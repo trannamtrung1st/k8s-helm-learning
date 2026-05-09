@@ -6,26 +6,44 @@ Design-only document for a small **synthetic load** system used to practice Kube
 
 - Simulate **CPU load**, **resident memory**, and **duration** via explicit parameters (no real business domain).
 - Exercise a **multi-service** layout that feels like production software: **web UI**, **API**, **background worker**, **message broker**, **database**, and optionally **cache** after v1.
-- Support later practice for **HPA**, **VPA**, **KEDA** (broker backlog), **Ingress**, **TLS**, **NetworkPolicy**, metrics, and tracing.
+- Support later practice for **HPA**, **VPA**, **KEDA** (broker backlog), **Ingress**, **TLS**, **NetworkPolicy**, **Datadog** (metrics, logs, APM), **resource requests and limits**, **Deployments / StatefulSets / Jobs**, **Service** types, multi-replica HA, and **secret management** when you wire credentials for Postgres, RabbitMQ, and apps.
+
+## Roadmap alignment
+
+Use [Learning roadmap](roadmap.md) as the syllabus; **keep deploying this workbench** as line items advance. Rough mapping:
+
+| Roadmap theme                 | Workbench touchpoints                                                                                                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workloads (1–7, 9–11)         | `Deployment` / `Job` for web, api, worker; Postgres, RabbitMQ, Redis charts                                                                         |
+| Expose traffic (4, 18–19, 21) | `Service` types, `Ingress`, TLS, DNS to **load-web** and **load-api**                                                                               |
+| Stability (5–6, 32)           | Replicas, PDB, **requests/limits**, rolling updates                                                                                                 |
+| Autoscale (33–35)             | HPA on api/worker; **KEDA** on RabbitMQ depth; cluster autoscaler                                                                                   |
+| Observability (25–26)         | **Datadog**: cluster agent/agent, logs, APM (or OTel → Datadog) for **load-api** / **load-worker**                                                  |
+| Access control (27–28)        | RBAC and `NetworkPolicy` around workbench namespaces                                                                                                |
+| Secret management (20)        | **External Secrets** (or similar) for Postgres and RabbitMQ credentials consumed by **load-api** / **load-worker**                                  |
+| Data durability (22–24)       | Postgres PVCs, backups                                                                                                                              |
+| Delivery (46–50)              | **GitHub Actions** for build/deploy (46–47), previews (**48**), rollbacks (**49**); **Argo CD (50)** optional later to sync the same manifests/Helm |
+
+**Secrets:** Prefer **External Secrets** or equivalent once broker and DB credentials leave plain `Secret` YAML ([roadmap](roadmap.md) item **20**, placed after cert-manager). Store connection strings and API keys for **load-api** / **load-worker** consistently.
 
 ## Technology stack
 
-| Layer | Choice | Notes |
-|-------|--------|--------|
-| API & worker | **.NET 10** | `load-api`: ASP.NET Core (REST). `load-worker`: worker service (e.g. `GenericHost` + hosted consumer, or separate executable). Prefer a **shared class library** for payload models and the **simulation routine** so API and worker stay in sync. |
-| Web UI | **React** + **Tailwind CSS** | SPA (e.g. **Vite** as bundler). Served as static assets behind nginx in Kubernetes. Tailwind for layout and forms; keep the UI utilitarian. |
-| Database | **PostgreSQL** | **System of record** for jobs (`id`, `status`, `payload` JSON, timestamps, error text). **v1:** migrations with **EF Core** (see section **Implementation defaults (v1)**). |
-| Job queue | **RabbitMQ** | Primary path: API **publishes** job messages; workers **consume** from a named queue (and exchange). **KEDA** can scale workers on **queue length** or **message rate** (RabbitMQ scaler). Topology: **Implementation defaults (v1)**. |
-| Cache / aux | **Redis** | **Not used in v1** (all state in Postgres). After v1, optional **idempotency**, **rate limiting**, or **read-through cache** for job status—see Technology stack intent only; no keys required until you add Redis. |
-| MQTT (later) | **EMQX** | **Out of scope for v1.** Add when practicing **certificates**, **TLS**, and **mTLS**: e.g. EMQX in-cluster, clients (or a small bridge service) using signed certs; optional publish of job lifecycle events over MQTT for observability drills—not required for core load simulation. |
+| Layer        | Choice                       | Notes                                                                                                                                                                                                                                                                                  |
+| ------------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API & worker | **.NET 10**                  | `load-api`: ASP.NET Core (REST). `load-worker`: worker service (e.g. `GenericHost` + hosted consumer, or separate executable). Prefer a **shared class library** for payload models and the **simulation routine** so API and worker stay in sync.                                     |
+| Web UI       | **React** + **Tailwind CSS** | SPA (e.g. **Vite** as bundler). Served as static assets behind nginx in Kubernetes. Tailwind for layout and forms; keep the UI utilitarian.                                                                                                                                            |
+| Database     | **PostgreSQL**               | **System of record** for jobs (`id`, `status`, `payload` JSON, timestamps, error text). **v1:** migrations with **EF Core** (see section **Implementation defaults (v1)**).                                                                                                            |
+| Job queue    | **RabbitMQ**                 | Primary path via **MassTransit** (RabbitMQ transport): API **publishes** command/event messages; workers **consume**. **KEDA** can scale workers on **queue length** or **message rate**. Broker topology: **Implementation defaults (v1)**.                                           |
+| Cache / aux  | **Redis**                    | **Not used in v1** (all state in Postgres). After v1, optional **idempotency**, **rate limiting**, or **read-through cache** for job status—see Technology stack intent only; no keys required until you add Redis.                                                                    |
+| MQTT (later) | **EMQX**                     | **Out of scope for v1.** Add when practicing **certificates**, **TLS**, and **mTLS**: e.g. EMQX in-cluster, clients (or a small bridge service) using signed certs; optional publish of job lifecycle events over MQTT for observability drills—not required for core load simulation. |
 
 **Interop (v1):** UI talks HTTP/JSON to the API only. API and workers use **Postgres** and **RabbitMQ** only.
 
 ## System overview
 
 - **load-web**: React + Tailwind SPA (static build via nginx). Submits jobs and shows status (polling is enough for v1).
-- **load-api**: .NET 10 HTTP API. Validates payloads, writes job row to **Postgres**, publishes message to **RabbitMQ**, exposes job status from **Postgres** (v1: no Redis).
-- **load-worker**: .NET 10 consumer. Pulls from **RabbitMQ**, updates Postgres status, runs the CPU/memory/time simulation (shared library).
+- **load-api**: .NET 10 HTTP API. Validates payloads, writes job row to **Postgres**, publishes the job envelope via **MassTransit** (RabbitMQ) to the configured queue, exposes job status from **Postgres** (v1: no Redis).
+- **load-worker**: .NET 10 **MassTransit** consumer (RabbitMQ transport); receive from the primary job queue, updates Postgres status, runs the CPU-memory-time simulation (shared library).
 - **RabbitMQ**: Decouples API from workers; supports **KEDA**-driven scale-out.
 - **PostgreSQL**: Durable jobs and history (backup/restore exercises on the roadmap).
 - **Redis**: Omit in v1; add when you want a dedicated Redis exercise on the roadmap.
@@ -44,12 +62,12 @@ All of API, worker, and UI must agree on one JSON shape. Example:
 }
 ```
 
-| Field | Requirement |
-|-------|-------------|
-| `durationSec` | Total time the simulation runs. **Numeric bounds:** see **Validation caps** under **Implementation defaults (v1)**. |
-| `cpuPercent` | 0–100. Approximate sustained CPU using a spin/sleep loop per time slice (no need for `stress-ng` in v1). **Algorithm:** see **Simulation routine** under **Implementation defaults (v1)**. |
-| `memoryMb` | Allocate roughly this much memory; reject out-of-range values per **v1 caps** (below). |
-| `memoryTouch` | If true, touch pages so **RSS** reflects allocation (better for memory-observable demos). |
+| Field         | Requirement                                                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `durationSec` | Total time the simulation runs. **Numeric bounds:** see **Validation caps** under **Implementation defaults (v1)**.                                                                        |
+| `cpuPercent`  | 0–100. Approximate sustained CPU using a spin/sleep loop per time slice (no need for `stress-ng` in v1). **Algorithm:** see **Simulation routine** under **Implementation defaults (v1)**. |
+| `memoryMb`    | Allocate roughly this much memory; reject out-of-range values per **v1 caps** (below).                                                                                                     |
+| `memoryTouch` | If true, touch pages so **RSS** reflects allocation (better for memory-observable demos).                                                                                                  |
 
 ## Implementation defaults (v1)
 
@@ -60,7 +78,7 @@ Simple defaults so an implementer can build without extra design meetings. **Pri
 - **Exchange**: name `workbench.jobs`, type **direct**, **durable**.
 - **Queue**: name `workbench.jobs.q`, **durable**; bind with routing key **`job`**.
 - **Publishing**: **persistent** messages (`delivery mode 2`); API uses the same exchange + routing key `job`.
-- **Consumers**: **manual ack**; **prefetch** `5` per channel (single consumer channel per worker process is enough for v1).
+- **Consumers:** **manual ack** at the broker is the reference model; **MassTransit** applies equivalent **ack/nack** behavior by default—override only when learning raw RabbitMQ semantics.
 - **Failure handling (simple):** on handler success → **ack**; on uncaught failure after DB update to `failed` → **ack** anyway (message was processed; bad payload is visible in Postgres). Avoid requeue loops in v1.
 - **Optional later (“Phase 1b”):** dead-letter exchange → queue `workbench.jobs.dlq` via a RabbitMQ policy if you want an extra learning exercise.
 - **Message body (envelope)** — JSON UTF-8:
@@ -78,7 +96,7 @@ Simple defaults so an implementer can build without extra design meetings. **Pri
 ```
 
 - **`jobId`** is the same UUID as `jobs.id` in Postgres (string, lowercase).
-- **.NET client (v1):** use **`RabbitMQ.Client`** (official driver, small surface area, easy to reason about in Kubernetes). **MassTransit** or similar is optional if you prefer a higher-level API; it does not change how you practice probes, ingress, or KEDA.
+- **.NET messaging (v1):** use **MassTransit** with the **RabbitMQ** transport. Same broker topology below (exchange, queue, routing key, persistent messages). Configure **receive endpoints and publishers** so the primary consumer queue KEDA observes remains **`workbench.jobs.q`** (explicit endpoint configuration), unless you intentionally use MassTransit’s default naming—then **document the actual queue name** and point KEDA at that. MassTransit is the main learning surface for messaging patterns; **`RabbitMQ.Client`** is only pulled in transitively—avoid using it directly in application code unless you drop MassTransit for a one-off exercise.
 
 ### PostgreSQL + .NET persistence
 
@@ -175,7 +193,7 @@ Suggested status values: `queued`, `running`, `succeeded`, `failed`.
 
 ## Worker requirements (load-worker)
 
-- Consume from **RabbitMQ** per **Implementation defaults (v1)** (competing consumers, **prefetch 5**, manual ack).
+- Consume via **MassTransit** (RabbitMQ) per **Implementation defaults (v1)**. Prefer **prefetch ≈ 5** and default MassTransit ack behavior unless you need raw broker semantics for an exercise.
 - On message: deserialize payload, set Postgres status to `running`, execute simulation, then `succeeded` or `failed` (store errors in DB).
 - **Graceful shutdown:** allow in-flight work to finish when possible; ack policy follows **Implementation defaults** (no silent message loss if the process dies mid-job beyond broker redelivery semantics).
 - Same caps and validation as the API where applicable.
@@ -196,21 +214,40 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 
 ## Kubernetes and networking
 
-- Separate **Deployment + Service** per application component: **web**, **api**, **worker**, plus **RabbitMQ** and **PostgreSQL**. **Redis:** only when you add Redis after v1 (Helm charts or operators are fine for infra).
-- Set **resource requests and limits** on api and worker (and small limits on web) so HPA/VPA and cgroup behavior are visible.
+### Workload kinds (align with roadmap)
+
+- **Application components (`load-web`, `load-api`, `load-worker`):** use **Deployment** (not bare Pods). They are stateless with respect to the cluster: state lives in **Postgres** and the **broker**.
+- **Replicas / HA:** for exercises on **multiple replicas** and **availability**, run **at least 2 replicas** of **`load-api`** and **`load-web`** (API must remain safe with multiple instances: no in-memory-only session state). Run **2+ `load-worker`** replicas when practicing **competing consumers** on the same queue; **1** replica is acceptable for minimal bring-up.
+- **Postgres, RabbitMQ, Redis:** install with **Helm or an operator**; underlying controllers are often **StatefulSet**. You practice **StatefulSet** explicitly when you follow that roadmap item (inspect or hand-write manifests), not by reimplementing the database in app code.
+- **Kubernetes Job / CronJob (optional):** e.g. one-off **migration** Job, or a **CronJob** that triggers synthetic load (HTTP client calling `POST /v1/jobs`). Not required for the core UI/API/worker path.
+
+### Services and external access
+
+- **Default (v1):** **`ClusterIP`** `Service` for **web**, **api**, **worker**, and for in-cluster access to Postgres/RabbitMQ. Prefer **Ingress** (HTTP) from outside the cluster to **web** and **api** when you practice ingress routes.
+- **Roadmap follow-up:** use **`NodePort`** or cloud **`LoadBalancer`** only when explicitly practicing those **Service** types; document the chosen `type` in your manifests and how it differs from **Ingress** (L4 vs L7, cost, scope).
+
+### Resource requests and limits (required)
+
+- Every **`load-web`**, **`load-api`**, and **`load-worker`** container MUST declare **`resources.requests`** and **`resources.limits`** for **CPU** and **memory** (avoid **BestEffort** for app components in this learning path unless troubleshooting).
+- **`load-worker`** **memory limit** MUST stay **above** worst-case process use when a job runs **`memoryMb`** at the spec maximum (runtime CLR overhead + payload allocation + headroom). Enforce **`memoryMb`** validation so simulated allocation fits under the pod limit; lower the **`WorkbenchOptions`** max **`memoryMb`** if your cluster gives workers a small limit.
+- **`load-api`** limits MUST allow **`POST /v1/work`** at max **`durationSec` / `memoryMb` / `cpuPercent`** without OOM or excessive throttling during demos.
+- Record starter **requests/limits** in Helm **`values.yaml`** or YAML manifests and adjust when practicing roadmap items on **resource limits / QoS** and **HPA** (resource metrics rely on **requests**, at minimum).
+
+### Deployments and dependencies
+
+- Separate **Deployment + Service** per application component: **web**, **api**, **worker**, plus install **RabbitMQ** and **PostgreSQL** (and **Redis** after v1). **Redis:** only when you add Redis after v1 (Helm charts or operators are fine for infra).
 - **Ingress** (when practiced): e.g. path **`/`** → `load-web`, **`/api`** → `load-api` (agree whether the API serves routes with or without `/api` prefix and configure rewrite if needed).
 
 ## Autoscaling and observability goals
 
 - **Workers**: primary target for **KEDA** (RabbitMQ queue length / message rate) and/or **HPA** (CPU).
 - **API**: scale if you load-test synchronous endpoints or high enqueue rate.
-- **Prometheus** metrics: use .NET **OpenTelemetry** or `prometheus-net` on api/worker (throughput, latency, failures).
-- Logs to stdout for **Loki**; trace context propagated API → broker → worker where practical.
+- **Observability:** use **Datadog** (roadmap items **25–26**): cluster agent, log collection from stdout, **APM** or **OpenTelemetry** export to Datadog on **load-api** / **load-worker**; monitors and dashboards in Datadog. Self-hosted Prometheus/Loki are **out of scope for now**.
 
 ## Safety and ergonomics
 
 - Enforce numeric caps from **Validation caps** in **Implementation defaults (v1)**; return **`400`** with the validation JSON shape from **HTTP JSON examples** on bad input.
-- Document recommended **requests/limits** per practice scenario (steady vs burst) when you deploy to a cluster.
+- Keep container **requests/limits** consistent with **Resource requests and limits (required)** and revise together when scenario or cluster size changes.
 
 ## Later: EMQX and certificate testing
 
@@ -222,6 +259,7 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 
 These align with the learning roadmap but are not fully specified here:
 
-- **Autoscaling**: VPA for suggestions, HPA on CPU/memory (and custom metrics later).
+- **Autoscaling**: VPA for suggestions, HPA on CPU/memory (and custom metrics via Datadog or metrics adapters if needed).
 - **Networking**: Services, Ingress, egress policies.
 - **Istio / mesh**, **canary** traffic: optional layers on top of the same Deployments.
+- **GitOps**: **Argo CD** is roadmap item **50** (advanced, after GitHub Actions CI/CD). **Policy engines, operators, cost tooling**: still deferred; see roadmap “out of scope for now.”
