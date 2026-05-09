@@ -7,7 +7,7 @@ Personal notes and experiments for Kubernetes, Helm, and platform tooling. Docum
 | Doc | Description |
 |-----|-------------|
 | [Roadmap](docs/roadmap.md) | Ordered list of topics to work through |
-| [Workbench demo spec](docs/workbench-demo-spec.md) | Requirements for the multi-service load simulator (UI, API, worker, Redis) |
+| [Workbench demo spec](docs/workbench-demo-spec.md) | Requirements includes **Implementation defaults (v1)**: RabbitMQ names, caps, sync vs async, JSON examples, EF Core, no Redis in v1 |
 | [Knowledge notes](docs/knowledge-notes.md) | Commands and short explanations (proxy, debug, PDB, TLS, ingress, load balancing) |
 
 ## References
