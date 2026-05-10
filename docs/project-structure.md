@@ -73,4 +73,4 @@ Use the first when you only need Postgres, RabbitMQ, and Redis; use the second f
 
 ## Relation to the workbench demo
 
-The application built under `src/` is intended to align with [Workbench demo spec](workbench-demo-spec.md) so platform experiments (Ingress, observability, secrets, policies) stay on one coherent system instead of one-off demos.
+The application built under `src/` is intended to align with [Workbench demo spec](workbench-demo-spec.md) so platform experiments (Gateway API, observability, secrets, policies) stay on one coherent system instead of one-off demos.

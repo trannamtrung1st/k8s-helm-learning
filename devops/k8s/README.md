@@ -31,7 +31,8 @@ Work in this monorepo treats **`devops/k8s/`** as the **Kubernetes root** (`<k8s
 │       └── …
 │
 ├── infrastructure/
-│   ├── ingress-nginx/
+│   ├── gateway-api/            # e.g. Envoy Gateway, cilium, contour — Gateway API implementations
+│   ├── ingress-nginx/          # legacy Ingress controller (optional)
 │   ├── cert-manager/
 │   ├── prometheus/
 │   ├── loki/
@@ -56,7 +57,7 @@ Work in this monorepo treats **`devops/k8s/`** as the **Kubernetes root** (`<k8s
 | Area                  | Role                                                                                                                                                                                                                                                                    |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`apps/`**           | One directory per workload (microservice). **`base/`** holds the canonical Kustomize resources; **`overlays/<env>/`** patches images, replicas, resources, namespaces, and env-specific config. Optional **`hpa.yaml`**, **`pdb.yaml`** when you practice HA (roadmap). |
-| **`infrastructure/`** | Cluster add-ons and third-party stacks (ingress controller, certs, mesh, observability). Often Helm-rendered or upstream manifests wrapped in Kustomize—keep them separate from app **Deployments**.                                                                    |
+| **`infrastructure/`** | Cluster add-ons and third-party stacks (**Gateway API** implementations, **cert-manager**, mesh, observability). Often Helm-rendered or upstream manifests wrapped in Kustomize—keep them separate from app **Deployments**.                                                         |
 | **`clusters/`**       | Environment- or cluster-level **entrypoints**: what Argo CD, Flux, or humans **`apply`** per cluster (e.g. one **`kustomization.yaml`** root per **`dev`** / **`staging`** / **`prod`** that pulls **`apps/*`** and **`platform/*`**).                                  |
 | **`platform/`**       | Shared policies: **NetworkPolicy**, **RBAC**, **LimitRange**, org guardrails—referenced by cluster roots instead of duplicated per app.                                                                                                                                 |
 | **`scripts/`**        | Helper **`kubectl`**, **`kustomize build`**, bootstrap, or CI glue—no long-lived YAML required.                                                                                                                                                                         |
@@ -110,7 +111,7 @@ Workbench uses several namespaces so DNS and RBAC can target tiers without mixin
 | **`workbench-system`** | **`system`**           | First-party apps: **API**, **worker**, **UI**, platform **Secrets** used today.    |
 | **`workbench-db`**     | **`database`**         | **PostgreSQL** (operators, StatefulSets, jobs, backups).                          |
 | **`workbench-storage`** | **`storage`**          | Object/block storage integrations, CSI-related app components, volume helpers.   |
-| **`workbench-infra`**  | **`shared-infra`**     | Cluster add-ons scoped to this product: **ingress**, **cert-manager**, brokers, cache, mesh ingress, etc.—keep separate from **`apps/`** Deployments. |
+| **`workbench-infra`**  | **`shared-infra`**     | Cluster add-ons scoped to this product: **Gateway API** controllers, **cert-manager**, brokers, cache, mesh gateways, etc.—keep separate from **`apps/`** Deployments. |
 
 **Today:** **`workbench-api`** and **`workbench-worker`** Kustomize bases still target **`workbench-system`** only. As you add Postgres/RabbitMQ/Redis to the cluster, place their namespaces **`workbench-db`** / **`workbench-infra`** (or split further) and point **Services** / **Secrets** from app overlays accordingly.
 

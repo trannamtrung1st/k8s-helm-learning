@@ -1,12 +1,12 @@
 # Workbench demo — requirements and specifications
 
-Design-only document for a small **synthetic load** system used to practice Kubernetes, Helm, autoscaling, ingress, and observability. **No implementation commitment** in this repo until you choose to build it.
+Design-only document for a small **synthetic load** system used to practice Kubernetes, Helm, autoscaling, **Gateway API**, and observability. **No implementation commitment** in this repo until you choose to build it.
 
 ## Purpose
 
 - Simulate **CPU load**, **resident memory**, and **duration** via explicit parameters (no real business domain).
 - Exercise a **multi-service** layout that feels like production software: **web UI**, **API**, **background worker**, **message broker**, **database**, and optionally **cache** after v1.
-- Support later practice for **HPA**, **VPA**, **KEDA** (broker backlog), **Ingress**, **TLS**, **NetworkPolicy**, **Datadog** (metrics, logs, APM), **resource requests and limits**, **Deployments / StatefulSets / Jobs**, **Service** types, multi-replica HA, and **secret management** when you wire credentials for Postgres, RabbitMQ, and apps.
+- Support later practice for **HPA**, **VPA**, **KEDA** (broker backlog), **Kubernetes Gateway API** (**Gateway**, **HTTPRoute**), **TLS**, **NetworkPolicy**, **Datadog** (metrics, logs, APM), **resource requests and limits**, **Deployments / StatefulSets / Jobs**, **Service** types, multi-replica HA, and **secret management** when you wire credentials for Postgres, RabbitMQ, and apps.
 
 ## Roadmap alignment
 
@@ -14,17 +14,17 @@ Use [Learning roadmap](roadmap.md) as the syllabus; **keep deploying this workbe
 
 | Roadmap theme                 | Workbench touchpoints                                                                                                                               |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Workloads (1–7, 9–11)         | `Deployment` / `Job` for web, api, worker; Postgres, RabbitMQ, Redis charts                                                                         |
-| Expose traffic (4, 18–19, 21) | `Service` types, `Ingress`, TLS, DNS to **workbench-app** and **workbench-api**                                                                               |
-| Stability (5–6, 32)           | Replicas, PDB, **requests/limits**, rolling updates                                                                                                 |
-| Autoscale (33–35)             | HPA on api/worker; **KEDA** on RabbitMQ depth; cluster autoscaler                                                                                   |
-| Observability (25–26)         | **Datadog**: cluster agent/agent, logs, APM (or OTel → Datadog) for **workbench-api** / **workbench-worker**                                                  |
-| Access control (27–28)        | RBAC and `NetworkPolicy` around workbench namespaces                                                                                                |
-| Secret management (20)        | **External Secrets** (or similar) for Postgres and RabbitMQ credentials consumed by **workbench-api** / **workbench-worker**                                  |
-| Data durability (22–24)       | Postgres PVCs, backups                                                                                                                              |
-| Delivery (46–50)              | **Kustomize** base + env **overlays** for images, config, and cluster-specific patches (see **Kubernetes and networking → Kustomize**); **GitHub Actions** for build/deploy (46–47), previews (**48**), rollbacks (**49**); **Argo CD (50)** optional later to sync the same manifests/Helm |
+| Runnable stack (**5–11**)     | Namespaces, ConfigMaps/Secrets, **Services**, PVC/StorageClass, **Postgres**, **RabbitMQ**, **worker + queue**; `Deployment`/`Job` for web, api, worker |
+| Edge HTTP (**18–20**)         | **Gateway API** (`Gateway`, `HTTPRoute`), TLS, DNS to **workbench-app** and **workbench-api** (after in-cluster **Services** / port-forward)           |
+| Stability (**12–17**)         | **requests/limits**, replicas, PDB, topology, **rolling updates**, **Jobs**/**CronJobs**, **StatefulSet** depth, optional **Redis**                    |
+| Autoscale (**31–33**)       | HPA on api/worker; **KEDA** on RabbitMQ depth; cluster autoscaler                                                                                   |
+| Observability (**24–25**)     | **Datadog**: cluster agent/agent, logs, APM (or OTel → Datadog) for **workbench-api** / **workbench-worker**                                        |
+| Access control (**26–27**)    | RBAC and `NetworkPolicy` around workbench namespaces                                                                                                |
+| Secret management (**21**)    | **External Secrets** (or similar) for Postgres and RabbitMQ credentials consumed by **workbench-api** / **workbench-worker**                        |
+| Data lifecycle (**22–23**)  | Dynamic provisioning, Postgres PVCs, **backup/restore**                                                                                              |
+| Delivery (**44–48**)          | **Kustomize** overlays (see **Kubernetes and networking → Kustomize**); **GitHub Actions** CI (**44**), CD (**45**), previews (**46**), rollbacks (**47**); **Argo CD (48)** optional |
 
-**Secrets:** Prefer **External Secrets** or equivalent once broker and DB credentials leave plain `Secret` YAML ([roadmap](roadmap.md) item **20**, placed after cert-manager). Store connection strings and API keys for **workbench-api** / **workbench-worker** consistently.
+**Secrets:** Prefer **External Secrets** or equivalent once broker and DB credentials leave plain `Secret` YAML ([roadmap](roadmap.md) item **21**, after Gateway API (**18**), TLS (**19**), and DNS (**20**)). Store connection strings and API keys for **workbench-api** / **workbench-worker** consistently.
 
 ## Technology stack
 
@@ -36,7 +36,7 @@ Use [Learning roadmap](roadmap.md) as the syllabus; **keep deploying this workbe
 | Job queue    | **RabbitMQ**                 | Job envelopes over **`RabbitMQ.Client`**. **Topology** is **not** created by the apps: **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** is the shared definitions file—**local Compose** bind-mounts it at broker boot; reuse the **same file** for Kubernetes when you add manifests. **KEDA** can scale workers on queue depth or message rate in cluster deployments.                                                                                                                                                    |
 | Cache / aux  | **Redis**                    | **Not used in v1** (all state in Postgres). After v1, optional **idempotency**, **rate limiting**, or **read-through cache** for job status—see Technology stack intent only; no keys required until you add Redis.                                                                    |
 | MQTT (later) | **EMQX**                     | **Out of scope for v1.** Add when practicing **certificates**, **TLS**, and **mTLS**: e.g. EMQX in-cluster, clients (or a small bridge service) using signed certs; optional publish of job lifecycle events over MQTT for observability drills—not required for core load simulation. |
-| K8s packaging | **Kustomize**               | **Base** manifests (shared workloads, Services, bare ConfigMaps/Secrets structure) plus **overlay** directories per environment (**local-kind**, **dev**, **staging**, **prod**, …). Overlays hold **patches**, **images**, **replicas**, **resources**, **namespace**, **Ingress** hosts, and **env-specific** `ConfigMap`/`Secret` wiring. Use this for **environment differences** before or alongside Helm (roadmap chart conversion stays a separate exercise). |
+| K8s packaging | **Kustomize**               | **Base** manifests (shared workloads, Services, bare ConfigMaps/Secrets structure) plus **overlay** directories per environment (**local-kind**, **dev**, **staging**, **prod**, …). Overlays hold **patches**, **images**, **replicas**, **resources**, **namespace**, **Gateway API** hostnames/paths/TLS refs, and **env-specific** `ConfigMap`/`Secret` wiring. Use this for **environment differences** before or alongside Helm (roadmap chart conversion stays a separate exercise). |
 
 **Interop (v1):** UI talks HTTP/JSON to the API only. API and workers use **Postgres** and **RabbitMQ** only.
 
@@ -183,7 +183,7 @@ ASP.NET **ProblemDetails** is fine as long as the same information appears.
 - `GET /v1/jobs?limit=…` — Recent jobs list from Postgres for the UI (same section for response shape).
 - `GET /healthz`, `GET /ready` — Liveness/readiness (readiness should verify Postgres + RabbitMQ connectivity as appropriate).
 - `POST /v1/work` — **Synchronous** load only (see section **`POST /v1/work` (sync) semantics** in **Implementation defaults (v1)**).
-- **CORS** or single-host **Ingress** so the browser can call the API (`/api` prefix is a common pattern).
+- **CORS** or single-host **Gateway API** routing (**HTTPRoute**) so the browser can call the API (`/api` prefix is a common pattern).
 
 Suggested status values: `queued`, `running`, `succeeded`, `failed`.
 
@@ -226,8 +226,8 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 ### Kustomize (base + environment overlays)
 
 - **Default approach for env-specific Kubernetes YAML:** maintain a **`base`** (or `kustomize/base`) with the canonical **`workbench-app`**, **`workbench-api`**, and **`workbench-worker`** objects—**Deployments**, **Services**, shared labels/common annotations, and optional **ConfigMap** stubs—then one **overlay** per target environment (**e.g.** `overlays/local-kind`, `overlays/dev`, `overlays/prod`).
-- **Overlays** apply only what differs: **`images`** (registry/tags from CI), **`replicas`**, **`resources`**, **namespace**, **Ingress** host/paths/TLS refs, **patches** (JSON or strategic merge) for connection strings or feature flags, and **replacements**/`vars` where appropriate. Keep secrets out of Git where policy requires it: reference **Secret** names in base/overlays and populate via **External Secrets**, sealed secrets, or CICD inject—not plain literals in overlay files.
-- **`kubectl apply -k`** (or **`kustomize build … | kubectl apply -f -`**) is the day-to-day render path; **GitOps** tools (**Argo CD**, **Flux**) can point at the same **kustomization.yaml** roots later (roadmap item **50**).
+- **Overlays** apply only what differs: **`images`** (registry/tags from CI), **`replicas`**, **`resources`**, **namespace**, **Gateway API** hostnames/paths/TLS refs, **patches** (JSON or strategic merge) for connection strings or feature flags, and **replacements**/`vars` where appropriate. Keep secrets out of Git where policy requires it: reference **Secret** names in base/overlays and populate via **External Secrets**, sealed secrets, or CICD inject—not plain literals in overlay files.
+- **`kubectl apply -k`** (or **`kustomize build … | kubectl apply -f -`**) is the day-to-day render path; **GitOps** tools (**Argo CD**, **Flux**) can point at the same **kustomization.yaml** roots later (roadmap item **48**).
 - **Helm:** roadmap still includes **converting manifests to Helm charts**; you can introduce charts later and either **wrap** Kustomize (e.g. chart + post-render) or **migrate**—the spec does not require Helm for the first cluster bring-up if **Kustomize overlays** already express env differences clearly.
 - **Layout:** a reference tree for **`apps/`** (per-service `base/` + `overlays/`), **`infrastructure/`**, **`clusters/`**, **`platform/`**, and **`scripts/`** is in **[`devops/k8s/README.md`](../devops/k8s/README.md)** (`devops/k8s/` is the Kubernetes root in this repo).
 
@@ -240,26 +240,26 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 
 ### Services and external access
 
-- **Default (v1):** **`ClusterIP`** `Service` for **web**, **api**, **worker**, and for in-cluster access to Postgres/RabbitMQ. Prefer **Ingress** (HTTP) from outside the cluster to **web** and **api** when you practice ingress routes.
-- **Roadmap follow-up:** use **`NodePort`** or cloud **`LoadBalancer`** only when explicitly practicing those **Service** types; document the chosen `type` in your manifests and how it differs from **Ingress** (L4 vs L7, cost, scope).
+- **Default (v1):** **`ClusterIP`** `Service` for **web**, **api**, **worker**, and for in-cluster access to Postgres/RabbitMQ. Prefer **Gateway API** (**HTTPRoute** attached to a **Gateway**) from outside the cluster to **web** and **api** when you practice edge HTTP routing.
+- **Roadmap follow-up:** use **`NodePort`** or cloud **`LoadBalancer`** only when explicitly practicing those **Service** types; document the chosen `type` in your manifests and how it differs from **Gateway API** edge config (L4 vs L7, cost, scope).
 
 ### Resource requests and limits (required)
 
 - Every **`workbench-app`**, **`workbench-api`**, and **`workbench-worker`** container MUST declare **`resources.requests`** and **`resources.limits`** for **CPU** and **memory** (avoid **BestEffort** for app components in this learning path unless troubleshooting).
 - **`workbench-worker`** **memory limit** MUST stay **above** worst-case process use when a job runs **`memoryMb`** at the spec maximum (runtime CLR overhead + payload allocation + headroom). Enforce **`memoryMb`** validation so simulated allocation fits under the pod limit; lower the **`WorkbenchOptions`** max **`memoryMb`** if your cluster gives workers a small limit.
 - **`workbench-api`** limits MUST allow **`POST /v1/work`** at max **`durationSec` / `memoryMb` / `cpuPercent`** without OOM or excessive throttling during demos.
-- Record starter **requests/limits** in Helm **`values.yaml`** or in **Kustomize** base/patch YAML and adjust when practicing roadmap items on **resource limits / QoS** and **HPA** (resource metrics rely on **requests**, at minimum).
+- Record starter **requests/limits** in Helm **`values.yaml`** or in **Kustomize** base/patch YAML and adjust when practicing roadmap items on **resource limits / QoS** (**12**) and **HPA** (**31**) (resource metrics rely on **requests**, at minimum).
 
 ### Deployments and dependencies
 
 - Separate **Deployment + Service** per application component: **web**, **api**, **worker**, plus install **RabbitMQ** and **PostgreSQL** (and **Redis** after v1). **Redis:** only when you add Redis after v1 (Helm charts or operators are fine for infra).
-- **Ingress** (when practiced): e.g. path **`/`** → `workbench-app`, **`/api`** → `workbench-api` (agree whether the API serves routes with or without `/api` prefix and configure rewrite if needed).
+- **Gateway API** (when practiced): e.g. **HTTPRoute** rules so path **`/`** → `workbench-app`, **`/api`** → `workbench-api` (agree whether the API serves routes with or without `/api` prefix and configure URL rewrite if needed).
 
 ## Autoscaling and observability goals
 
 - **Workers**: primary target for **KEDA** (RabbitMQ queue length / message rate) and/or **HPA** (CPU).
 - **API**: scale if you load-test synchronous endpoints or high enqueue rate.
-- **Observability:** use **Datadog** (roadmap items **25–26**): cluster agent, log collection from stdout, **APM** or **OpenTelemetry** export to Datadog on **workbench-api** / **workbench-worker**; monitors and dashboards in Datadog. Self-hosted Prometheus/Loki are **out of scope for now**.
+- **Observability:** use **Datadog** (roadmap items **24–25**): cluster agent, log collection from stdout, **APM** or **OpenTelemetry** export to Datadog on **workbench-api** / **workbench-worker**; monitors and dashboards in Datadog. Self-hosted Prometheus/Loki are **out of scope for now**.
 
 ## Safety and ergonomics
 
@@ -277,6 +277,6 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 These align with the learning roadmap but are not fully specified here:
 
 - **Autoscaling**: VPA for suggestions, HPA on CPU/memory (and custom metrics via Datadog or metrics adapters if needed).
-- **Networking**: Services, Ingress, egress policies.
+- **Networking**: Services, Gateway API, egress policies.
 - **Istio / mesh**, **canary** traffic: optional layers on top of the same Deployments.
-- **GitOps**: **Argo CD** is roadmap item **50** (advanced, after GitHub Actions CI/CD). Repositories can track **Kustomize** roots (`kustomization.yaml` per env overlay) as the deployable unit. **Policy engines, operators, cost tooling**: still deferred; see roadmap “out of scope for now.”
+- **GitOps**: **Argo CD** is roadmap item **48** (advanced, after GitHub Actions CI/CD, previews, and rollbacks). Repositories can track **Kustomize** roots (`kustomization.yaml` per env overlay) as the deployable unit. **Policy engines, operators, cost tooling**: still deferred; see roadmap “out of scope for now.”

@@ -56,9 +56,9 @@ ephemeralContainers:
 9. Both derive symmetric session keys.
 10. Encrypted communication starts (TLS established).
 
-## Ingress alternatives
+## Edge routing alternatives
 
-An ingress controller can be replaced with a simpler reverse proxy (for example nginx) or an API gateway pod. Ingress controllers usually integrate more deeply with Kubernetes features and offer richer routing and TLS behavior.
+**Kubernetes Gateway API** (**Gateway**, **HTTPRoute**) is the preferred cluster-native HTTP edge in this repo’s [roadmap](roadmap.md). For local development only, **Workbench.LocalGateway** (YARP) in Docker Compose fills a similar role without installing a gateway implementation on the cluster.
 
 ## Global load balancer
 
