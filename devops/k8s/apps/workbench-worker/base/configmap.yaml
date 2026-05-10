@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workbench-worker-config
+data:
+  ASPNETCORE_URLS: http://+:8080
+  Logging__LogLevel__Default: Information
+  Logging__LogLevel__Microsoft.Hosting.Lifetime: Information
+  Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+  RabbitMq__ConsumerConcurrency: "4"
+  RabbitMq__PrefetchPerConsumer: "10"
+  Workbench__DurationSecMin: "1"
+  Workbench__DurationSecMax: "300"
+  Workbench__CpuPercentMin: "0"
+  Workbench__CpuPercentMax: "100"
+  Workbench__MemoryMbMin: "0"
+  Workbench__MemoryMbMax: "1024"

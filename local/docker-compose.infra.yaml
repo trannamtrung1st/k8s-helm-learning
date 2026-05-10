@@ -1,5 +1,5 @@
 # Infrastructure only: Postgres, RabbitMQ, and Redis (local workbench stack).
-# Run from repo root: docker compose -f local/docker-compose.infra.yml up -d
+# Run from repo root: docker compose -f local/docker-compose.infra.yaml up -d
 # Data is ephemeral (no named volumes): DB, broker, and cache reset when containers are removed.
 
 name: workbench

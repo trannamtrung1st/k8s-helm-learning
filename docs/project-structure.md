@@ -27,6 +27,7 @@ Design-time scaffolding uses **`JobsDbContextFactory`** (no full API host). Over
 ### `devops/`
 
 - **RabbitMQ:** canonical broker definitions for the workbench stack live in **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** (vhost **`/`**, user **`workbench`**, exchange **`workbench.jobs`**, queue **`workbench.jobs.q`**, routing key **`job`**). **Local Compose** bind-mounts this file into **`rabbitmq:4-management`**; when you add Kubernetes manifests or Helm, reuse the **same path** (e.g. ConfigMap/Secret **`kubectl create secret --from-file=...=devops/rabbitmq/definitions.json`**) so local and cluster stay aligned.
+- **Kubernetes / Kustomize:** the intended tree (**`apps/`**, **`infrastructure/`**, **`clusters/`**, **`platform/`**, **`scripts/`**) is documented in **[`devops/k8s/README.md`](../devops/k8s/README.md)**. In this repo the Kubernetes root is **`devops/k8s/`**; **`apps/workbench-api/`** (and siblings as you add them) follow **`base/`** + **`overlays/`** per app. **Labels** use **`app.kubernetes.io/name`** / **`component`** (see the label convention section there).
 
 Other infrastructure-as-code (Terraform, raw YAML, additional charts, CI) can live under **`devops/`** as you add it.
 
@@ -40,8 +41,8 @@ Workbench **v1** app path in [Workbench demo spec](workbench-demo-spec.md) uses 
 
 | File                                                                  | Purpose                                                                                                                                                                                                                        |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`local/docker-compose.infra.yml`](../local/docker-compose.infra.yml) | **Infrastructure only** — `postgres`, `rabbitmq` (management **15672**), `redis` (**6379**). Postgres uses user/password/database **`workbench`**. **RabbitMQ** mounts **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** at boot (see [`local/rabbitmq/conf.d/10-workbench-definitions.conf`](../local/rabbitmq/conf.d/10-workbench-definitions.conf)). No bind or named volumes: data is **ephemeral** for local resets.         |
-| [`local/docker-compose.yml`](../local/docker-compose.yml)             | **Full stack** — `include`s infra (same **RabbitMQ** definitions mounts) and adds **`workbench-api`**, **`workbench-worker`**, **`workbench-app`** (React UI) with **`deploy.resources`** limits. Requires **`include`** support.                                      |
+| [`local/docker-compose.infra.yaml`](../local/docker-compose.infra.yaml) | **Infrastructure only** — `postgres`, `rabbitmq` (management **15672**), `redis` (**6379**). Postgres uses user/password/database **`workbench`**. **RabbitMQ** mounts **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** at boot (see [`local/rabbitmq/conf.d/10-workbench-definitions.conf`](../local/rabbitmq/conf.d/10-workbench-definitions.conf)). No bind or named volumes: data is **ephemeral** for local resets.         |
+| [`local/docker-compose.yaml`](../local/docker-compose.yaml)             | **Full stack** — `include`s infra (same **RabbitMQ** definitions mounts) and adds **`workbench-api`**, **`workbench-worker`**, **`workbench-app`** (React UI) with **`deploy.resources`** limits. Requires **`include`** support.                                      |
 
 Published ports (host) when using the full stack file:
 
@@ -64,8 +65,8 @@ These credentials are for **local practice only**; do not reuse in production.
 Typical usage (from the **repository root**):
 
 ```bash
-docker compose -f local/docker-compose.infra.yml up -d
-docker compose -f local/docker-compose.yml up --build
+docker compose -f local/docker-compose.infra.yaml up -d
+docker compose -f local/docker-compose.yaml up --build
 ```
 
 Use the first when you only need Postgres, RabbitMQ, and Redis; use the second for infra plus all app images. Add `-d` for detached mode if you prefer.

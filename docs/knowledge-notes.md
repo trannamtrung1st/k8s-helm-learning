@@ -2,6 +2,10 @@
 
 Short operational and conceptual notes collected while working through Kubernetes and related tooling.
 
+## Server-side apply
+
+Prefer **`kubectl apply --server-side`** (with **`-k`** or piped from **`kustomize build`**) over client-side apply for declarative configs so the apiserver owns merge behavior and field managers. See [Applying manifests (prefer server-side apply)](../devops/k8s/README.md#applying-manifests-prefer-server-side-apply) in **`devops/k8s/README.md`** and the upstream [Server-Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) guide.
+
 ## Proxy Kubernetes API to localhost
 
 ```sh

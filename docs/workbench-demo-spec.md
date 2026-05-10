@@ -22,7 +22,7 @@ Use [Learning roadmap](roadmap.md) as the syllabus; **keep deploying this workbe
 | Access control (27–28)        | RBAC and `NetworkPolicy` around workbench namespaces                                                                                                |
 | Secret management (20)        | **External Secrets** (or similar) for Postgres and RabbitMQ credentials consumed by **workbench-api** / **workbench-worker**                                  |
 | Data durability (22–24)       | Postgres PVCs, backups                                                                                                                              |
-| Delivery (46–50)              | **GitHub Actions** for build/deploy (46–47), previews (**48**), rollbacks (**49**); **Argo CD (50)** optional later to sync the same manifests/Helm |
+| Delivery (46–50)              | **Kustomize** base + env **overlays** for images, config, and cluster-specific patches (see **Kubernetes and networking → Kustomize**); **GitHub Actions** for build/deploy (46–47), previews (**48**), rollbacks (**49**); **Argo CD (50)** optional later to sync the same manifests/Helm |
 
 **Secrets:** Prefer **External Secrets** or equivalent once broker and DB credentials leave plain `Secret` YAML ([roadmap](roadmap.md) item **20**, placed after cert-manager). Store connection strings and API keys for **workbench-api** / **workbench-worker** consistently.
 
@@ -36,6 +36,7 @@ Use [Learning roadmap](roadmap.md) as the syllabus; **keep deploying this workbe
 | Job queue    | **RabbitMQ**                 | Job envelopes over **`RabbitMQ.Client`**. **Topology** is **not** created by the apps: **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** is the shared definitions file—**local Compose** bind-mounts it at broker boot; reuse the **same file** for Kubernetes when you add manifests. **KEDA** can scale workers on queue depth or message rate in cluster deployments.                                                                                                                                                    |
 | Cache / aux  | **Redis**                    | **Not used in v1** (all state in Postgres). After v1, optional **idempotency**, **rate limiting**, or **read-through cache** for job status—see Technology stack intent only; no keys required until you add Redis.                                                                    |
 | MQTT (later) | **EMQX**                     | **Out of scope for v1.** Add when practicing **certificates**, **TLS**, and **mTLS**: e.g. EMQX in-cluster, clients (or a small bridge service) using signed certs; optional publish of job lifecycle events over MQTT for observability drills—not required for core load simulation. |
+| K8s packaging | **Kustomize**               | **Base** manifests (shared workloads, Services, bare ConfigMaps/Secrets structure) plus **overlay** directories per environment (**local-kind**, **dev**, **staging**, **prod**, …). Overlays hold **patches**, **images**, **replicas**, **resources**, **namespace**, **Ingress** hosts, and **env-specific** `ConfigMap`/`Secret` wiring. Use this for **environment differences** before or alongside Helm (roadmap chart conversion stays a separate exercise). |
 
 **Interop (v1):** UI talks HTTP/JSON to the API only. API and workers use **Postgres** and **RabbitMQ** only.
 
@@ -79,7 +80,7 @@ Simple defaults so an implementer can build without extra design meetings. **Pri
 
 - **Exchange**: name `workbench.jobs`, type **direct**, **durable**.
 - **Queue**: name `workbench.jobs.q`, **durable**; bind with routing key **`job`**.
-- **Provisioning (v1):** create virtual host **`/`**, application user (**`workbench`** / **`workbench`** in this repo), and the job **exchange**, **queue**, and **binding** with a **definitions** JSON file imported at **node boot** (`definitions.import_backend = local_filesystem` and `definitions.local.path`, per [RabbitMQ](https://www.rabbitmq.com/docs/definitions)). The canonical file in this repo is **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)**—**local Compose** bind-mounts it (see **[`local/docker-compose.infra.yml`](../local/docker-compose.infra.yml)**); wire the **same file** into cluster brokers when you add Kubernetes or Helm. Boot import **does not** seed Docker’s default user: credentials and topology live in that JSON. **Do not rely on apps declaring topology.** The **API** and **worker** only connect, publish, and consume.
+- **Provisioning (v1):** create virtual host **`/`**, application user (**`workbench`** / **`workbench`** in this repo), and the job **exchange**, **queue**, and **binding** with a **definitions** JSON file imported at **node boot** (`definitions.import_backend = local_filesystem` and `definitions.local.path`, per [RabbitMQ](https://www.rabbitmq.com/docs/definitions)). The canonical file in this repo is **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)**—**local Compose** bind-mounts it (see **[`local/docker-compose.infra.yaml`](../local/docker-compose.infra.yaml)**); wire the **same file** into cluster brokers when you add Kubernetes or Helm. Boot import **does not** seed Docker’s default user: credentials and topology live in that JSON. **Do not rely on apps declaring topology.** The **API** and **worker** only connect, publish, and consume.
 - **Publishing**: **persistent** messages (`delivery mode 2`); API uses the same exchange + routing key `job`.
 - **Consumers:** **manual ack** with **prefetch ≈ 5** (see **Worker requirements**). **Ack** after **`IQueuedJobExecutor.ExecuteAsync`** returns without throwing (today’s executor persists `failed` in Postgres for validation/simulation errors and does not rethrow). **Nack without requeue** for poison JSON or unexpected throws (e.g. DB errors) so poison messages are not endlessly redelivered.
 - **Optional later (“Phase 1b”):** dead-letter exchange → queue `workbench.jobs.dlq` via a RabbitMQ policy if you want an extra learning exercise.
@@ -218,6 +219,18 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 
 ## Kubernetes and networking
 
+### Labels (Kubernetes recommended)
+
+- Use **`app.kubernetes.io/name`**, **`app.kubernetes.io/component`**, and optional **`app.kubernetes.io/part-of`** for selectors and object metadata—see **[`devops/k8s/README.md` — Label convention](../devops/k8s/README.md#label-convention-kubernetes-recommended-labels)** (includes a **common `component` value** table: **`api`**, **`worker`**, **`frontend`**, …).
+
+### Kustomize (base + environment overlays)
+
+- **Default approach for env-specific Kubernetes YAML:** maintain a **`base`** (or `kustomize/base`) with the canonical **`workbench-app`**, **`workbench-api`**, and **`workbench-worker`** objects—**Deployments**, **Services**, shared labels/common annotations, and optional **ConfigMap** stubs—then one **overlay** per target environment (**e.g.** `overlays/local-kind`, `overlays/dev`, `overlays/prod`).
+- **Overlays** apply only what differs: **`images`** (registry/tags from CI), **`replicas`**, **`resources`**, **namespace**, **Ingress** host/paths/TLS refs, **patches** (JSON or strategic merge) for connection strings or feature flags, and **replacements**/`vars` where appropriate. Keep secrets out of Git where policy requires it: reference **Secret** names in base/overlays and populate via **External Secrets**, sealed secrets, or CICD inject—not plain literals in overlay files.
+- **`kubectl apply -k`** (or **`kustomize build … | kubectl apply -f -`**) is the day-to-day render path; **GitOps** tools (**Argo CD**, **Flux**) can point at the same **kustomization.yaml** roots later (roadmap item **50**).
+- **Helm:** roadmap still includes **converting manifests to Helm charts**; you can introduce charts later and either **wrap** Kustomize (e.g. chart + post-render) or **migrate**—the spec does not require Helm for the first cluster bring-up if **Kustomize overlays** already express env differences clearly.
+- **Layout:** a reference tree for **`apps/`** (per-service `base/` + `overlays/`), **`infrastructure/`**, **`clusters/`**, **`platform/`**, and **`scripts/`** is in **[`devops/k8s/README.md`](../devops/k8s/README.md)** (`devops/k8s/` is the Kubernetes root in this repo).
+
 ### Workload kinds (align with roadmap)
 
 - **Application components (`workbench-app`, `workbench-api`, `workbench-worker`):** use **Deployment** (not bare Pods). They are stateless with respect to the cluster: state lives in **Postgres** and the **broker**.
@@ -235,7 +248,7 @@ Canonical v1 exchange, queue, routing key, message envelope, and ack rules are d
 - Every **`workbench-app`**, **`workbench-api`**, and **`workbench-worker`** container MUST declare **`resources.requests`** and **`resources.limits`** for **CPU** and **memory** (avoid **BestEffort** for app components in this learning path unless troubleshooting).
 - **`workbench-worker`** **memory limit** MUST stay **above** worst-case process use when a job runs **`memoryMb`** at the spec maximum (runtime CLR overhead + payload allocation + headroom). Enforce **`memoryMb`** validation so simulated allocation fits under the pod limit; lower the **`WorkbenchOptions`** max **`memoryMb`** if your cluster gives workers a small limit.
 - **`workbench-api`** limits MUST allow **`POST /v1/work`** at max **`durationSec` / `memoryMb` / `cpuPercent`** without OOM or excessive throttling during demos.
-- Record starter **requests/limits** in Helm **`values.yaml`** or YAML manifests and adjust when practicing roadmap items on **resource limits / QoS** and **HPA** (resource metrics rely on **requests**, at minimum).
+- Record starter **requests/limits** in Helm **`values.yaml`** or in **Kustomize** base/patch YAML and adjust when practicing roadmap items on **resource limits / QoS** and **HPA** (resource metrics rely on **requests**, at minimum).
 
 ### Deployments and dependencies
 
@@ -266,4 +279,4 @@ These align with the learning roadmap but are not fully specified here:
 - **Autoscaling**: VPA for suggestions, HPA on CPU/memory (and custom metrics via Datadog or metrics adapters if needed).
 - **Networking**: Services, Ingress, egress policies.
 - **Istio / mesh**, **canary** traffic: optional layers on top of the same Deployments.
-- **GitOps**: **Argo CD** is roadmap item **50** (advanced, after GitHub Actions CI/CD). **Policy engines, operators, cost tooling**: still deferred; see roadmap “out of scope for now.”
+- **GitOps**: **Argo CD** is roadmap item **50** (advanced, after GitHub Actions CI/CD). Repositories can track **Kustomize** roots (`kustomization.yaml` per env overlay) as the deployable unit. **Policy engines, operators, cost tooling**: still deferred; see roadmap “out of scope for now.”

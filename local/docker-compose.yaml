@@ -1,16 +1,17 @@
 # Full stack: infra + workbench-api, workbench-worker, workbench-app
-# Run from repo root: docker compose -f local/docker-compose.yml up --build
+# Run from repo root: docker compose -f local/docker-compose.yaml up --build
 #
-# Requires Docker Compose v2 with `include` (Docker Desktop / recent compose-plugin).
+# App services use image tag 1.0.0-rc1 (bump when releasing). `image` + `build` tags the local build.
 # Backend build context: ../src (Workbench.*). Frontend: ../src/workbench-app.
 
 name: workbench
 
 include:
-  - path: ./docker-compose.infra.yml
+  - path: ./docker-compose.infra.yaml
 
 services:
   workbench-api:
+    image: workbench/workbench-api:1.0.0-rc1
     build:
       context: ../src
       dockerfile: Workbench.Api/Dockerfile
@@ -41,6 +42,7 @@ services:
       - workbench
 
   workbench-worker:
+    image: workbench/workbench-worker:1.0.0-rc1
     build:
       context: ../src
       dockerfile: Workbench.Worker/Dockerfile
@@ -73,6 +75,7 @@ services:
       - workbench
 
   workbench-app:
+    image: workbench/workbench-app:1.0.0-rc1
     build:
       context: ../src/workbench-app
       dockerfile: Dockerfile
