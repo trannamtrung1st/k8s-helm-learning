@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Workbench.Application", "Wo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Workbench.Infrastructure", "Workbench.Infrastructure\Workbench.Infrastructure.csproj", "{2D9585C8-32FE-4395-A6EB-00F69FB23990}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Workbench.LocalApiGateway", "Workbench.LocalApiGateway\Workbench.LocalApiGateway.csproj", "{3D5DA98B-226E-43B2-A04D-15C8ABD9028C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Workbench.LocalGateway", "Workbench.LocalGateway\Workbench.LocalGateway.csproj", "{3D5DA98B-226E-43B2-A04D-15C8ABD9028C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

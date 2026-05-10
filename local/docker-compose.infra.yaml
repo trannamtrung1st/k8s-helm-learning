@@ -56,10 +56,10 @@ services:
       - workbench
 
   workbench-local-gateway:
-    image: workbench/workbench-local-api-gateway:1.0.0-rc1
+    image: workbench/workbench-local-gateway:1.0.0-rc1
     build:
       context: ../src
-      dockerfile: Workbench.LocalApiGateway/Dockerfile
+      dockerfile: Workbench.LocalGateway/Dockerfile
     environment:
       ASPNETCORE_URLS: http://+:8080
       ReverseProxy__Clusters__workbenchApi__Destinations__workbenchApi__Address: http://workbench-api/
