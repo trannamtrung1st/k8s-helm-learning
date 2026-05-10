@@ -7,7 +7,7 @@ import type {
 } from './types'
 
 const baseUrl = () =>
-  (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+  (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api').replace(/\/$/, '')
 
 async function throwValidationIfNeeded(res: Response): Promise<void> {
   if (res.status !== 400) return

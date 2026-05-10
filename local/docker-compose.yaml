@@ -1,4 +1,5 @@
-# Full stack: infra + workbench-api, workbench-worker, workbench-app
+# Full stack: infra + workbench-local-gateway (YARP), workbench-api, workbench-worker, workbench-app
+# Browser/API entry: localhost:8080 (/api/* → API, /swagger → Swashbuckle). API has no host port.
 # Run from repo root: docker compose -f local/docker-compose.yaml up --build
 #
 # App services use image tag 1.0.0-rc1 (bump when releasing). `image` + `build` tags the local build.
@@ -16,13 +17,11 @@ services:
       context: ../src
       dockerfile: Workbench.Api/Dockerfile
     environment:
-      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_URLS: http://+:80
       ConnectionStrings__Default: >-
         Host=postgres;Port=5432;Database=workbench;Username=workbench;Password=workbench
       RabbitMq__Uri: amqp://workbench:workbench@rabbitmq:5672/
       Redis__ConnectionString: redis:6379
-    ports:
-      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -30,6 +29,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    cap_add:
+      - NET_BIND_SERVICE
     deploy:
       resources:
         limits:
@@ -41,19 +42,26 @@ services:
     networks:
       - workbench
 
+  workbench-local-gateway:
+    depends_on:
+      workbench-api:
+        condition: service_started
+
   workbench-worker:
     image: workbench/workbench-worker:1.0.0-rc1
     build:
       context: ../src
       dockerfile: Workbench.Worker/Dockerfile
     environment:
-      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_URLS: http://+:80
       ConnectionStrings__Default: >-
         Host=postgres;Port=5432;Database=workbench;Username=workbench;Password=workbench
       RabbitMq__Uri: amqp://workbench:workbench@rabbitmq:5672/
       Redis__ConnectionString: redis:6379
     ports:
-      - "8082:8080"
+      - "8082:80"
+    cap_add:
+      - NET_BIND_SERVICE
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,11 +88,11 @@ services:
       context: ../src/workbench-app
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:8080
+        VITE_API_BASE_URL: http://localhost:8080/api
     ports:
       - "8081:80"
     depends_on:
-      workbench-api:
+      workbench-local-gateway:
         condition: service_started
     deploy:
       resources:

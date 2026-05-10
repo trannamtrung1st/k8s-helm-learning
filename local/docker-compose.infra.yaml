@@ -1,6 +1,7 @@
-# Infrastructure only: Postgres, RabbitMQ, and Redis (local workbench stack).
+# Infrastructure only: Postgres, RabbitMQ, Redis, and local YARP API gateway (compose merge adds app deps).
 # Run from repo root: docker compose -f local/docker-compose.infra.yaml up -d
 # Data is ephemeral (no named volumes): DB, broker, and cache reset when containers are removed.
+# workbench-local-gateway proxies /api → workbench-api; with infra alone the API host is unreachable until full stack.
 
 name: workbench
 
@@ -51,6 +52,19 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+    networks:
+      - workbench
+
+  workbench-local-gateway:
+    image: workbench/workbench-local-api-gateway:1.0.0-rc1
+    build:
+      context: ../src
+      dockerfile: Workbench.LocalApiGateway/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ReverseProxy__Clusters__workbenchApi__Destinations__workbenchApi__Address: http://workbench-api/
+    ports:
+      - "8080:8080"
     networks:
       - workbench
 

@@ -171,7 +171,7 @@ function App() {
   }
 
   const apiLabel =
-    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 
   const activePolling =
     Boolean(activeId) &&
