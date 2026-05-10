@@ -92,11 +92,11 @@ export function ToastStack({
           className={[
             'pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg transition [animation:toast-in_0.22s_ease-out]',
             t.variant === 'success' &&
-              'border-emerald-800/80 bg-emerald-950/95 text-emerald-100',
+              'border-emerald-600 bg-emerald-950 text-emerald-50',
             t.variant === 'error' &&
-              'border-red-800/80 bg-red-950/95 text-red-100',
+              'border-red-600 bg-red-950 text-red-50',
             t.variant === 'info' &&
-              'border-violet-800/80 bg-slate-900/95 text-slate-100',
+              'border-violet-500 bg-slate-900 text-slate-50',
           ]
             .filter(Boolean)
             .join(' ')}
@@ -105,7 +105,7 @@ export function ToastStack({
           <button
             type="button"
             onClick={() => onDismiss(t.id)}
-            className="-m-1 shrink-0 rounded p-1 text-current opacity-70 hover:opacity-100"
+            className="-m-1 shrink-0 rounded p-1 text-current opacity-90 hover:opacity-100"
             aria-label="Dismiss notification"
           >
             ×
