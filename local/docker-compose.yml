@@ -1,0 +1,92 @@
+# Full stack: infra + workbench-api, workbench-worker, workbench-app
+# Run from repo root: docker compose -f local/docker-compose.yml up --build
+#
+# Requires Docker Compose v2 with `include` (Docker Desktop / recent compose-plugin).
+# Backend build context: ../src (Workbench.*). Frontend: ../src/workbench-app.
+
+name: workbench
+
+include:
+  - path: ./docker-compose.infra.yml
+
+services:
+  workbench-api:
+    build:
+      context: ../src
+      dockerfile: Workbench.Api/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Default: >-
+        Host=postgres;Port=5432;Database=workbench;Username=workbench;Password=workbench
+      RabbitMq__Uri: amqp://workbench:workbench@rabbitmq:5672/
+      Redis__ConnectionString: redis:6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    networks:
+      - workbench
+
+  workbench-worker:
+    build:
+      context: ../src
+      dockerfile: Workbench.Worker/Dockerfile
+    environment:
+      ConnectionStrings__Default: >-
+        Host=postgres;Port=5432;Database=workbench;Username=workbench;Password=workbench
+      RabbitMq__Uri: amqp://workbench:workbench@rabbitmq:5672/
+      Redis__ConnectionString: redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      workbench-api:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    networks:
+      - workbench
+
+  workbench-app:
+    build:
+      context: ../src/workbench-app
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "8081:80"
+    depends_on:
+      workbench-api:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+        reservations:
+          cpus: "0.10"
+          memory: 64M
+    networks:
+      - workbench

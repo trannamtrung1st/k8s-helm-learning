@@ -2,7 +2,7 @@
 
 Numbered sequence of topics for this repository.
 
-1. Build local multi-service Kubernetes app
+1. (**DONE**) Build local multi-service Kubernetes app
 2. Configure liveness, readiness, and startup probes for workloads
 3. Use Deployments for stateless workloads (replicas, rolling update fundamentals)
 4. Expose workloads with Services — ClusterIP, NodePort, LoadBalancer — and when Ingress fits instead

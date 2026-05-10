@@ -315,6 +315,11 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# pnpm (local store, debug logs — lockfile pnpm-lock.yaml stays tracked)
+.pnpm-store/
+pnpm-debug.log*
+**/.pnpm-store/
+
 # Visual Studio 6 build log
 *.plg
 

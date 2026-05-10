@@ -2,6 +2,10 @@
 
 Personal notes and experiments for Kubernetes, Helm, and platform tooling. Documentation lives under [`docs/`](docs/).
 
+## Repository layout
+
+Backend is **`src/Workbench.sln`** (.NET 10, Clean Architecture: **Workbench.Domain**, **Workbench.Application**, **Workbench.Infrastructure**, **Workbench.Api**, **Workbench.Worker**). Frontend is **`src/workbench-app`** (React, Vite, Tailwind). Platform assets live under **`devops/`**; local compose under **`local/`**. See [Project structure](docs/project-structure.md) for details.
+
 ## How to practice
 
 1. Pick a **local or small cloud cluster** (e.g. **kind**, **k3d**, **minikube**) and a **container registry** you can push to.
@@ -17,6 +21,7 @@ Personal notes and experiments for Kubernetes, Helm, and platform tooling. Docum
 | [Roadmap](docs/roadmap.md) | Topics, how to use the list, optional app vs platform tracks |
 | [Workbench demo spec](docs/workbench-demo-spec.md) | App requirements, v1 defaults, roadmap alignment (**Datadog** for observability) |
 | [Knowledge notes](docs/knowledge-notes.md) | Commands and short explanations (proxy, debug, PDB, TLS, ingress, load balancing) |
+| [Project structure](docs/project-structure.md) | `src/`, `devops/`, `local/`, and Docker Compose layout |
 
 ## References
 

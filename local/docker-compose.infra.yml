@@ -1,0 +1,59 @@
+# Infrastructure only: Postgres, RabbitMQ, and Redis (local workbench stack).
+# Run from repo root: docker compose -f local/docker-compose.infra.yml up -d
+# Data is ephemeral (no named volumes): DB, broker, and cache reset when containers are removed.
+
+name: workbench
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: workbench
+      POSTGRES_PASSWORD: workbench
+      POSTGRES_DB: workbench
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workbench -d workbench"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - workbench
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    # Single source: devops/rabbitmq/definitions.json (reuse for Kubernetes later).
+    volumes:
+      - ./rabbitmq/conf.d/10-workbench-definitions.conf:/etc/rabbitmq/conf.d/10-workbench-definitions.conf:ro
+      - ../devops/rabbitmq/definitions.json:/etc/rabbitmq/definitions/workbench.json:ro
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - workbench
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - workbench
+
+networks:
+  workbench:
+    driver: bridge
