@@ -101,6 +101,25 @@ Pair each **`component`** with **`app.kubernetes.io/name`** (e.g. `name: workben
 
 **Arbitrary domain keys:** there is no recommended **`environment`** label in the common set. For deploy-target hints (e.g. `local-kind`, `prod`), use a DNS-valid prefix such as **`workbench.io/environment`** on metadata only—never on **`matchLabels`** / **`Service`** selectors unless every pod in that tier shares the value.
 
+## Namespaces
+
+Workbench uses several namespaces so DNS and RBAC can target tiers without mixing concerns. All are defined under **`platform/namespaces/`** and share **`app.kubernetes.io/part-of: workbench`** plus **`workbench.io/purpose`** for humans and policies.
+
+| Namespace              | `workbench.io/purpose` | Intended workloads                                                                 |
+| ---------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| **`workbench-system`** | **`system`**           | First-party apps: **API**, **worker**, **UI**, platform **Secrets** used today.    |
+| **`workbench-db`**     | **`database`**         | **PostgreSQL** (operators, StatefulSets, jobs, backups).                          |
+| **`workbench-storage`** | **`storage`**          | Object/block storage integrations, CSI-related app components, volume helpers.   |
+| **`workbench-infra`**  | **`shared-infra`**     | Cluster add-ons scoped to this product: **ingress**, **cert-manager**, brokers, cache, mesh ingress, etc.—keep separate from **`apps/`** Deployments. |
+
+**Today:** **`workbench-api`** and **`workbench-worker`** Kustomize bases still target **`workbench-system`** only. As you add Postgres/RabbitMQ/Redis to the cluster, place their namespaces **`workbench-db`** / **`workbench-infra`** (or split further) and point **Services** / **Secrets** from app overlays accordingly.
+
+Apply every namespace at once:
+
+```bash
+kubectl apply --server-side -k devops/k8s/platform/namespaces
+```
+
 ## Applying manifests (prefer server-side apply)
 
 For declarative YAML in this repo, **prefer [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/)** over default client-side `kubectl apply` when your cluster supports it. The apiserver tracks **field managers** and ownership; that scales better with GitOps and multiple controllers and avoids stuffing large `last-applied-configuration` annotations on objects.
@@ -108,7 +127,7 @@ For declarative YAML in this repo, **prefer [server-side apply](https://kubernet
 Examples:
 
 ```bash
-kubectl apply --server-side -f devops/k8s/platform/namespaces/workbench-system.yaml
+kubectl apply --server-side -k devops/k8s/platform/namespaces
 # workbench-api base — files under base/ are Kustomize fragments; use -k (not plain -f on that directory)
 kubectl apply --server-side -k devops/k8s/apps/workbench-api/base
 ```
@@ -120,7 +139,7 @@ With the **`local-kind`** overlay (**[`apps/workbench-api/overlays/local-kind/ku
 docker build -t workbench/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
 kind load docker-image workbench/workbench-api:1.0.0-rc1 --name workbench-0
 
-kubectl apply --server-side -f devops/k8s/platform/namespaces/workbench-system.yaml
+kubectl apply --server-side -k devops/k8s/platform/namespaces
 kubectl apply --server-side -k devops/k8s/apps/workbench-api/overlays/local-kind
 # preview: kubectl kustomize devops/k8s/apps/workbench-api/overlays/local-kind
 ```

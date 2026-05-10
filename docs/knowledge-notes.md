@@ -6,6 +6,10 @@ Short operational and conceptual notes collected while working through Kubernete
 
 Prefer **`kubectl apply --server-side`** (with **`-k`** or piped from **`kustomize build`**) over client-side apply for declarative configs so the apiserver owns merge behavior and field managers. See [Applying manifests (prefer server-side apply)](../devops/k8s/README.md#applying-manifests-prefer-server-side-apply) in **`devops/k8s/README.md`** and the upstream [Server-Side Apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/) guide.
 
+## Workbench Kubernetes namespaces
+
+Four namespaces are defined under **`devops/k8s/platform/namespaces/`**: **`workbench-system`** (apps and current platform secrets), **`workbench-db`**, **`workbench-storage`**, and **`workbench-infra`**. Purposes and apply command: [Namespaces](../devops/k8s/README.md#namespaces) in **`devops/k8s/README.md`**.
+
 ## Proxy Kubernetes API to localhost
 
 ```sh

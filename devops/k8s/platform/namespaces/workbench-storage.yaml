@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: workbench-system
+  name: workbench-storage
   labels:
-    app.kubernetes.io/name: workbench-system
+    app.kubernetes.io/name: workbench-storage
     app.kubernetes.io/part-of: workbench
     app.kubernetes.io/managed-by: kustomize
-    workbench.io/purpose: system
+    workbench.io/purpose: storage
