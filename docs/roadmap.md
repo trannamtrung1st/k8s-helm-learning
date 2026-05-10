@@ -3,8 +3,8 @@
 Numbered sequence of topics for this repository.
 
 1. (**DONE**) Build local multi-service Kubernetes app
-2. Configure Kubernetes cluster (kubectl, kubeconfig, context, cluster access, and minimum bootstrap) — set this up first; you need a working cluster before deploying workloads
-3. Configure liveness, readiness, and startup probes for workloads
+2. (**DONE**) Configure Kubernetes cluster (kubectl, kubeconfig, context, cluster access, and minimum bootstrap) — set this up first; you need a working cluster before deploying workloads
+3. (**DONE**) Configure liveness, readiness, and startup probes for workloads
 4. Use Deployments for stateless workloads (replicas, rolling update fundamentals)
 5. Expose workloads with Services — ClusterIP, NodePort, LoadBalancer — and when Ingress fits instead
 6. Run multiple replicas with topology spread and PodDisruptionBudgets for basic application HA

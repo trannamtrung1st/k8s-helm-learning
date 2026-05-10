@@ -45,10 +45,13 @@ services:
       context: ../src
       dockerfile: Workbench.Worker/Dockerfile
     environment:
+      ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__Default: >-
         Host=postgres;Port=5432;Database=workbench;Username=workbench;Password=workbench
       RabbitMq__Uri: amqp://workbench:workbench@rabbitmq:5672/
       Redis__ConnectionString: redis:6379
+    ports:
+      - "8082:8080"
     depends_on:
       postgres:
         condition: service_healthy
