@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: workbench-rabbitmq
+spec:
+  selector:
+    app.kubernetes.io/name: workbench-rabbitmq
+  ports:
+    - name: rabbitmq-port
+      protocol: TCP
+      port: 5672
+      targetPort: rabbitmq-port
+    # Should not publish management port (security risk); use port-forwarding for local access.
+    # - name: management-port
+    #   protocol: TCP
+    #   port: 15672
+    #   targetPort: management-port
+  type: ClusterIP
+  clusterIP: None

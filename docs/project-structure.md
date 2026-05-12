@@ -26,33 +26,33 @@ Design-time scaffolding uses **`JobsDbContextFactory`** (no full API host). Over
 
 ### `devops/`
 
-- **RabbitMQ:** canonical broker definitions for the workbench stack live in **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** (vhost **`/`**, user **`workbench`**, exchange **`workbench.jobs`**, queue **`workbench.jobs.q`**, routing key **`job`**). **Local Compose** bind-mounts this file into **`rabbitmq:4-management`**; when you add Kubernetes manifests or Helm, reuse the **same path** (e.g. ConfigMap/Secret **`kubectl create secret --from-file=...=devops/rabbitmq/definitions.json`**) so local and cluster stay aligned.
+- **RabbitMQ:** canonical broker definitions for the workbench stack live in **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** (vhost **`/`**, user **`workbench`**, exchange **`workbench.jobs`**, queue **`workbench.jobs.q`**, routing key **`job`**). Boot import is enabled by **[`devops/rabbitmq/conf.d/10-workbench-definitions.conf`](../devops/rabbitmq/conf.d/10-workbench-definitions.conf)** (`definitions.local.path` → **`/etc/rabbitmq/definitions/workbench.json`** in the container). **Local Compose** bind-mounts both files into **`rabbitmq:4-management-alpine`**; **Kubernetes** should mount the same paths from ConfigMaps (or equivalent) so local and cluster stay aligned.
 - **Kubernetes / Kustomize:** the intended tree (**`apps/`**, **`infrastructure/`**, **`clusters/`**, **`platform/`**, **`scripts/`**) is documented in **[`devops/k8s/README.md`](../devops/k8s/README.md)**. In this repo the Kubernetes root is **`devops/k8s/`**; **`apps/workbench-api/`** (and siblings as you add them) follow **`base/`** + **`overlays/`** per app. **Labels** use **`app.kubernetes.io/name`** / **`component`** (see the label convention section there). **Namespaces** live under **`devops/k8s/platform/namespaces/`** (**`workbench-system`**, **`workbench-db`**, **`workbench-storage`**, **`workbench-infra`**); apply with **`kubectl apply --server-side -k`** on that directory (see the **Namespaces** section in the k8s README).
 
 Other infrastructure-as-code (Terraform, raw YAML, additional charts, CI) can live under **`devops/`** as you add it.
 
 ### `local/`
 
-Local-only material: environment samples, helper scripts, and Docker Compose files. Nothing here is required for production clusters; it supports developing and testing on a single machine. **RabbitMQ** boot config for the official image is **[`local/rabbitmq/conf.d/10-workbench-definitions.conf`](../local/rabbitmq/conf.d/10-workbench-definitions.conf)** (`definitions.local.path` → mounted JSON). Definitions content itself is **`devops/rabbitmq/definitions.json`** (see **`devops/`** above).
+Local-only material: environment samples, helper scripts, and Docker Compose files. Nothing here is required for production clusters; it supports developing and testing on a single machine. **RabbitMQ** broker config and definitions JSON both live under **`devops/rabbitmq/`** (see **`devops/`** above); Compose only bind-mounts them into the container.
 
 ## Docker Compose
 
 Workbench **v1** app path in [Workbench demo spec](workbench-demo-spec.md) uses **PostgreSQL** and **RabbitMQ** only; **Redis** is still included in Compose so you can practice cache/idempotency patterns after v1 without changing the file layout.
 
-| File                                                                  | Purpose                                                                                                                                                                                                                        |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`local/docker-compose.infra.yaml`](../local/docker-compose.infra.yaml) | **Infrastructure only** — `postgres`, `rabbitmq` (management **15672**), `redis` (**6379**). Postgres uses user/password/database **`workbench`**. **RabbitMQ** mounts **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** at boot (see [`local/rabbitmq/conf.d/10-workbench-definitions.conf`](../local/rabbitmq/conf.d/10-workbench-definitions.conf)). No bind or named volumes: data is **ephemeral** for local resets.         |
-| [`local/docker-compose.yaml`](../local/docker-compose.yaml)             | **Full stack** — `include`s infra (same **RabbitMQ** definitions mounts) and adds **`workbench-api`**, **`workbench-worker`**, **`workbench-app`** (React UI) with **`deploy.resources`** limits. Requires **`include`** support.                                      |
+| File                                                                    | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`local/docker-compose.infra.yaml`](../local/docker-compose.infra.yaml) | **Infrastructure only** — `postgres`, `rabbitmq` (management **15672**), `redis` (**6379**). Postgres uses user/password/database **`workbench`**. **RabbitMQ** mounts **[`devops/rabbitmq/conf.d/10-workbench-definitions.conf`](../devops/rabbitmq/conf.d/10-workbench-definitions.conf)** and **[`devops/rabbitmq/definitions.json`](../devops/rabbitmq/definitions.json)** at boot. No bind or named volumes: data is **ephemeral** for local resets. |
+| [`local/docker-compose.yaml`](../local/docker-compose.yaml)             | **Full stack** — `include`s infra (same **RabbitMQ** definitions mounts) and adds **`workbench-api`**, **`workbench-worker`**, **`workbench-app`** (React UI) with **`deploy.resources`** limits. Requires **`include`** support.                                                                                                                                                                                                                         |
 
 Published ports (host) when using the full stack file:
 
-| Service    | Ports        |
-| ---------- | ------------ |
-| PostgreSQL | **5432**     |
-| RabbitMQ   | **5672**, management **15672** |
-| Redis      | **6379**     |
-| workbench-api | **8080**     |
-| workbench-app | **8081** → container **80** |
+| Service       | Ports                          |
+| ------------- | ------------------------------ |
+| PostgreSQL    | **5432**                       |
+| RabbitMQ      | **5672**, management **15672** |
+| Redis         | **6379**                       |
+| workbench-api | **8080**                       |
+| workbench-app | **8081** → container **80**    |
 
 App containers receive **example** connection settings (override in compose or `.env` when your app uses different names):
 

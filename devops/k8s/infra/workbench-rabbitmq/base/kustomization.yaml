@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: workbench-infra
+
+resources:
+  - statefulset.yaml
+  - service.yaml
+  - persistentvolume.yaml
+
+# Mirrors devops/rabbitmq (Kustomize only allows file sources under this directory).
+configMapGenerator:
+  - name: workbench-rabbitmq-definitions
+    files:
+      - workbench.json=rabbitmq/workbench.json
+      - 10-workbench-definitions.conf=rabbitmq/10-workbench-definitions.conf

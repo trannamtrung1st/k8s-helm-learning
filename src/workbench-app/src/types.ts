@@ -38,3 +38,8 @@ export type SyncWorkResponse = {
   peakWorkingSetBytes: number
   processAvgCpuPercent: number
 }
+
+export type JobMetrics = {
+  jobsEnqueuedTotal: number
+  jobsProcessedTotal: number
+}

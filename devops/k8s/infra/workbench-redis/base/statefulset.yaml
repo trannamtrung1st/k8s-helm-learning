@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: workbench-redis
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workbench-redis
+  serviceName: "workbench-redis"
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: workbench-redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/part-of: workbench
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: workbench-redis
+          image: redis:7-alpine
+          command: ["redis-server", "/etc/redis/workbench.conf"]
+          ports:
+            - containerPort: 6379
+              name: redis-port
+          volumeMounts:
+            - name: workbench-redis-secrets
+              mountPath: /etc/redis
+              readOnly: true
+          imagePullPolicy: IfNotPresent
+          resources: # QoS: Burstable
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          startupProbe:
+            exec:
+              command:
+                ["redis-cli", "--user", "workbench", "-a", "workbench", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command:
+                ["redis-cli", "--user", "workbench", "-a", "workbench", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                ["redis-cli", "--user", "workbench", "-a", "workbench", "ping"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: workbench-redis-secrets
+          secret:
+            secretName: workbench-redis-secrets

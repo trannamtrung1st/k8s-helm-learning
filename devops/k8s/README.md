@@ -57,12 +57,26 @@ Work in this monorepo treats **`devops/k8s/`** as the **Kubernetes root** (`<k8s
 | Area                  | Role                                                                                                                                                                                                                                                                    |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`apps/`**           | One directory per workload (microservice). **`base/`** holds the canonical Kustomize resources; **`overlays/<env>/`** patches images, replicas, resources, namespaces, and env-specific config. Optional **`hpa.yaml`**, **`pdb.yaml`** when you practice HA (roadmap). |
-| **`infrastructure/`** | Cluster add-ons and third-party stacks (**Gateway API** implementations, **cert-manager**, mesh, observability). Often Helm-rendered or upstream manifests wrapped in Kustomize—keep them separate from app **Deployments**.                                                         |
+| **`infrastructure/`** | Cluster add-ons and third-party stacks (**Gateway API** implementations, **cert-manager**, mesh, observability). Often Helm-rendered or upstream manifests wrapped in Kustomize—keep them separate from app **Deployments**.                                            |
 | **`clusters/`**       | Environment- or cluster-level **entrypoints**: what Argo CD, Flux, or humans **`apply`** per cluster (e.g. one **`kustomization.yaml`** root per **`dev`** / **`staging`** / **`prod`** that pulls **`apps/*`** and **`platform/*`**).                                  |
 | **`platform/`**       | Shared policies: **NetworkPolicy**, **RBAC**, **LimitRange**, org guardrails—referenced by cluster roots instead of duplicated per app.                                                                                                                                 |
 | **`scripts/`**        | Helper **`kubectl`**, **`kustomize build`**, bootstrap, or CI glue—no long-lived YAML required.                                                                                                                                                                         |
 
 **This repo today:** under **`apps/`** you will find **`workbench-api`** (and can add **`workbench-worker`**, **`workbench-app`**, …) following the same **`base/` + `overlays/`** pattern; **`infrastructure/`**, **`clusters/`**, **`platform/`**, and **`scripts/`** can grow as roadmap items land.
+
+## Injecting config into workloads (small vs large)
+
+**Small configuration** (roughly sub–megabyte text: env snippets, `rabbitmq.conf` fragments, small JSON definitions, feature flags) is a good fit for **`ConfigMap`** and **`Secret`**. Mount them as files with **`volumes`** / **`volumeMounts`**, or expose keys via **`envFrom`** / **`valueFrom`**. With **Kustomize**, keep the source of truth in Git as plain files or literals and let the bundle generate API objects: **`configMapGenerator`** and **`secretGenerator`** (for example **`files:`** / **`literals:`**) produce names with content hashes by default so rollouts pick up changes. Use **`generatorOptions`** / **`behavior: merge`** when you need stable names or layered bases.
+
+**Large blobs or big file trees** should not be stuffed into **`ConfigMap`** / **`Secret`**: they bloat etcd, hit object size limits, and slow API watches. Prefer a **volume** the workload reads at runtime instead. Common patterns:
+
+- **CSI volumes** — mount object storage, cloud secret stores, or vendor-specific CSI drivers so data lives outside the cluster object store for that key.
+- **External / network filesystems** — **`PersistentVolume`** backed by NFS, SMB, or similar when the file set is maintained out-of-band and you only need a mount path.
+- **Pre-provisioned data** — bake into a **container image** (immutable), load from a **PVC** populated once (restore job, upload init), or use a **snapshot** / cloned volume when the dataset is large but stable.
+- **Sync sidecars or init containers** — a small container that **`git clone`**, **`aws s3 sync`**, or **`wget`** into a shared **`emptyDir`** (or a **PVC**), then the main container reads the same **`volumeMount`** path; the main app stays simple while refresh policy lives in the sidecar or CronJob.
+- **`emptyDir` as the handoff** — init or sidecar writes the full file tree into **`emptyDir`**; the primary container only mounts that directory (ephemeral unless you swap in a **PVC** for persistence).
+
+Pick **ConfigMap/Secret + generators** for lean, reviewable config; move to **volumes + CSI / external / sync** when size, rotation, or ownership of the data no longer belongs in the Kubernetes object API.
 
 ## Label convention (Kubernetes recommended labels)
 
@@ -106,12 +120,12 @@ Pair each **`component`** with **`app.kubernetes.io/name`** (e.g. `name: workben
 
 Workbench uses several namespaces so DNS and RBAC can target tiers without mixing concerns. All are defined under **`platform/namespaces/`** and share **`app.kubernetes.io/part-of: workbench`** plus **`workbench.io/purpose`** for humans and policies.
 
-| Namespace              | `workbench.io/purpose` | Intended workloads                                                                 |
-| ---------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
-| **`workbench-system`** | **`system`**           | First-party apps: **API**, **worker**, **UI**, platform **Secrets** used today.    |
-| **`workbench-db`**     | **`database`**         | **PostgreSQL** (operators, StatefulSets, jobs, backups).                          |
-| **`workbench-storage`** | **`storage`**          | Object/block storage integrations, CSI-related app components, volume helpers.   |
-| **`workbench-infra`**  | **`shared-infra`**     | Cluster add-ons scoped to this product: **Gateway API** controllers, **cert-manager**, brokers, cache, mesh gateways, etc.—keep separate from **`apps/`** Deployments. |
+| Namespace               | `workbench.io/purpose` | Intended workloads                                                                                                                                                     |
+| ----------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`workbench-system`**  | **`system`**           | First-party apps: **API**, **worker**, **UI**, platform **Secrets** used today.                                                                                        |
+| **`workbench-db`**      | **`database`**         | **PostgreSQL** (operators, StatefulSets, jobs, backups).                                                                                                               |
+| **`workbench-storage`** | **`storage`**          | Object/block storage integrations, CSI-related app components, volume helpers.                                                                                         |
+| **`workbench-infra`**   | **`shared-infra`**     | Cluster add-ons scoped to this product: **Gateway API** controllers, **cert-manager**, brokers, cache, mesh gateways, etc.—keep separate from **`apps/`** Deployments. |
 
 **Today:** **`workbench-api`** and **`workbench-worker`** Kustomize bases still target **`workbench-system`** only. As you add Postgres/RabbitMQ/Redis to the cluster, place their namespaces **`workbench-db`** / **`workbench-infra`** (or split further) and point **Services** / **Secrets** from app overlays accordingly.
 

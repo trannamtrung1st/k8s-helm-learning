@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: workbench-rabbitmq
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workbench-rabbitmq
+  serviceName: "workbench-rabbitmq"
+  replicas: 1 # by default is 1
+  minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: workbench-rabbitmq
+        app.kubernetes.io/component: broker
+        app.kubernetes.io/part-of: workbench
+        app.kubernetes.io/managed-by: kustomize
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: workbench-rabbitmq
+          image: rabbitmq:4-management-alpine
+          ports:
+            - containerPort: 5672
+              name: rabbitmq-port
+            - containerPort: 15672
+              name: management-port
+          volumeMounts:
+            - name: workbench-rabbitmq-volume
+              mountPath: /var/lib/rabbitmq
+            - name: workbench-rabbitmq-definitions-conf
+              mountPath: /etc/rabbitmq/conf.d
+              readOnly: true
+            - name: workbench-rabbitmq-definitions-json
+              mountPath: /etc/rabbitmq/definitions
+              readOnly: true
+          imagePullPolicy: IfNotPresent
+          resources: # QoS: Guaranteed
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: workbench-rabbitmq-definitions-conf
+          configMap:
+            name: workbench-rabbitmq-definitions
+            defaultMode: 420
+            items:
+              - key: 10-workbench-definitions.conf
+                path: 10-workbench-definitions.conf
+        - name: workbench-rabbitmq-definitions-json
+          configMap:
+            name: workbench-rabbitmq-definitions
+            defaultMode: 420
+            items:
+              - key: workbench.json
+                path: workbench.json
+  volumeClaimTemplates:
+    - metadata:
+        name: workbench-rabbitmq-volume
+      spec:
+        volumeName: workbench-rabbitmq-volume # static volume name, no dynamic provisioning
+        accessModes: ["ReadWriteOncePod"]
+        storageClassName: "local-storage"
+        resources:
+          requests:
+            storage: 512Mi

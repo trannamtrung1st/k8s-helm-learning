@@ -7,6 +7,7 @@ namespace Workbench.Application;
 
 public sealed class QueuedJobExecutor(
     IJobRepository jobs,
+    IWorkbenchJobMetrics jobMetrics,
     IOptions<WorkbenchOptions> options,
     ILogger<QueuedJobExecutor> logger) : IQueuedJobExecutor
 {
@@ -19,6 +20,25 @@ public sealed class QueuedJobExecutor(
             return;
         }
 
+        try
+        {
+            await ExecuteCoreAsync(job, jobId, payload, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                await jobMetrics.RecordProcessedAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Redis processed metric failed after job {JobId}.", jobId);
+            }
+        }
+    }
+
+    private async Task ExecuteCoreAsync(Job job, Guid jobId, JobPayload payload, CancellationToken cancellationToken)
+    {
         var limits = options.Value.ToLimits();
         var errors = JobPayloadValidation.Validate(payload, limits);
         if (errors.Count > 0)

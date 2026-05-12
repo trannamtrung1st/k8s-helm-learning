@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: workbench-postgres-db-volume
+  name: workbench-rabbitmq-volume
 spec:
   capacity:
-    storage: 1Gi
+    storage: 512Mi
   accessModes:
     - ReadWriteOncePod
   storageClassName: local-storage
   persistentVolumeReclaimPolicy: Retain # no deletion on PVC deletion
   local:
-    path: /mnt/disks/workbench-postgres-db
+    path: /mnt/disks/workbench-rabbitmq
   nodeAffinity:
     required:
       nodeSelectorTerms:

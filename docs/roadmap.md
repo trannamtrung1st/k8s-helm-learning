@@ -1,6 +1,6 @@
 # Learning roadmap
 
-Topics are ordered so you **run the whole Workbench-shaped system on-cluster first** (apps talking to Postgres and a broker over **Services** and **PVCs**), then **harden and expose** (Gateway API, TLS, External Secrets), then go **deeper** (StatefulSet theory, mesh, cloud, GitOps, platform).
+Topics are ordered so you **run the whole Workbench-shaped system on-cluster first** (apps talking to Postgres and a broker over **Services** and **PVCs**), then **harden and expose** (Gateway API, TLS, External Secrets), then go **deeper** (StatefulSet theory — **RabbitMQ cluster** and **Redis Cluster** labs in item **16**, mesh, cloud, GitOps, platform).
 
 Within each band, earlier items unblock later ones. Skip ahead only when you already have substitutes (e.g. managed DB outside the cluster).
 
@@ -12,10 +12,10 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 4. (**DONE**) Use Deployments for stateless workloads (replicas, rolling update fundamentals)
 5. (**DONE**) Apply **namespaces** and baseline **platform** layout (e.g. `workbench-system`, `workbench-db`, `workbench-infra` — see `devops/k8s/platform/namespaces/`)
 6. (**DONE**) **ConfigMaps** and in-cluster **Secrets** — env and volume mounts; plain `Secret` objects before operators (External Secrets comes later)
-7. (**DOING**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
-8. **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components
-9. Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
-10. Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical
+7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
+8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components
+9. (**DONE**) Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
+10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical; evolve to a **multi-node cluster** under item **16**
 11. **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
 
 ## Hygiene and reliability
@@ -24,8 +24,10 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 13. Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
 14. **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
 15. Run batch and scheduled tasks with **Jobs** and **CronJobs**
-16. **StatefulSets** in depth — stable identity, ordered rollout, volume claim templates (beyond “only ever installed Postgres via a chart”)
-17. Deploy **Redis** on Kubernetes (optional; cache and idempotency patterns)
+16. **StatefulSets** in depth — stable identity, ordered rollout, volume claim templates (beyond “only ever installed Postgres via a chart”); reinforce with **clustered middleware** (not “many pods behind one DNS name” without a real cluster story):
+    - **RabbitMQ cluster** on Kubernetes — peer discovery, governing **headless** Service and per-pod DNS, ordered StatefulSet (or operator); quorum queues / mirrored queues vs single node; keep topology aligned with **`devops/rabbitmq`** where practical
+    - **Redis Cluster** on Kubernetes — slot-aware sharding (StatefulSet-based shards, operator, or upstream topology docs), failover and **cluster-aware clients** (e.g. StackExchange.Redis cluster configuration); contrast with one standalone Redis behind a Service
+17. Deploy **Redis** on Kubernetes (optional; cache and idempotency patterns; treat **Redis Cluster** as the StatefulSet-deep-dive under item **16** when you want multi-primary data sharding, not N unrelated `redis-server` replicas)
 
 ## Edge HTTP, identity of traffic, secrets at scale
 

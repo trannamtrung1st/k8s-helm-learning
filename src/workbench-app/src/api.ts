@@ -1,5 +1,6 @@
 import type {
   CreateJobResponse,
+  JobMetrics,
   JobDetail,
   JobPayload,
   SyncWorkResponse,
@@ -51,4 +52,10 @@ export async function listJobs(limit: number): Promise<JobDetail[]> {
   const res = await fetch(`${baseUrl()}/v1/jobs?limit=${limit}`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return (await res.json()) as JobDetail[]
+}
+
+export async function getJobMetrics(): Promise<JobMetrics> {
+  const res = await fetch(`${baseUrl()}/v1/metrics`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return (await res.json()) as JobMetrics
 }

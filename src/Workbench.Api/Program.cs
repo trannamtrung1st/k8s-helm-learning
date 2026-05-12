@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RabbitMQ.Client;
 using Workbench.Application;
+using Workbench.Application.Abstractions;
 using Workbench.Domain;
 using Workbench.Infrastructure;
 using Workbench.Infrastructure.Persistence;
+using Workbench.Infrastructure.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +35,12 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 var rabbitUri = builder.Configuration["RabbitMq:Uri"]
     ?? throw new InvalidOperationException("RabbitMq:Uri is required");
 
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"]
+    ?? throw new InvalidOperationException("Redis:ConnectionString is required");
+
 builder.Services.AddWorkbenchPersistence(connectionString);
 builder.Services.AddWorkbenchRabbitMqPublishOnly(rabbitUri);
+builder.Services.AddWorkbenchRedis(redisConnectionString);
 
 builder.Services.AddHealthChecks()
     .AddCheck("live", () => HealthCheckResult.Healthy(), tags: ["live"])
@@ -44,7 +50,8 @@ builder.Services.AddHealthChecks()
         var factory = new ConnectionFactory { Uri = new Uri(rabbitUri) };
         await using var conn = await factory.CreateConnectionAsync().ConfigureAwait(false);
         return HealthCheckResult.Healthy();
-    }, tags: ["ready"]);
+    }, tags: ["ready"])
+    .AddCheck<RedisPingHealthCheck>("redis", tags: ["ready"]);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
@@ -53,7 +60,8 @@ builder.Services.AddSwaggerGen(o =>
     {
         Title = "Workbench API",
         Version = "v1",
-        Description = "Synthetic load jobs: enqueue, list, get, and sync workloads (all environments).",
+        Description =
+            "Synthetic load jobs: enqueue, list, get, sync workloads, and Redis-backed counters (GET /v1/metrics).",
     });
 });
 
@@ -104,6 +112,13 @@ jobsApi.MapGet("/jobs", async (int? limit, IJobsApplicationService jobs, Cancell
     var list = await jobs.ListJobsAsync(limit ?? 20, ct).ConfigureAwait(false);
     return Results.Ok(list.Select(ToAnonymous).ToArray());
 }).WithName("ListJobs");
+
+jobsApi.MapGet("/metrics", async (IWorkbenchJobMetrics metrics, CancellationToken ct) =>
+{
+    var enqueued = await metrics.GetEnqueueTotalAsync(ct).ConfigureAwait(false);
+    var processed = await metrics.GetProcessedTotalAsync(ct).ConfigureAwait(false);
+    return Results.Ok(new { jobsEnqueuedTotal = enqueued, jobsProcessedTotal = processed });
+}).WithName("JobMetrics");
 
 jobsApi.MapPost("/work", async (JobPayload body, IJobsApplicationService jobs, CancellationToken ct) =>
 {

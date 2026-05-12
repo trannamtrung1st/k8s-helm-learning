@@ -8,6 +8,7 @@ namespace Workbench.Application;
 public sealed class JobsApplicationService(
     IJobRepository jobs,
     IJobQueuePublisher publisher,
+    IWorkbenchJobMetrics jobMetrics,
     IOptions<WorkbenchOptions> options,
     ILogger<JobsApplicationService> logger) : IJobsApplicationService
 {
@@ -33,6 +34,15 @@ public sealed class JobsApplicationService(
         await publisher.PublishJobAsync(
             new JobEnvelope { JobId = id, Payload = payload },
             cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await jobMetrics.RecordEnqueueAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Redis enqueue metric failed; job was still enqueued.");
+        }
 
         logger.LogInformation("Job {JobId} enqueued and published to queue", id);
         return new EnqueueJobSuccess(id, JobStatusNames.Queued);
