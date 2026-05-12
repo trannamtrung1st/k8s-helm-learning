@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: workbench-rabbitmq-pdb
+  namespace: workbench-infra
+spec:
+  maxUnavailable: 1 # to avoid losing quorum
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: workbench-rabbitmq

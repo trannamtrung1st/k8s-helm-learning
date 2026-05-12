@@ -13,15 +13,15 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 5. (**DONE**) Apply **namespaces** and baseline **platform** layout (e.g. `workbench-system`, `workbench-db`, `workbench-infra` — see `devops/k8s/platform/namespaces/`)
 6. (**DONE**) **ConfigMaps** and in-cluster **Secrets** — env and volume mounts; plain `Secret` objects before operators (External Secrets comes later)
 7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
-8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components
+8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components (local PVs in this repo use **node affinity** to `workbench.io/infra-node=true`; see `devops/k8s/README.md` **Local kind workflow**)
 9. (**DONE**) Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
 10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical; evolve to a **multi-node cluster** under item **16**
-11. **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
+11. (**DONE**) **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
 
 ## Hygiene and reliability
 
-12. Configure **CPU and memory** requests and limits (QoS classes; optional LimitRanges and ResourceQuotas)
-13. Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
+12. (**DONE**) Configure **CPU and memory** requests and limits (QoS classes; optional LimitRanges and ResourceQuotas)
+13. (**DONE**) Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
 14. **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
 15. Run batch and scheduled tasks with **Jobs** and **CronJobs**
 16. **StatefulSets** in depth — stable identity, ordered rollout, volume claim templates (beyond “only ever installed Postgres via a chart”); reinforce with **clustered middleware** (not “many pods behind one DNS name” without a real cluster story):

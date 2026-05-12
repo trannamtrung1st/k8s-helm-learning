@@ -10,6 +10,15 @@ spec:
       maxUnavailable: 0
   template:
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor # important, ignore control plane
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: workbench-api
       containers:
         - name: workbench-api
           image: workbench/workbench-api

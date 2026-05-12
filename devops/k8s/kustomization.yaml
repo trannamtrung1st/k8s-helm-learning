@@ -7,8 +7,9 @@ kind: Kustomization
 # 3) app workloads
 resources:
   - platform/namespaces
-  - platform/storageclasses/local-storage.yaml
-  - platform/secrets/workbench-platform-secrets.yaml
+  - platform/storageclasses
+  - platform/secrets
+  - platform/policies
 
   - infra/workbench-postgres-db/base
   - infra/workbench-rabbitmq/base

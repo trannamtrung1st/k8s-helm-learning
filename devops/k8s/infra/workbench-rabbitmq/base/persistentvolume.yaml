@@ -11,11 +11,12 @@ spec:
   persistentVolumeReclaimPolicy: Retain # no deletion on PVC deletion
   local:
     path: /mnt/disks/workbench-rabbitmq
+  # Requires node label workbench.io/infra-node=true (see devops/k8s/README.md).
   nodeAffinity:
     required:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: kubernetes.io/hostname
+            - key: workbench.io/infra-node
               operator: In
               values:
-                - workbench-0-control-plane
+                - "true"
