@@ -455,3 +455,4 @@ Gemfile.lock
 angel.yaml
 .metals/metals.mv.db
 depvalues/
+.temp/

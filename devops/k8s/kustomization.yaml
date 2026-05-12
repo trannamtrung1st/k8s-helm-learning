@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Apply order intent:
+# 1) namespaces + cluster-scoped platform prerequisites
+# 2) infra dependencies
+# 3) app workloads
+resources:
+  - platform/namespaces
+  - platform/storageclasses/local-storage.yaml
+  - platform/secrets/workbench-platform-secrets.yaml
+
+  - infra/workbench-postgres-db/base
+  - infra/workbench-rabbitmq/base
+  - infra/workbench-redis/base
+
+  - apps/workbench-api/overlays/local-kind
+  - apps/workbench-worker/overlays/local-kind
