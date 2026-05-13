@@ -1,6 +1,6 @@
 # Learning roadmap
 
-Topics are ordered so you **run the whole Workbench-shaped system on-cluster first** (apps talking to Postgres and a broker over **Services** and **PVCs**), then **harden and expose** (Gateway API, TLS, External Secrets), then go **deeper** (StatefulSet theory — **RabbitMQ cluster** and **Redis Cluster** labs in item **16**, mesh, cloud, GitOps, platform).
+Topics are ordered so you **run the whole Workbench-shaped system on-cluster first** (apps talking to Postgres and a broker over **Services** and **PVCs**), then **harden and expose** (Gateway API, TLS, External Secrets), then go **deeper** (StatefulSet theory — **RabbitMQ cluster** and **Redis Cluster** labs in item **17**, mesh, cloud, GitOps, platform).
 
 Within each band, earlier items unblock later ones. Skip ahead only when you already have substitutes (e.g. managed DB outside the cluster).
 
@@ -15,7 +15,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
 8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components (local PVs in this repo use **node affinity** to `workbench.io/infra-node=true`; see `devops/k8s/README.md` **Local kind workflow**)
 9. (**DONE**) Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
-10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical; evolve to a **multi-node cluster** under item **16**
+10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical; evolve to a **multi-node cluster** under item **17**
 11. (**DONE**) **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
 
 ## Hygiene and reliability
@@ -24,7 +24,11 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 13. (**DONE**) Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
 14. (**DONE**) **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
 15. (**DONE**) Run batch and scheduled tasks with **Jobs** and **CronJobs**
-16. **StatefulSets** in depth
+16. Deploy **Redis** on Kubernetes (optional, single instance first)
+    - Focus on cache and idempotency patterns before cluster complexity.
+    - Practice persistence and eviction behavior for a single Redis node.
+    - Use this as baseline before Redis Cluster in item **17**.
+17. **StatefulSets** in depth
     - **Goal:** Understand stable pod identity, ordered rollout, and volume claim templates (beyond "installing a single chart and stopping there").
     - **What to practice:**
       - Stateful pod identity (`pod-0`, `pod-1`, ...), governing **headless** Service, and per-pod DNS.
@@ -38,7 +42,6 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
       - Slot-aware sharding and failover behavior (StatefulSet-based topology, operator, or upstream reference architecture).
       - Verify **cluster-aware clients** (for example, StackExchange.Redis cluster configuration).
       - Contrast with one standalone Redis behind a Service (what problems that does and does not solve).
-17. Deploy **Redis** on Kubernetes (optional; cache and idempotency patterns; treat **Redis Cluster** as the StatefulSet-deep-dive under item **16** when you want multi-primary data sharding, not N unrelated `redis-server` replicas)
 
 ## Edge HTTP, identity of traffic, secrets at scale
 
