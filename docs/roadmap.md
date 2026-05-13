@@ -23,10 +23,21 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 12. (**DONE**) Configure **CPU and memory** requests and limits (QoS classes; optional LimitRanges and ResourceQuotas)
 13. (**DONE**) Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
 14. (**DONE**) **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
-15. Run batch and scheduled tasks with **Jobs** and **CronJobs**
-16. **StatefulSets** in depth — stable identity, ordered rollout, volume claim templates (beyond “only ever installed Postgres via a chart”); reinforce with **clustered middleware** (not “many pods behind one DNS name” without a real cluster story):
-    - **RabbitMQ cluster** on Kubernetes — peer discovery, governing **headless** Service and per-pod DNS, ordered StatefulSet (or operator); quorum queues / mirrored queues vs single node; keep topology aligned with **`devops/rabbitmq`** where practical
-    - **Redis Cluster** on Kubernetes — slot-aware sharding (StatefulSet-based shards, operator, or upstream topology docs), failover and **cluster-aware clients** (e.g. StackExchange.Redis cluster configuration); contrast with one standalone Redis behind a Service
+15. (**DONE**) Run batch and scheduled tasks with **Jobs** and **CronJobs**
+16. **StatefulSets** in depth
+    - **Goal:** Understand stable pod identity, ordered rollout, and volume claim templates (beyond "installing a single chart and stopping there").
+    - **What to practice:**
+      - Stateful pod identity (`pod-0`, `pod-1`, ...), governing **headless** Service, and per-pod DNS.
+      - Ordered startup/termination and rolling updates for stateful workloads.
+      - Persistent volume behavior per replica (one PVC per pod, retained data across restarts).
+    - **Lab track A — RabbitMQ cluster on Kubernetes:**
+      - Peer discovery and cluster formation across StatefulSet replicas (or operator equivalent).
+      - Queue durability/HA choices (quorum queues or mirrored queues) vs single-node trade-offs.
+      - Keep topology aligned with **`devops/rabbitmq`** where practical.
+    - **Lab track B — Redis Cluster on Kubernetes:**
+      - Slot-aware sharding and failover behavior (StatefulSet-based topology, operator, or upstream reference architecture).
+      - Verify **cluster-aware clients** (for example, StackExchange.Redis cluster configuration).
+      - Contrast with one standalone Redis behind a Service (what problems that does and does not solve).
 17. Deploy **Redis** on Kubernetes (optional; cache and idempotency patterns; treat **Redis Cluster** as the StatefulSet-deep-dive under item **16** when you want multi-primary data sharding, not N unrelated `redis-server` replicas)
 
 ## Edge HTTP, identity of traffic, secrets at scale
