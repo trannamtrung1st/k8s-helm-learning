@@ -17,3 +17,4 @@ resources:
 
   - apps/workbench-api/overlays/local-kind
   - apps/workbench-worker/overlays/local-kind
+  - apps/workbench-jobs/overlays/local-kind

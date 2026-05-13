@@ -1,0 +1,20 @@
+# Build with: kubectl kustomize . | kubectl apply --server-side -f -
+# Raw YAML fragments here are incomplete alone (no namespace/labels until kustomize runs).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: workbench-system
+
+labels:
+  - pairs:
+      app.kubernetes.io/component: jobs
+    includeSelectors: true
+  - pairs:
+      app.kubernetes.io/part-of: workbench
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
+    includeTemplates: true
+
+resources:
+  - cleanup-jobs-cronjob.yaml
+  - cleanup-jobs-secrets.yaml

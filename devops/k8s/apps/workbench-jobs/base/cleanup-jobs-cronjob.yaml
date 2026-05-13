@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: workbench-cleanup-jobs-cronjob
+  labels:
+    app.kubernetes.io/name: workbench-cleanup-jobs-cronjob
+spec:
+  schedule: "* * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  timeZone: Asia/Bangkok
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600 # 1 hour
+      parallelism: 1
+      completions: 1
+      backoffLimit: 3
+      activeDeadlineSeconds: 60 # 1 minute
+      template:
+        spec:
+          containers:
+            - name: cleanup-jobs
+              image: workbench/workbench-jobs:1.0.0-rc1
+              imagePullPolicy: IfNotPresent
+              args:
+                - cleanup-old-jobs
+                - --older-than-days
+                - "2"
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              envFrom:
+                - secretRef:
+                    name: workbench-cleanup-jobs-secrets
+          restartPolicy: OnFailure

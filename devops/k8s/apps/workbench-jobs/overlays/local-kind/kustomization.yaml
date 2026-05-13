@@ -1,0 +1,7 @@
+# Build with: kubectl kustomize . | kubectl apply --server-side -f -
+# Raw YAML fragments here are incomplete alone (no namespace/labels until kustomize runs).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
