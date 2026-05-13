@@ -83,9 +83,9 @@ spec:
     - metadata:
         name: workbench-rabbitmq-volume
       spec:
-        volumeName: workbench-rabbitmq-volume # static volume name, no dynamic provisioning
+        # volumeName: workbench-rabbitmq-volume # static volume name, no dynamic provisioning
         accessModes: ["ReadWriteOncePod"]
-        storageClassName: "local-storage"
+        storageClassName: "standard"
         resources:
           requests:
             storage: 512Mi

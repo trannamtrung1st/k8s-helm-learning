@@ -1,3 +1,4 @@
+# Static volume name, no dynamic provisioning.
 apiVersion: v1
 kind: PersistentVolume
 metadata:

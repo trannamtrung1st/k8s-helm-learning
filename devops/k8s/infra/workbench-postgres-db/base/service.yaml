@@ -11,3 +11,4 @@ spec:
       port: 5432
       targetPort: db-port
   type: ClusterIP
+  clusterIP: None

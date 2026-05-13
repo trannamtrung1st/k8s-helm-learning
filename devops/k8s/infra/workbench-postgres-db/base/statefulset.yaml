@@ -56,9 +56,9 @@ spec:
     - metadata:
         name: workbench-postgres-db-volume
       spec:
-        volumeName: workbench-postgres-db-volume # static volume name, no dynamic provisioning
+        # volumeName: workbench-postgres-db-volume # static volume name, no dynamic provisioning
         accessModes: ["ReadWriteOncePod"]
-        storageClassName: "local-storage"
+        storageClassName: "standard"
         resources:
           requests:
             storage: 1Gi
