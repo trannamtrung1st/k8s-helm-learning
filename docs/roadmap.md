@@ -24,7 +24,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 13. (**DONE**) Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
 14. (**DONE**) **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
 15. (**DONE**) Run batch and scheduled tasks with **Jobs** and **CronJobs**
-16. Deploy **Redis** on Kubernetes (optional, single instance first)
+16. (**DONE**) Deploy **Redis** on Kubernetes (optional, single instance first)
     - Focus on cache and idempotency patterns before cluster complexity.
     - Practice persistence and eviction behavior for a single Redis node.
     - Use this as baseline before Redis Cluster in item **17**.
