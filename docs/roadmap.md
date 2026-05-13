@@ -22,7 +22,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 
 12. (**DONE**) Configure **CPU and memory** requests and limits (QoS classes; optional LimitRanges and ResourceQuotas)
 13. (**DONE**) Run **multiple replicas** with **topology spread** and **PodDisruptionBudgets** for basic application HA
-14. **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
+14. (**DONE**) **Rolling updates** — strategy fields, rollout status, and rollback basics (`kubectl rollout …`)
 15. Run batch and scheduled tasks with **Jobs** and **CronJobs**
 16. **StatefulSets** in depth — stable identity, ordered rollout, volume claim templates (beyond “only ever installed Postgres via a chart”); reinforce with **clustered middleware** (not “many pods behind one DNS name” without a real cluster story):
     - **RabbitMQ cluster** on Kubernetes — peer discovery, governing **headless** Service and per-pod DNS, ordered StatefulSet (or operator); quorum queues / mirrored queues vs single node; keep topology aligned with **`devops/rabbitmq`** where practical

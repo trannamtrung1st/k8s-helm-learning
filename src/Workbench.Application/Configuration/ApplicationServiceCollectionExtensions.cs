@@ -8,6 +8,7 @@ public static class ApplicationServiceCollectionExtensions
     public static IServiceCollection AddWorkbenchApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IJobsApplicationService, JobsApplicationService>();
+        services.AddScoped<IJobMaintenanceApplicationService, JobMaintenanceApplicationService>();
         services.AddScoped<IQueuedJobExecutor, QueuedJobExecutor>();
         return services;
     }

@@ -28,6 +28,12 @@ public sealed class EfJobRepository(JobsDbContext db) : IJobRepository
         return list;
     }
 
+    public Task<int> CountOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken) =>
+        db.Jobs.CountAsync(j => j.CreatedAt < cutoff, cancellationToken);
+
+    public Task<int> DeleteOlderThanAsync(DateTimeOffset cutoff, CancellationToken cancellationToken) =>
+        db.Jobs.Where(j => j.CreatedAt < cutoff).ExecuteDeleteAsync(cancellationToken);
+
     public Task SaveChangesAsync(CancellationToken cancellationToken) =>
         db.SaveChangesAsync(cancellationToken);
 }
