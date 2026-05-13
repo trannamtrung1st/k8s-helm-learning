@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: workbench-worker
 spec:
+  revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
     rollingUpdate:

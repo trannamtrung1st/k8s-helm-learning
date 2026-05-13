@@ -3,6 +3,7 @@ kind: StatefulSet
 metadata:
   name: workbench-postgres-db
 spec:
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: workbench-postgres-db
