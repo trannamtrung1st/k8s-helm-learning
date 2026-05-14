@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - limitranges/workbench-limit-range.yaml
-  - resourcequotas/workbench-resource-quota.yaml
-  - pdb/workbench-rabbitmq-pdb.yaml
+  - limit-ranges/workbench-limit-range.yaml
+  - resource-quotas/workbench-resource-quota.yaml
+  - pod-disruption-budgets/workbench-rabbitmq-pdb.yaml

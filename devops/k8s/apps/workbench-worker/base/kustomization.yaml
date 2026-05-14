@@ -27,7 +27,7 @@ images:
     newTag: 1.0.0-rc1
 
 resources:
-  - configmap.yaml
+  - config-map.yaml
   - secrets.yaml
   - deployment.yaml
   - service.yaml

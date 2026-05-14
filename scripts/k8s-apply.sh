@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kubectl apply --server-side --force-conflicts -k devops/k8s/
+kubectl apply --server-side --force-conflicts -k devops/

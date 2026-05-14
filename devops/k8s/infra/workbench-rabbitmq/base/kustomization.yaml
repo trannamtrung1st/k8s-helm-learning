@@ -4,13 +4,6 @@ kind: Kustomization
 namespace: workbench-infra
 
 resources:
-  - statefulset.yaml
+  - stateful-set.yaml
   - service.yaml
-  - persistentvolume.yaml
-
-# Mirrors devops/rabbitmq (Kustomize only allows file sources under this directory).
-configMapGenerator:
-  - name: workbench-rabbitmq-definitions
-    files:
-      - workbench.json=rabbitmq/workbench.json
-      - 10-workbench-definitions.conf=rabbitmq/10-workbench-definitions.conf
+  - persistent-volume.yaml

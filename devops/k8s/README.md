@@ -1,8 +1,10 @@
 # Kubernetes (local cluster)
 
-This directory is the Kubernetes root for the Workbench learning stack.
+This directory (**`devops/k8s/`**) holds **manifests** (apps, infra, platform). The **top-level Kustomize entrypoint** is **`devops/kustomization.yaml`** (one directory up): apply with **`kubectl apply -k devops`** from the repository root so **RabbitMQ** and **Redis** `ConfigMap` / `Secret` generators can read canonical files from **`devops/rabbitmq/`** and **`devops/redis/`** without duplicating them under **`k8s/`**.
 
-Apply manifests through Kustomize entrypoints (`kubectl apply -k ...` or `./scripts/k8s-apply.sh` from the **repository root**), not by applying raw files from individual `base/` folders unless you know you want that.
+**Naming:** folders and YAML filenames under **`k8s/`** use **kebab-case** (for example `platform/storage-classes/`, `config-map.yaml`, `stateful-set.yaml`, `persistent-volume.yaml`) so paths stay readable and consistent.
+
+Apply manifests through Kustomize entrypoints (`kubectl apply -k devops` or `./scripts/k8s-apply.sh` from the **repository root**), not by applying raw files from individual `base/` folders unless you know you want that.
 
 ## Prerequisites
 
@@ -12,7 +14,7 @@ Apply manifests through Kustomize entrypoints (`kubectl apply -k ...` or `./scri
 
 ## First run (kind, from repo root)
 
-Run these from the **repository root** so script paths and `devops/k8s` resolve correctly.
+Run these from the **repository root** so script paths and **`devops/`** / **`devops/k8s/`** resolve correctly.
 
 1. **Create the kind cluster** — use the interactive wizard (worker count, delete/recreate, list clusters):
 
@@ -96,34 +98,46 @@ If Postgres or RabbitMQ stay **Pending**, confirm the infra label and that `./sc
 Raw kubectl equivalents:
 
 ```bash
-kubectl apply --server-side --force-conflicts -k devops/k8s
-kubectl delete --server-side -k devops/k8s
+kubectl apply --server-side --force-conflicts -k devops
+kubectl delete --server-side -k devops
 ```
 
 ## What top-level Kustomize applies
 
-`devops/k8s/kustomization.yaml` applies resources in this intent order:
+**`devops/kustomization.yaml`** lists **`k8s/...`** resources and **Kustomize generators** for shared broker/cache files:
+
+- **`configMapGenerator`** → **`workbench-rabbitmq-definitions`** in **`workbench-infra`** from **`rabbitmq/definitions.json`** and **`rabbitmq/conf.d/10-workbench-definitions.conf`** (same sources as Docker Compose).
+- **`secretGenerator`** → **`workbench-redis-secrets`** in **`workbench-infra`** from **`redis/workbench.conf`**.
+
+Resources are applied in this intent order:
 
 1. platform prerequisites  
-   - `platform/namespaces`  
-   - `platform/storageclasses/local-storage.yaml`  
-   - `platform/secrets/workbench-platform-secrets.yaml`  
+   - `k8s/platform/namespaces`  
+   - `k8s/platform/storage-classes/local-storage.yaml`  
+   - `k8s/platform/secrets/workbench-platform-secrets.yaml`  
 2. infra dependencies  
-   - `infra/workbench-postgres-db/base`  
-   - `infra/workbench-rabbitmq/base`  
-   - `infra/workbench-redis/base`  
+   - `k8s/infra/workbench-postgres-db/base`  
+   - `k8s/infra/workbench-rabbitmq/base`  
+   - `k8s/infra/workbench-redis/base`  
 3. app workloads (local-kind overlays)  
-   - `apps/workbench-api/overlays/local-kind`  
-   - `apps/workbench-worker/overlays/local-kind`  
+   - `k8s/apps/workbench-api/overlays/local-kind`  
+   - `k8s/apps/workbench-worker/overlays/local-kind`  
+   - `k8s/apps/workbench-jobs/overlays/local-kind`  
+
+The generated **`ConfigMap`** / **`Secret`** are merged with the same build as the **`StatefulSet`** references (`workbench-rabbitmq-definitions`, `workbench-redis-secrets`); **do not** apply **`k8s/infra/workbench-rabbitmq/base`** or **`k8s/infra/workbench-redis/base`** alone if you expect those mounts to exist—use **`kubectl apply -k devops`** (or the full tree) unless you supply equivalent objects another way.
 
 ## Repository layout
 
 ```text
-devops/k8s/
-├── apps/                 # first-party workloads (base + overlays)
-├── infra/                # product infrastructure (postgres, rabbitmq, redis, ...)
-├── platform/             # namespaces, storageclasses, shared secrets/policies
-└── kustomization.yaml    # top-level apply entrypoint
+devops/
+├── kustomization.yaml    # top-level apply: k8s/ resources + CM/Secret generators
+├── rabbitmq/             # canonical broker definitions (Compose + Kustomize)
+├── redis/                # canonical redis config (Compose + Kustomize)
+└── k8s/
+    ├── apps/             # first-party workloads (base + overlays)
+    ├── infra/            # postgres, rabbitmq, redis, ...
+    ├── platform/         # namespaces, storage-classes, secrets, policies
+    └── ...
 ```
 
 ## Namespaces
@@ -141,13 +155,13 @@ kubectl apply --server-side -k devops/k8s/platform/namespaces
 
 ## Local volumes and the infra node label
 
-- PV manifests: `infra/workbench-postgres-db/base/persistentvolume.yaml`, `infra/workbench-rabbitmq/base/persistentvolume.yaml` — **required** affinity to `workbench.io/infra-node=true`.
+- PV manifests: `k8s/infra/workbench-postgres-db/base/persistent-volume.yaml`, `k8s/infra/workbench-rabbitmq/base/persistent-volume.yaml` — **required** affinity to `workbench.io/infra-node=true`.
 - Volume scripts discover nodes with that label; keep **kubectl context** aligned with the kind cluster when using discovery.
 
 ## Kustomize usage notes
 
 - Prefer server-side apply in this repo: `kubectl apply --server-side -k ...`
-- Preview rendered manifests without applying: `kubectl kustomize devops/k8s`
+- Preview rendered manifests without applying: `kubectl kustomize devops`
 - If ownership conflicts appear, check `kubectl apply --server-side --help`
 - Use `--force-conflicts` only intentionally (`./scripts/k8s-apply.sh` includes it)
 
@@ -158,7 +172,9 @@ kubectl apply --server-side -k devops/k8s/apps/workbench-api/overlays/local-kind
 kubectl apply --server-side -k devops/k8s/apps/workbench-api/overlays/<env>
 ```
 
-For `local-kind`, ensure namespaces and dependencies are applied, secrets match workloads, and **local images are built and loaded** (see **First run** step 4).
+Use this when you intentionally patch **only** that app. It **does not** include **`devops/kustomization.yaml`** generators (**RabbitMQ** definitions **ConfigMap**, **Redis** **Secret**) or other namespaces; for a **full stack** bring-up, apply **`devops`** (see **Day-two commands**).
+
+For **`local-kind`** as a **full stack**, apply **`devops`**, ensure secrets match workloads, and **local images are built and loaded** (see **First run** step 4).
 
 ## Label convention
 

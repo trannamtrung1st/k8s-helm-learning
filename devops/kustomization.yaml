@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Apply from repository root: kubectl apply --server-side --force-conflicts -k devops
+# (or ./scripts/k8s-apply.sh). Manifests live under k8s/; shared broker/cache files
+# are sourced from rabbitmq/ and redis/ at this same devops/ level.
+
+# Apply order intent:
+# 1) namespaces + cluster-scoped platform prerequisites
+# 2) infra dependencies
+# 3) app workloads
+resources:
+  - k8s/platform/namespaces
+  - k8s/platform/storage-classes
+  - k8s/platform/secrets
+  - k8s/platform/policies
+
+  - k8s/infra/workbench-postgres-db/base
+  - k8s/infra/workbench-rabbitmq/base
+  - k8s/infra/workbench-redis/base
+
+  - k8s/apps/workbench-api/overlays/local-kind
+  - k8s/apps/workbench-worker/overlays/local-kind
+  - k8s/apps/workbench-jobs/overlays/local-kind
+
+configMapGenerator:
+  - name: workbench-rabbitmq-definitions
+    namespace: workbench-infra
+    options:
+      disableNameSuffixHash: true
+    files:
+      - definitions.json=rabbitmq/definitions.json
+      - 10-workbench-definitions.conf=rabbitmq/conf.d/10-workbench-definitions.conf
+
+secretGenerator:
+  - name: workbench-redis-secrets
+    namespace: workbench-infra
+    options:
+      disableNameSuffixHash: true
+    files:
+      - workbench.conf=redis/workbench.conf

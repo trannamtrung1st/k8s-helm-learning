@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: workbench-db
 
 resources:
-  - statefulset.yaml
+  - stateful-set.yaml
   - service.yaml
   - secrets.yaml
-  - persistentvolume.yaml
+  - persistent-volume.yaml

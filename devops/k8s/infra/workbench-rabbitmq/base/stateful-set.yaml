@@ -77,8 +77,8 @@ spec:
             name: workbench-rabbitmq-definitions
             defaultMode: 420
             items:
-              - key: workbench.json
-                path: workbench.json
+              - key: definitions.json
+                path: definitions.json
   volumeClaimTemplates:
     - metadata:
         name: workbench-rabbitmq-volume

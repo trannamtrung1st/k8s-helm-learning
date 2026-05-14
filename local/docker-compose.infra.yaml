@@ -28,7 +28,7 @@ services:
     # Single source: devops/rabbitmq/definitions.json + conf.d (same files for Kubernetes).
     volumes:
       - ../devops/rabbitmq/conf.d/10-workbench-definitions.conf:/etc/rabbitmq/conf.d/10-workbench-definitions.conf:ro
-      - ../devops/rabbitmq/definitions.json:/etc/rabbitmq/definitions/workbench.json:ro
+      - ../devops/rabbitmq/definitions.json:/etc/rabbitmq/definitions/definitions.json:ro
     ports:
       - "5672:5672"
       - "15672:15672"
