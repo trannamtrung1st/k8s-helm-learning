@@ -1,0 +1,15 @@
+namespaces:
+  system:
+    name: workbench-system
+    purpose: system
+  db:
+    name: workbench-db
+    purpose: database
+  storage:
+    name: workbench-storage
+    purpose: storage
+  infra:
+    name: workbench-infra
+    purpose: shared-infra
+
+partOf: workbench
