@@ -1,0 +1,27 @@
+name: workbench-rabbitmq
+configMap:
+  name: workbench-rabbitmq-definitions
+image:
+  repository: rabbitmq
+  tag: 4-management-alpine
+replicas: 1
+revisionHistoryLimit: 3
+minReadySeconds: 10
+terminationGracePeriodSeconds: 10
+service:
+  amqpPort: 5672
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+pvc:
+  storageClassName: standard
+  size: 512Mi
+pv:
+  name: workbench-rabbitmq-volume
+  storageClassName: local-storage
+  capacity: 512Mi
+  path: /mnt/disks/workbench-rabbitmq

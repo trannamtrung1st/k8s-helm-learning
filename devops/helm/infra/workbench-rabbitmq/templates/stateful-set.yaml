@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ include "workbench.rabbitmq.namespace" . }}
+  labels:
+    {{- include "workbench.rabbitmq.labels.standard" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "workbench.rabbitmq.labels.selector" . | nindent 6 }}
+  serviceName: {{ .Values.name | quote }}
+  replicas: {{ .Values.replicas }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "workbench.rabbitmq.labels.standard" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ .Values.name }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.service.amqpPort }}
+              name: rabbitmq-port
+            - containerPort: 15672
+              name: management-port
+          volumeMounts:
+            - name: {{ .Values.name }}-volume
+              mountPath: /var/lib/rabbitmq
+            - name: workbench-rabbitmq-definitions-conf
+              mountPath: /etc/rabbitmq/conf.d
+              readOnly: true
+            - name: workbench-rabbitmq-definitions-json
+              mountPath: /etc/rabbitmq/definitions
+              readOnly: true
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: workbench-rabbitmq-definitions-conf
+          configMap:
+            name: {{ .Values.configMap.name }}
+            defaultMode: 420
+            items:
+              - key: 10-workbench-definitions.conf
+                path: 10-workbench-definitions.conf
+        - name: workbench-rabbitmq-definitions-json
+          configMap:
+            name: {{ .Values.configMap.name }}
+            defaultMode: 420
+            items:
+              - key: definitions.json
+                path: definitions.json
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.name }}-volume
+      spec:
+        accessModes:
+          - ReadWriteOncePod
+        storageClassName: {{ .Values.pvc.storageClassName | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.pvc.size }}

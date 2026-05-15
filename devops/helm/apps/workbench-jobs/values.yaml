@@ -1,0 +1,24 @@
+name: workbench-cleanup-jobs-cronjob
+component: jobs
+schedule: "* * * * *"
+timeZone: Asia/Bangkok
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 3
+ttlSecondsAfterFinished: 3600
+backoffLimit: 3
+activeDeadlineSeconds: 60
+image:
+  repository: workbench/workbench-jobs
+  tag: 1.0.0-rc1
+  pullPolicy: IfNotPresent
+cleanup:
+  olderThanDays: "2"
+secrets:
+  name: workbench-cleanup-jobs-secrets
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

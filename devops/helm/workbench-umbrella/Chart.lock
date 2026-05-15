@@ -1,0 +1,33 @@
+dependencies:
+- name: workbench-namespaces
+  repository: file://../platform/workbench-namespaces
+  version: 1.0.0-rc1
+- name: workbench-storage-classes
+  repository: file://../platform/workbench-storage-classes
+  version: 1.0.0-rc1
+- name: workbench-apps-secrets
+  repository: file://../platform/workbench-apps-secrets
+  version: 1.0.0-rc1
+- name: workbench-policies
+  repository: file://../platform/workbench-policies
+  version: 1.0.0-rc1
+- name: workbench-postgres
+  repository: file://../infra/workbench-postgres
+  version: 1.0.0-rc1
+- name: workbench-rabbitmq
+  repository: file://../infra/workbench-rabbitmq
+  version: 1.0.0-rc1
+- name: workbench-redis
+  repository: file://../infra/workbench-redis
+  version: 1.0.0-rc1
+- name: workbench-api
+  repository: file://../apps/workbench-api
+  version: 1.0.0-rc1
+- name: workbench-worker
+  repository: file://../apps/workbench-worker
+  version: 1.0.0-rc1
+- name: workbench-jobs
+  repository: file://../apps/workbench-jobs
+  version: 1.0.0-rc1
+digest: sha256:ac53238fe124f321b8dce909a164a53b7712bee8a2c07fa88cfec13b8ff72bb9
+generated: "2026-05-15T14:21:39.579983+07:00"

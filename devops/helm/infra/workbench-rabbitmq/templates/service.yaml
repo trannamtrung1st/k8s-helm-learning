@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ include "workbench.rabbitmq.namespace" . }}
+  labels:
+    {{- include "workbench.rabbitmq.labels.standard" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "workbench.rabbitmq.labels.selector" . | nindent 4 }}
+  ports:
+    - name: rabbitmq-port
+      protocol: TCP
+      port: {{ .Values.service.amqpPort }}
+      targetPort: rabbitmq-port
+  type: ClusterIP
+  clusterIP: None

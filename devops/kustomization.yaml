@@ -1,3 +1,9 @@
+# DEPRECATED: prefer Helm for full-stack installs.
+#
+#   ./scripts/helm-apply.sh
+#
+# Legacy Kustomize entrypoint (manifests under k8s/). Kept for reference and
+# gradual migration; new changes belong in devops/helm/.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -5,10 +11,6 @@ kind: Kustomization
 # (or ./scripts/k8s-apply.sh). Manifests live under k8s/; shared broker/cache files
 # are sourced from rabbitmq/ and redis/ at this same devops/ level.
 
-# Apply order intent:
-# 1) namespaces + cluster-scoped platform prerequisites
-# 2) infra dependencies
-# 3) app workloads
 resources:
   - k8s/platform/namespaces
   - k8s/platform/storage-classes

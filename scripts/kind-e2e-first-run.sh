@@ -170,7 +170,7 @@ fi
 
 if [[ "${SKIP_APPLY}" != "true" ]]; then
   echo "=== Step 6: apply stack ==="
-  ./scripts/k8s-apply.sh
+  ./scripts/helm-apply.sh
 else
   echo "=== Step 6: skip apply ==="
 fi

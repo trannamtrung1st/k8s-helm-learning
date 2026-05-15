@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ include "workbench.jobs.namespace" . }}
+  labels:
+    {{- include "workbench.jobs.labels.standard" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.failedJobsHistoryLimit }}
+  timeZone: {{ .Values.timeZone }}
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: {{ .Values.ttlSecondsAfterFinished }}
+      parallelism: 1
+      completions: 1
+      backoffLimit: {{ .Values.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels:
+            {{- include "workbench.jobs.labels.standard" . | nindent 12 }}
+        spec:
+          containers:
+            - name: cleanup-jobs
+              image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args:
+                - cleanup-old-jobs
+                - --older-than-days
+                - {{ .Values.cleanup.olderThanDays | quote }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.secrets.name }}
+          restartPolicy: OnFailure

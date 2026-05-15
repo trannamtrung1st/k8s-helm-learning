@@ -1,6 +1,8 @@
 # Kubernetes (local cluster)
 
-This directory (**`devops/k8s/`**) holds **manifests** (apps, infra, platform). The **top-level Kustomize entrypoint** is **`devops/kustomization.yaml`** (one directory up): apply with **`kubectl apply -k devops`** from the repository root so **RabbitMQ** and **Redis** `ConfigMap` / `Secret` generators can read canonical files from **`devops/rabbitmq/`** and **`devops/redis/`** without duplicating them under **`k8s/`**.
+> **Migration:** The full stack is now available as Helm charts under **`devops/helm/`**. Prefer **`./scripts/helm-apply.sh`** from the repository root. Kustomize under **`devops/k8s/`** and **`devops/kustomization.yaml`** remain for reference; new changes belong in Helm.
+
+This directory (**`devops/k8s/`**) holds **legacy manifests** (apps, infra, platform). The **top-level Kustomize entrypoint** is **`devops/kustomization.yaml`** (one directory up): apply with **`kubectl apply -k devops`** from the repository root so **RabbitMQ** and **Redis** `ConfigMap` / `Secret` generators can read canonical files from **`devops/rabbitmq/`** and **`devops/redis/`** without duplicating them under **`k8s/`**.
 
 **Naming:** folders and YAML filenames under **`k8s/`** use **kebab-case** (for example `platform/storage-classes/`, `config-map.yaml`, `stateful-set.yaml`, `persistent-volume.yaml`) so paths stay readable and consistent.
 
@@ -61,7 +63,13 @@ Run these from the **repository root** so script paths and **`devops/`** / **`de
    ./scripts/kind-load-images.sh --cluster workbench-0
    ```
 
-5. **Apply the stack** — server-side apply with conflict overwrite (same as top-level Kustomize):
+5. **Apply the stack** — Helm (recommended):
+
+   ```bash
+   ./scripts/helm-apply.sh
+   ```
+
+   Legacy Kustomize equivalent:
 
    ```bash
    ./scripts/k8s-apply.sh

@@ -1,0 +1,30 @@
+name: workbench-postgres-db
+image:
+  repository: postgres
+  tag: "16-alpine"
+replicas: 1
+revisionHistoryLimit: 3
+minReadySeconds: 10
+terminationGracePeriodSeconds: 10
+service:
+  port: 5432
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+pvc:
+  storageClassName: standard
+  size: 1Gi
+pv:
+  name: workbench-postgres-db-volume
+  storageClassName: local-storage
+  capacity: 1Gi
+  path: /mnt/disks/workbench-postgres-db
+secrets:
+  name: workbench-postgres-db-secrets
+  user: workbench
+  password: workbench
+  database: workbench

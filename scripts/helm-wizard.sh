@@ -167,6 +167,10 @@ read_namespace_optional() {
   prompt_optional "Kubernetes namespace (-n)"
 }
 
+read_history_max() {
+  prompt_nonempty "Revision history limit (--history-max)" "5"
+}
+
 wiz_helm_version() {
   require_helm
   local -a cmd=(helm version)
@@ -217,10 +221,11 @@ wiz_search_repo() {
 
 wiz_install() {
   require_helm
-  local rel chart ns
+  local rel chart ns history_max
   rel="$(prompt_nonempty "Release name")"
   chart="$(prompt_nonempty_path "Chart (repo/chart or local path)")"
   ns="$(read_namespace_optional)"
+  history_max="$(read_history_max)"
   read_values_files_into_array
   local -a cmd=(helm install "${rel}" "${chart}")
   if prompt_yes_no_default_yes "Use server-side apply (--server-side=true)?"; then
@@ -237,6 +242,7 @@ wiz_install() {
   if [[ ${#WIZ_VALS_LINES[@]} -gt 0 ]]; then
     cmd+=("${WIZ_VALS_LINES[@]}")
   fi
+  cmd+=(--history-max "${history_max}")
   if prompt_yes_no_default_no "Add --dry-run=server (simulate on API, no persist)?"; then
     cmd+=(--dry-run=server)
   fi
@@ -245,10 +251,11 @@ wiz_install() {
 
 wiz_upgrade() {
   require_helm
-  local rel chart ns
+  local rel chart ns history_max
   rel="$(prompt_nonempty "Release name")"
   chart="$(prompt_nonempty_path "Chart (repo/chart or local path)")"
   ns="$(read_namespace_optional)"
+  history_max="$(read_history_max)"
   read_values_files_into_array
   local -a cmd=(helm upgrade "${rel}" "${chart}")
   if prompt_yes_no_default_yes "Use server-side apply (--server-side=true)?"; then
@@ -268,6 +275,7 @@ wiz_upgrade() {
   if [[ ${#WIZ_VALS_LINES[@]} -gt 0 ]]; then
     cmd+=("${WIZ_VALS_LINES[@]}")
   fi
+  cmd+=(--history-max "${history_max}")
   if prompt_yes_no_default_no "Add --dry-run=server (simulate on API, no persist)?"; then
     cmd+=(--dry-run=server)
   fi
@@ -535,8 +543,9 @@ command you can copy, then runs it. Uninstall and rollback ask before running
 [y/N]. After each run (or skip), press Enter to clear the screen and return to
 the menu.
 
-Install, upgrade, template, and lint can prompt for multiple values files (-f);
-each path is merged in the order you enter (later overrides earlier).
+Install and upgrade prompt for --history-max (default 5). Install, upgrade,
+template, and lint can prompt for multiple values files (-f); each path is
+merged in the order you enter (later overrides earlier).
 
   $0              # interactive menu
   $0 --help       # this text

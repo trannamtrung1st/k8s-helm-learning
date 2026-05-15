@@ -1,0 +1,37 @@
+apiVersion: v2
+name: workbench-umbrella
+description: Workbench umbrella chart (platform, infra, and apps)
+type: application
+version: 1.0.0-rc1
+appVersion: "1.0.0-rc1"
+dependencies:
+  - name: workbench-namespaces
+    version: 1.0.0-rc1
+    repository: file://../platform/workbench-namespaces
+  - name: workbench-storage-classes
+    version: 1.0.0-rc1
+    repository: file://../platform/workbench-storage-classes
+  - name: workbench-apps-secrets
+    version: 1.0.0-rc1
+    repository: file://../platform/workbench-apps-secrets
+  - name: workbench-policies
+    version: 1.0.0-rc1
+    repository: file://../platform/workbench-policies
+  - name: workbench-postgres
+    version: 1.0.0-rc1
+    repository: file://../infra/workbench-postgres
+  - name: workbench-rabbitmq
+    version: 1.0.0-rc1
+    repository: file://../infra/workbench-rabbitmq
+  - name: workbench-redis
+    version: 1.0.0-rc1
+    repository: file://../infra/workbench-redis
+  - name: workbench-api
+    version: 1.0.0-rc1
+    repository: file://../apps/workbench-api
+  - name: workbench-worker
+    version: 1.0.0-rc1
+    repository: file://../apps/workbench-worker
+  - name: workbench-jobs
+    version: 1.0.0-rc1
+    repository: file://../apps/workbench-jobs
