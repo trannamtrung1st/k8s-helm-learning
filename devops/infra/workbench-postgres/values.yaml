@@ -25,6 +25,4 @@ pv:
   path: /mnt/disks/workbench-postgres-db
 secrets:
   name: workbench-postgres-db-secrets
-  user: workbench
-  password: workbench
-  database: workbench
+  # user, password, database: set via global.workbenchPostgres in cluster global-values.yaml

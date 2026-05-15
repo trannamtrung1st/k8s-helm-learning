@@ -8,10 +8,15 @@
 global:
   workbenchPostgres:
     connectionString: Host=workbench-postgres-db.workbench-db.svc.cluster.local;Port=5432;Database=workbench;Username=workbench;Password=workbench
+    user: workbench
+    password: workbench
+    database: workbench
   workbenchRabbitMq:
     uri: amqp://workbench:workbench@workbench-rabbitmq.workbench-infra.svc.cluster.local:5672/
   workbenchRedis:
     connectionString: workbench-redis.workbench-infra.svc.cluster.local:6379,user=workbench,password=workbench
+    user: workbench
+    password: workbench
 
 # local-kind overlay equivalents (formerly k8s/apps/*/overlays/local-kind)
 workbench-api:

@@ -39,9 +39,9 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - {{ .Values.secrets.user }}
+                - {{ required "workbench-postgres: set global.workbenchPostgres.user (cluster -f overlay)." .Values.global.workbenchPostgres.user }}
                 - -d
-                - {{ .Values.secrets.database }}
+                - {{ required "workbench-postgres: set global.workbenchPostgres.database (cluster -f overlay)." .Values.global.workbenchPostgres.database }}
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
@@ -51,9 +51,9 @@ spec:
               command:
                 - pg_isready
                 - -U
-                - {{ .Values.secrets.user }}
+                - {{ required "workbench-postgres: set global.workbenchPostgres.user (cluster -f overlay)." .Values.global.workbenchPostgres.user }}
                 - -d
-                - {{ .Values.secrets.database }}
+                - {{ required "workbench-postgres: set global.workbenchPostgres.database (cluster -f overlay)." .Values.global.workbenchPostgres.database }}
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3

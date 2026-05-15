@@ -50,7 +50,7 @@ Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`*
 ```
 
 - **`global.*`** propagates to every subchart (namespaces, secrets, infra, apps).
-- Cluster overlay fills **`global.workbenchPostgres.connectionString`**, **`global.workbenchRabbitMq.uri`**, **`global.workbenchRedis.connectionString`**, and per-chart keys such as **`workbench-api.replicaCount`**.
+- Cluster overlay fills broker/cache/db connection strings and credentials (**`global.workbenchPostgres.*`**, **`global.workbenchRabbitMq.uri`**, **`global.workbenchRedis.*`**). Infra charts leave **`user` / `password` / `database`** empty in packaged **`values.yaml`**; **`clusters/<cluster>/global-values.yaml`** supplies them.
 
 ## Full stack install
 

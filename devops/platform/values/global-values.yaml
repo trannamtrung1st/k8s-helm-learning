@@ -38,5 +38,10 @@ global:
     uri:
   workbenchRedis:
     connectionString:
+    user:
+    password:
   workbenchPostgres:
     connectionString:
+    user:
+    password:
+    database:

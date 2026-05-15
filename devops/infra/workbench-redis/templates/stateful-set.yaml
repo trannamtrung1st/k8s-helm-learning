@@ -1,3 +1,6 @@
+{{- $redis := .Values.global.workbenchRedis | default dict -}}
+{{- $cliUser := required "workbench-redis: set global.workbenchRedis.user (cluster -f overlay)." $redis.user -}}
+{{- $cliPassword := required "workbench-redis: set global.workbenchRedis.password (cluster -f overlay)." $redis.password -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -38,9 +41,9 @@ spec:
               command:
                 - redis-cli
                 - --user
-                - {{ .Values.redisCli.user }}
+                - {{ $cliUser }}
                 - -a
-                - {{ .Values.redisCli.password }}
+                - {{ $cliPassword }}
                 - ping
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -51,9 +54,9 @@ spec:
               command:
                 - redis-cli
                 - --user
-                - {{ .Values.redisCli.user }}
+                - {{ $cliUser }}
                 - -a
-                - {{ .Values.redisCli.password }}
+                - {{ $cliPassword }}
                 - ping
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -64,9 +67,9 @@ spec:
               command:
                 - redis-cli
                 - --user
-                - {{ .Values.redisCli.user }}
+                - {{ $cliUser }}
                 - -a
-                - {{ .Values.redisCli.password }}
+                - {{ $cliPassword }}
                 - ping
             periodSeconds: 5
             timeoutSeconds: 5
