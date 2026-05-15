@@ -21,8 +21,3 @@
 .idea/
 *.tmproj
 .vscode/
-# Packaged charts (often vendored under charts/)
-*.tgz
-charts/*.tgz
-# Editor / agent metadata (monorepo checkouts)
-.cursor/

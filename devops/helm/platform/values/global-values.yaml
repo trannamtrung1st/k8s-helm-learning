@@ -1,0 +1,23 @@
+# Used for both:
+# - direct: helm upgrade … devops/helm/platform/namespaces/ -f …/global-values.yaml
+# - umbrella: helm upgrade … devops/helm/umbrella/ -f …/global-values.yaml
+#
+# All keys live under `global` so Helm propagates them to every subchart’s `.Values.global`.
+global:
+  workbenchPartOf: workbench
+  workbenchNamespaces:
+    platform:
+      name: workbench-platform
+      purpose: platform
+    apps:
+      name: workbench-apps
+      purpose: system
+    db:
+      name: workbench-db
+      purpose: database
+    storage:
+      name: workbench-storage
+      purpose: storage
+    infra:
+      name: workbench-infra
+      purpose: shared-infra

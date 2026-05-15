@@ -1,0 +1,3 @@
+# Optional cluster overrides under `global.*` (same keys as platform/values/global-values.yaml).
+# See devops/helm/README.md.
+{}

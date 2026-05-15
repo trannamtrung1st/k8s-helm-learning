@@ -1,0 +1,10 @@
+apiVersion: v2
+name: workbench-umbrella
+description: Workbench umbrella chart
+type: application
+version: 1.0.0-rc1
+appVersion: "1.0.0-rc1"
+dependencies:
+  - name: workbench-namespaces
+    version: 1.0.0-rc1
+    repository: file://../platform/namespaces

@@ -1,5 +1,9 @@
-{{- $workbenchPartOf := .Values.workbenchPartOf -}}
-{{- range .Values.workbenchNamespaces }}
+{{- /* Namespace list from .Values.global (works for direct install and umbrella subcharts). */ -}}
+{{- $g := .Values.global | default dict -}}
+{{- $namespaces := $g.workbenchNamespaces | default dict -}}
+{{ $workbenchPartOf := $g.workbenchPartOf }}
+{{ range $k := keys $namespaces | sortAlpha }}
+{{ with $namespace := index $namespaces $k }}
 {{ include "platform.namespaces.namespace" (
     dict
         "name" .name
@@ -9,4 +13,5 @@
         "Chart" $.Chart
 ) }}
 ---
+{{ end }}
 {{ end }}

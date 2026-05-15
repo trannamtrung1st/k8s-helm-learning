@@ -146,14 +146,17 @@ finalize_cmd() {
   pause_and_refresh
 }
 
-# Reads lines into global WIZ_VALS_LINES as separate args (each line is one -f path).
+# Reads lines into global WIZ_VALS_LINES as separate args (each non-empty line is
+# one --values / -f path). Helm merges multiple files in order; later keys win.
 WIZ_VALS_LINES=()
 
 read_values_files_into_array() {
   WIZ_VALS_LINES=()
   local f
+  echo "Optional values files: enter one path per line (each becomes -f/--values)."
+  echo "Helm merges in order (later overrides earlier). Empty line when done."
   while true; do
-    read -e -r -p "Values file -f (empty line to finish): " f
+    read -e -r -p "Values file path (empty = done): " f
     [[ -z "${f}" ]] && break
     WIZ_VALS_LINES+=(-f "${f}")
   done
@@ -406,9 +409,13 @@ wiz_lint() {
   require_helm
   local path
   path="$(prompt_nonempty_path "Chart directory or packaged chart path")"
+  read_values_files_into_array
   local -a cmd=(helm lint "${path}")
   if prompt_yes_no_default_no "Add --strict?"; then
     cmd+=(--strict)
+  fi
+  if [[ ${#WIZ_VALS_LINES[@]} -gt 0 ]]; then
+    cmd+=("${WIZ_VALS_LINES[@]}")
   fi
   finalize_cmd auto -- "${cmd[@]}"
 }
@@ -528,6 +535,9 @@ command you can copy, then runs it. Uninstall and rollback ask before running
 [y/N]. After each run (or skip), press Enter to clear the screen and return to
 the menu.
 
+Install, upgrade, template, and lint can prompt for multiple values files (-f);
+each path is merged in the order you enter (later overrides earlier).
+
   $0              # interactive menu
   $0 --help       # this text
 
@@ -563,7 +573,7 @@ main_menu() {
     echo "  12) helm rollback            — roll a release back to a prior revision"
     echo "  13) helm get                 — print values, manifest, notes, or all"
     echo "  14) helm template            — render chart templates locally (no cluster apply)"
-    echo "  15) helm lint                — run checks on a chart directory or package"
+    echo "  15) helm lint                — run checks on a chart (optional multiple -f values files)"
     echo "  16) helm show                — show chart metadata, default values, or readme"
     echo "  17) helm pull                — download a chart package from a repo or URI"
     echo "  18) helm dependency          — update or vendor subchart dependencies"
