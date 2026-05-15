@@ -21,6 +21,8 @@ spec:
         metadata:
           labels:
             {{- include "workbench.jobs.labels.standard" . | nindent 12 }}
+          annotations:
+            checksum/secrets: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
         spec:
           containers:
             - name: cleanup-jobs
