@@ -14,3 +14,6 @@ dependencies:
   - name: workbench-storage-classes
     version: 1.0.0-rc1
     repository: file://../platform/storage-classes
+  - name: workbench-policies
+    version: 1.0.0-rc1
+    repository: file://../platform/policies

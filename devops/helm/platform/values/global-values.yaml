@@ -31,6 +31,7 @@ global:
     local:
       name: local-storage
   workbenchRabbitMq:
+    name: workbench-rabbitmq
     uri:
   workbenchRedis:
     connectionString:

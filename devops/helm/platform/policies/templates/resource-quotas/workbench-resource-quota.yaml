@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ .Values.workbenchResourceQuota.name }}
+  namespace: {{ .Values.global.workbenchNamespaces.apps.name }}
+spec:
+  hard:
+    requests.cpu: {{ .Values.workbenchResourceQuota.requestsCpu | toString }}
+    requests.memory: {{ .Values.workbenchResourceQuota.requestsMemory | toString }}
+    limits.cpu: {{ .Values.workbenchResourceQuota.limitsCpu | toString }}
+    limits.memory: {{ .Values.workbenchResourceQuota.limitsMemory | toString }}

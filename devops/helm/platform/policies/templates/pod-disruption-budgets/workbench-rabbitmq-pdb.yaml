@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.workbenchRabbitMqPdb.name }}
+  namespace: {{ .Values.global.workbenchNamespaces.infra.name }}
+spec:
+  maxUnavailable: {{ .Values.workbenchRabbitMqPdb.maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.global.workbenchRabbitMq.name }}

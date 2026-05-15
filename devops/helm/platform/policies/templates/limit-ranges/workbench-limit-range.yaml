@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ .Values.workbenchLimitRange.name }}
+  namespace: {{ .Values.global.workbenchNamespaces.apps.name }}
+spec:
+  limits:
+    - default: # this section defines default limits
+        cpu: {{ .Values.workbenchLimitRange.defaultCpuLimit }}
+      defaultRequest: # this section defines default requests
+        cpu: {{ .Values.workbenchLimitRange.defaultCpuRequest }}
+      max:
+        cpu: {{ .Values.workbenchLimitRange.maxCpuLimit }}
+      type: Container

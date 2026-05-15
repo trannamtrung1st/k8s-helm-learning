@@ -1,0 +1,16 @@
+workbenchLimitRange:
+  name: workbench-limit-range
+  defaultCpuLimit: 2
+  defaultCpuRequest: 100m
+  maxCpuLimit: 4
+
+workbenchRabbitMqPdb:
+  name: workbench-rabbitmq-pdb
+  maxUnavailable: 1
+
+workbenchResourceQuota:
+  name: workbench-resource-quota
+  requestsCpu: 7
+  requestsMemory: "10Gi"
+  limitsCpu: 7
+  limitsMemory: "10Gi"
