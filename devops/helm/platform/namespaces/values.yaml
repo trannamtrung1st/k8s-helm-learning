@@ -1,15 +1,13 @@
-namespaces:
-  system:
-    name: workbench-apps
+workbenchNamespaces:
+  - name: workbench-platform
+    purpose: platform
+  - name: workbench-apps
     purpose: system
-  db:
-    name: workbench-db
+  - name: workbench-db
     purpose: database
-  storage:
-    name: workbench-storage
+  - name: workbench-storage
     purpose: storage
-  infra:
-    name: workbench-infra
+  - name: workbench-infra
     purpose: shared-infra
 
-partOf: workbench
+workbenchPartOf: workbench

@@ -6,6 +6,9 @@ set -euo pipefail
 # (uninstall/rollback ask before running [y/N]). After output you press Enter to
 # clear the screen and return to the menu.
 #
+# Path prompts use bash readline (read -e): Tab completes file and directory
+# names like in an interactive shell (when stdin is a terminal).
+#
 # Requires: helm on PATH, kubectl context set when using cluster-scoped actions.
 #
 # Run from repository root or anywhere:
@@ -41,6 +44,33 @@ prompt_optional() {
   local prompt="$1"
   local out
   read -r -p "${prompt} (leave empty to skip): " out
+  echo "${out}"
+}
+
+# Same as prompt_* but with read -e so readline enables Tab completion on paths.
+prompt_nonempty_path() {
+  local prompt="$1"
+  local default="${2:-}"
+  local out
+  if [[ -n "${default}" ]]; then
+    read -e -r -p "${prompt} [${default}]: " out
+    echo "${out:-${default}}"
+  else
+    while true; do
+      read -e -r -p "${prompt}: " out
+      if [[ -n "${out}" ]]; then
+        echo "${out}"
+        return
+      fi
+      echo "Value required."
+    done
+  fi
+}
+
+prompt_optional_path() {
+  local prompt="$1"
+  local out
+  read -e -r -p "${prompt} (leave empty to skip): " out
   echo "${out}"
 }
 
@@ -123,7 +153,7 @@ read_values_files_into_array() {
   WIZ_VALS_LINES=()
   local f
   while true; do
-    read -r -p "Values file -f (empty line to finish): " f
+    read -e -r -p "Values file -f (empty line to finish): " f
     [[ -z "${f}" ]] && break
     WIZ_VALS_LINES+=(-f "${f}")
   done
@@ -186,10 +216,15 @@ wiz_install() {
   require_helm
   local rel chart ns
   rel="$(prompt_nonempty "Release name")"
-  chart="$(prompt_nonempty "Chart (repo/chart or local path)")"
+  chart="$(prompt_nonempty_path "Chart (repo/chart or local path)")"
   ns="$(read_namespace_optional)"
   read_values_files_into_array
   local -a cmd=(helm install "${rel}" "${chart}")
+  if prompt_yes_no_default_yes "Use server-side apply (--server-side=true)?"; then
+    cmd+=(--server-side=true)
+  else
+    cmd+=(--server-side=false)
+  fi
   if [[ -n "${ns}" ]]; then
     cmd+=(-n "${ns}")
   fi
@@ -199,8 +234,8 @@ wiz_install() {
   if [[ ${#WIZ_VALS_LINES[@]} -gt 0 ]]; then
     cmd+=("${WIZ_VALS_LINES[@]}")
   fi
-  if prompt_yes_no_default_no "Add --dry-run=client (print only)?"; then
-    cmd+=(--dry-run=client)
+  if prompt_yes_no_default_no "Add --dry-run=server (simulate on API, no persist)?"; then
+    cmd+=(--dry-run=server)
   fi
   finalize_cmd auto -- "${cmd[@]}"
 }
@@ -209,10 +244,15 @@ wiz_upgrade() {
   require_helm
   local rel chart ns
   rel="$(prompt_nonempty "Release name")"
-  chart="$(prompt_nonempty "Chart (repo/chart or local path)")"
+  chart="$(prompt_nonempty_path "Chart (repo/chart or local path)")"
   ns="$(read_namespace_optional)"
   read_values_files_into_array
   local -a cmd=(helm upgrade "${rel}" "${chart}")
+  if prompt_yes_no_default_yes "Use server-side apply (--server-side=true)?"; then
+    cmd+=(--server-side=true)
+  else
+    cmd+=(--server-side=false)
+  fi
   if prompt_yes_no_default_no "Add --install (release-if-missing)?"; then
     cmd+=(--install)
   fi
@@ -225,8 +265,8 @@ wiz_upgrade() {
   if [[ ${#WIZ_VALS_LINES[@]} -gt 0 ]]; then
     cmd+=("${WIZ_VALS_LINES[@]}")
   fi
-  if prompt_yes_no_default_no "Add --dry-run=client?"; then
-    cmd+=(--dry-run=client)
+  if prompt_yes_no_default_no "Add --dry-run=server (simulate on API, no persist)?"; then
+    cmd+=(--dry-run=server)
   fi
   finalize_cmd auto -- "${cmd[@]}"
 }
@@ -306,8 +346,8 @@ wiz_rollback() {
   if prompt_yes_no_default_yes "Add --wait?"; then
     cmd+=(--wait)
   fi
-  if prompt_yes_no_default_no "Add --dry-run=client?"; then
-    cmd+=(--dry-run=client)
+  if prompt_yes_no_default_no "Add --dry-run=server (simulate on API, no persist)?"; then
+    cmd+=(--dry-run=server)
   fi
   echo "Rollback changes live resources for this release."
   finalize_cmd confirm_no -- "${cmd[@]}"
@@ -349,7 +389,7 @@ wiz_template() {
   require_helm
   local rel chart ns
   rel="$(prompt_nonempty "Release name (logical name for template)")"
-  chart="$(prompt_nonempty "Chart (repo/chart or local path)")"
+  chart="$(prompt_nonempty_path "Chart (repo/chart or local path)")"
   ns="$(read_namespace_optional)"
   read_values_files_into_array
   local -a cmd=(helm template "${rel}" "${chart}")
@@ -365,7 +405,7 @@ wiz_template() {
 wiz_lint() {
   require_helm
   local path
-  path="$(prompt_nonempty "Chart directory or packaged chart path")"
+  path="$(prompt_nonempty_path "Chart directory or packaged chart path")"
   local -a cmd=(helm lint "${path}")
   if prompt_yes_no_default_no "Add --strict?"; then
     cmd+=(--strict)
@@ -390,7 +430,7 @@ wiz_show() {
       return
       ;;
   esac
-  chart="$(prompt_nonempty "Chart (repo/chart or URI)")"
+  chart="$(prompt_nonempty_path "Chart (repo/chart or URI)")"
   ver="$(prompt_optional "Chart version (--version), empty to skip")"
   local -a cmd=(helm show "${sub}" "${chart}")
   if [[ -n "${ver}" ]]; then
@@ -402,9 +442,9 @@ wiz_show() {
 wiz_pull() {
   require_helm
   local chart ver dest
-  chart="$(prompt_nonempty "Chart (repo/chart or URI)")"
+  chart="$(prompt_nonempty_path "Chart (repo/chart or URI)")"
   ver="$(prompt_optional "Chart version (--version), empty to skip")"
-  dest="$(prompt_optional "Destination directory (-d), empty to skip")"
+  dest="$(prompt_optional_path "Destination directory (-d), empty to skip")"
   local -a cmd=(helm pull "${chart}")
   if [[ -n "${ver}" ]]; then
     cmd+=(--version "${ver}")
@@ -425,7 +465,7 @@ wiz_dependency() {
   echo "  2) helm dependency build CHART_DIR"
   local c path
   read -r -p "Choose [1-2]: " c
-  path="$(prompt_nonempty "Chart directory (containing Chart.yaml)")"
+  path="$(prompt_nonempty_path "Chart directory (containing Chart.yaml)")"
   local -a cmd
   case "${c}" in
     1) cmd=(helm dependency update "${path}") ;;
@@ -441,7 +481,7 @@ wiz_dependency() {
 wiz_create_chart() {
   require_helm
   local path starter
-  path="$(prompt_nonempty "Chart path to create (e.g. devops/helm/my-chart)")"
+  path="$(prompt_nonempty_path "Chart path to create (e.g. devops/helm/my-chart)")"
   if [[ -e "${path}" ]]; then
     echo "That path already exists. helm create will add/overwrite scaffold files where needed."
     if ! prompt_yes_no_default_no "Continue?"; then
@@ -450,7 +490,7 @@ wiz_create_chart() {
       return 0
     fi
   fi
-  starter="$(prompt_optional "Starter for -p (--starter): built-in name or absolute path")"
+  starter="$(prompt_optional_path "Starter for -p (--starter): built-in name or absolute path")"
   local -a cmd=(helm create "${path}")
   if [[ -n "${starter}" ]]; then
     cmd+=(-p "${starter}")
@@ -461,8 +501,8 @@ wiz_create_chart() {
 wiz_package_chart() {
   require_helm
   local path dest ver appver
-  path="$(prompt_nonempty "Chart directory (contains Chart.yaml)")"
-  dest="$(prompt_optional "Package output directory (-d), empty for current directory")"
+  path="$(prompt_nonempty_path "Chart directory (contains Chart.yaml)")"
+  dest="$(prompt_optional_path "Package output directory (-d), empty for current directory")"
   ver="$(prompt_optional "Override chart version (--version), empty to use Chart.yaml")"
   appver="$(prompt_optional "Override appVersion (--app-version), empty to skip")"
   local -a cmd=(helm package "${path}")

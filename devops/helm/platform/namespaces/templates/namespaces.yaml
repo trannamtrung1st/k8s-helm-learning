@@ -1,9 +1,10 @@
-{{- range $name, $namespace := .Values.namespaces }}
+{{- $workbenchPartOf := .Values.workbenchPartOf -}}
+{{- range .Values.workbenchNamespaces }}
 {{ include "platform.namespaces.namespace" (
     dict
-        "name" $namespace.name
-        "partOf" $.Values.partOf
-        "purpose" $namespace.purpose
+        "name" .name
+        "partOf" $workbenchPartOf
+        "purpose" .purpose
         "Release" $.Release
         "Chart" $.Chart
 ) }}

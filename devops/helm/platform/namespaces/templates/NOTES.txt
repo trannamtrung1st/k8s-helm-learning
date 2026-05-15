@@ -1,0 +1,5 @@
+This chart installs the Workbench namespaces.
+To verify the namespaces are installed, run:
+```bash
+kubectl get namespaces
+```

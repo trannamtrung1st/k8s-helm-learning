@@ -1,6 +1,4 @@
-# [IMPORTANT]: comment must end with */}}
-
-{{- /**
+{{/*
 Context required:
 - .name: the name of the namespace
 - .partOf: the part of the namespace
