@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Usage:
-#   ./scripts/k8s-rollout-status.sh -n workbench-system workbench-api
+#   ./scripts/k8s-rollout-status.sh -n workbench-apps workbench-api
 #   ./scripts/k8s-rollout-status.sh workbench-api workbench-worker
-#   ./scripts/k8s-rollout-status.sh -n workbench-system --timeout 180s workbench-api
+#   ./scripts/k8s-rollout-status.sh -n workbench-apps --timeout 180s workbench-api
 
-NAMESPACE="workbench-system"
+NAMESPACE="workbench-apps"
 TIMEOUT=""
 DEPLOYMENTS=()
 

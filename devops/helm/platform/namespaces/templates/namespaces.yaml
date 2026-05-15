@@ -1,0 +1,11 @@
+{{- range $name, $namespace := .Values.namespaces }}
+{{ include "platform.namespaces.namespace" (
+    dict
+        "name" $namespace.name
+        "partOf" $.Values.partOf
+        "purpose" $namespace.purpose
+        "Release" $.Release
+        "Chart" $.Chart
+) }}
+---
+{{ end }}

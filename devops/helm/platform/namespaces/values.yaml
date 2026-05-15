@@ -1,6 +1,6 @@
 namespaces:
   system:
-    name: workbench-system
+    name: workbench-apps
     purpose: system
   db:
     name: workbench-db

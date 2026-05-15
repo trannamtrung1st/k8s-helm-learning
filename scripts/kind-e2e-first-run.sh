@@ -179,8 +179,8 @@ echo "=== Verify ==="
 kubectl get ns
 kubectl get pods -n workbench-db
 kubectl get pods -n workbench-infra
-kubectl get pods -n workbench-system
+kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
-kubectl get svc -n workbench-system
+kubectl get svc -n workbench-apps
 
 echo "Done."

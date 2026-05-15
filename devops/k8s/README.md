@@ -73,9 +73,9 @@ Run these from the **repository root** so script paths and **`devops/`** / **`de
 kubectl get ns
 kubectl get pods -n workbench-db
 kubectl get pods -n workbench-infra
-kubectl get pods -n workbench-system
+kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
-kubectl get svc -n workbench-system
+kubectl get svc -n workbench-apps
 ```
 
 If Postgres or RabbitMQ stay **Pending**, confirm the infra label and that `./scripts/k8s-volumes-init.sh` ran successfully on those nodes.
@@ -92,7 +92,7 @@ If Postgres or RabbitMQ stay **Pending**, confirm the infra label and that `./sc
 ./scripts/k8s-events.sh                 # all namespaces
 ./scripts/k8s-events.sh workbench-infra # one namespace
 ./scripts/k8s-events.sh all Failed      # filter by reason
-./scripts/k8s-port-forward.sh -n workbench-system svc/workbench-api 8080:80
+./scripts/k8s-port-forward.sh -n workbench-apps svc/workbench-api 8080:80
 ```
 
 Raw kubectl equivalents:
@@ -142,7 +142,7 @@ devops/
 
 ## Namespaces
 
-- `workbench-system`: first-party workloads (API, worker, UI)
+- `workbench-apps`: first-party workloads (API, worker, UI)
 - `workbench-db`: database tier
 - `workbench-infra`: shared infra tier (broker/cache/etc.)
 - `workbench-storage`: storage tier

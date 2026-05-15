@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Usage:
-#   ./scripts/k8s-rollout-history.sh -n workbench-system workbench-api
+#   ./scripts/k8s-rollout-history.sh -n workbench-apps workbench-api
 #   ./scripts/k8s-rollout-history.sh workbench-api workbench-worker
-#   ./scripts/k8s-rollout-history.sh -n workbench-system -r 3 workbench-api
+#   ./scripts/k8s-rollout-history.sh -n workbench-apps -r 3 workbench-api
 
-NAMESPACE="workbench-system"
+NAMESPACE="workbench-apps"
 REVISION=""
 DEPLOYMENTS=()
 

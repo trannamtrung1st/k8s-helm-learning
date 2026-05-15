@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: workbench-resource-quota
-  namespace: workbench-system
+  namespace: workbench-apps
 spec:
   hard:
     requests.cpu: "7"

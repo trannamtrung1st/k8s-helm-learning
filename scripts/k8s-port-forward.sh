@@ -5,10 +5,10 @@ set -euo pipefail
 #
 # Usage:
 #   ./scripts/k8s-port-forward.sh svc/workbench-api 8080:80
-#   ./scripts/k8s-port-forward.sh -n workbench-system svc/workbench-api 8080:80
+#   ./scripts/k8s-port-forward.sh -n workbench-apps svc/workbench-api 8080:80
 #   ./scripts/k8s-port-forward.sh -n workbench-infra pod/workbench-rabbitmq-0 15672:15672
 #   ./scripts/k8s-port-forward.sh -n workbench-infra sts/workbench-redis 6379:6379
-#   ./scripts/k8s-port-forward.sh --address 0.0.0.0 -n workbench-system svc/workbench-api 8080:80
+#   ./scripts/k8s-port-forward.sh --address 0.0.0.0 -n workbench-apps svc/workbench-api 8080:80
 #
 # If -n is omitted, kubectl uses your current context namespace.
 # Resource must be TYPE/NAME (kubectl shorthand: svc, deploy, pod, sts, …).
@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: $0 [-n <namespace>] [-a <bind-address>] <type/name> <local:remote> [<local:remote> ...]"
       echo "Examples:"
-      echo "  $0 -n workbench-system svc/workbench-api 8080:80"
+      echo "  $0 -n workbench-apps svc/workbench-api 8080:80"
       echo "  $0 -n workbench-infra pod/workbench-rabbitmq-0 15672:15672"
       exit 0
       ;;

@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Usage:
-#   ./scripts/k8s-restart-deployments.sh -n workbench-system workbench-api
-#   ./scripts/k8s-restart-deployments.sh -n workbench-system workbench-api workbench-worker
-#   ./scripts/k8s-restart-deployments.sh workbench-api   # defaults to workbench-system
+#   ./scripts/k8s-restart-deployments.sh -n workbench-apps workbench-api
+#   ./scripts/k8s-restart-deployments.sh -n workbench-apps workbench-api workbench-worker
+#   ./scripts/k8s-restart-deployments.sh workbench-api   # defaults to workbench-apps
 
-NAMESPACE="workbench-system"
+NAMESPACE="workbench-apps"
 DEPLOYMENTS=()
 
 while [[ $# -gt 0 ]]; do

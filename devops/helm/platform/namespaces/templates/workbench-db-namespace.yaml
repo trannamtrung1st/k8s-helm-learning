@@ -1,7 +1,0 @@
-{{ include "platform.namespaces.namespace" (
-    dict
-        "name" .Values.namespaces.db.name
-        "partOf" .Values.partOf
-        "purpose" .Values.namespaces.db.purpose
-        "Release" .Release
-) }}

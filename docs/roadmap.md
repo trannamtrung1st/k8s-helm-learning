@@ -10,7 +10,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 2. (**DONE**) Configure Kubernetes cluster (kubectl, kubeconfig, context, cluster access, and minimum bootstrap) — set this up first; you need a working cluster before deploying workloads
 3. (**DONE**) Configure liveness, readiness, and startup probes for workloads
 4. (**DONE**) Use Deployments for stateless workloads (replicas, rolling update fundamentals)
-5. (**DONE**) Apply **namespaces** and baseline **platform** layout (e.g. `workbench-system`, `workbench-db`, `workbench-infra` — see `devops/k8s/platform/namespaces/`)
+5. (**DONE**) Apply **namespaces** and baseline **platform** layout (e.g. `workbench-apps`, `workbench-db`, `workbench-infra` — see `devops/k8s/platform/namespaces/`)
 6. (**DONE**) **ConfigMaps** and in-cluster **Secrets** — env and volume mounts; plain `Secret` objects before operators (External Secrets comes later)
 7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
 8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components (local PVs in this repo use **node affinity** to `workbench.io/infra-node=true`; see `devops/k8s/README.md` **Local kind workflow**)

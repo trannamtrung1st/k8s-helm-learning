@@ -8,7 +8,7 @@ Prefer **`kubectl apply --server-side`** (with **`-k devops`** or piped from **`
 
 ## Workbench Kubernetes namespaces
 
-Four namespaces are defined under **`devops/k8s/platform/namespaces/`**: **`workbench-system`** (apps and current platform secrets), **`workbench-db`**, **`workbench-storage`**, and **`workbench-infra`**. Purposes and apply command: [Namespaces](../devops/k8s/README.md#namespaces) in **`devops/k8s/README.md`**.
+Four namespaces are defined under **`devops/k8s/platform/namespaces/`**: **`workbench-apps`** (apps and current platform secrets), **`workbench-db`**, **`workbench-storage`**, and **`workbench-infra`**. Purposes and apply command: [Namespaces](../devops/k8s/README.md#namespaces) in **`devops/k8s/README.md`**.
 
 **Path naming:** directories and manifest files under **`devops/k8s/`** use **kebab-case** (for example **`platform/storage-classes/`**, **`config-map.yaml`**). **Full-cluster apply** uses **`devops/kustomization.yaml`**: **`kubectl apply --server-side -k devops`** (see **`devops/k8s/README.md`**).
 
