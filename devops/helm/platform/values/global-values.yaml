@@ -21,3 +21,13 @@ global:
     infra:
       name: workbench-infra
       purpose: shared-infra
+  workbenchSecrets:
+    apps:
+      name: workbench-apps-secrets
+  workbenchComponents:
+    platform:
+      name: platform
+  workbenchRabbitMq:
+    uri:
+  workbenchRedis:
+    connectionString:

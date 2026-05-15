@@ -11,26 +11,36 @@ devops/helm/
     namespaces/              # Chart: workbench-namespaces (namespace manifests)
       Chart.yaml
       values.yaml              # Sparse defaults (see platform/values for real data)
+      values.schema.json
+      templates/
+    secrets/                   # Chart: workbench-apps-secrets (apps Secret; RabbitMQ + Redis)
+      Chart.yaml
+      values.yaml
+      values.schema.json
       templates/
     values/
-      global-values.yaml     # Platform-wide values under global.* (umbrella-safe)
+      global-values.yaml     # Platform-wide global.* (umbrella-safe); empty broker fields
   clusters/
     local/
-      global-values.yaml     # Cluster overlay (optional; add global.* overrides here)
+      global-values.yaml     # Cluster overlay — fills RabbitMQ URI + Redis connectionString
   umbrella/                  # Umbrella chart: workbench-umbrella
-    Chart.yaml               # Depends on workbench-namespaces (file://../platform/namespaces)
+    Chart.yaml               # Depends on workbench-namespaces + workbench-apps-secrets (file://)
     Chart.lock
-    charts/                  # Vendored dependency tgz (refresh after subchart edits)
+    charts/                  # Vendored dependency tgz files (refresh after subchart edits)
     values.yaml
 ```
 
-- **`platform/<chart>/`** — one Helm chart per subdirectory (for example **`namespaces`**).
-- **`platform/values/global-values.yaml`** — default **`global.*`** values for Workbench. Workbench fields live **directly under `global`** (`global.workbenchPartOf`, `global.workbenchNamespaces`) so the **same file** works for a **direct** install of `workbench-namespaces` and for an **umbrella** install: Helm copies **`global`** from the parent release into every subchart’s **`.Values.global`**.
-- **`clusters/<cluster>/global-values.yaml`** — last layer in the usual **`-f`** chain for that cluster (local, dev, prod, …). Put overrides under the same **`global.*`** keys here so umbrella subcharts still see them.
+- **`platform/<chart>/`** — one Helm chart per subdirectory (**`namespaces`**, **`secrets`**, …).
+- **`platform/values/global-values.yaml`** — default **`global.*`** shape for Workbench (namespaces, secret metadata, **empty** `global.workbenchRabbitMq.uri` / `global.workbenchRedis.connectionString`). Same file works for **direct** installs and **umbrella** installs: Helm propagates **`global`** to every subchart’s **`.Values.global`**.
+- **`clusters/<cluster>/global-values.yaml`** — merged **after** the platform file (**later `-f` wins**). For **`workbench-apps-secrets`**, this layer **must** supply non-empty **`global.workbenchRabbitMq.uri`** and **`global.workbenchRedis.connectionString`** (see **`values.schema.json`** on that chart).
 
 Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`** file left to right. **Later files win** on duplicate keys.
 
-The **`workbench-namespaces`** chart includes **`values.schema.json`**: the packaged **`values.yaml`** is only **`{}`**, so **`helm lint devops/helm/platform/namespaces`** with **no `-f`** **fails by design** until you merge **`global.*`** (same **`-f`** chain as install). **`helm lint devops/helm/umbrella`** behaves the same without **`-f`** because the dependency is validated too.
+### `helm lint` and `values.schema.json`
+
+- **`workbench-namespaces`**: packaged **`values.yaml`** is **`{}`**, so **`helm lint devops/helm/platform/namespaces`** with **no `-f`** **fails**. You can lint with **only** **`platform/values/global-values.yaml`** (namespaces do not need broker strings), or add the cluster file for parity with umbrella installs.
+- **`workbench-apps-secrets`**: **`values.schema.json`** requires **merged** `global.*` including **non-empty** RabbitMQ and Redis strings, so you **always** pass **both** `-f` files for **`helm lint` / `helm template` / install** of this chart (or of the umbrella that includes it).
+- **`workbench-umbrella`**: **`helm lint devops/helm/umbrella`** without **`-f`** fails because dependencies are validated; use the **same two-file `-f` chain** as install.
 
 ## Release name convention
 
@@ -42,18 +52,27 @@ Prefer **kebab-case** names that identify **what** and **where**:
 
 | Part | Meaning |
 |------|---------|
-| **`<app>`** | What this release installs, for example `namespaces`, `platform-secrets`. |
+| **`<app>`** | What this release installs, for example `namespaces`, `secrets`, `umbrella`. |
 | **`<env>`** | Cluster or environment slice, for example `local`, `dev`, `prod`. |
 
-Examples: **`namespaces-local`**, **`namespaces-dev`**. A short name like **`namespaces`** is fine if only one environment uses that cluster.
+Examples: **`namespaces-local`**, **`secrets-dev`**. A short name like **`namespaces`** is fine if only one environment uses that cluster.
 
 Release metadata is stored in the install namespace (**`-n` / `--namespace`**). Platform charts in this repo are typically installed into **`workbench-platform`**.
 
-## Typical command (single chart)
+## Typical `-f` chain
 
-From the **repository root**:
+Use both files so **`workbench-apps-secrets`** (and umbrella) receive connection strings:
 
-**Simulate on the API (no persist)** — drop **`--dry-run=server`** when you want a real apply:
+```text
+-f devops/helm/platform/values/global-values.yaml \
+-f devops/helm/clusters/local/global-values.yaml
+```
+
+Swap **`clusters/local/`** for another directory when targeting another cluster.
+
+## Single chart: `workbench-namespaces`
+
+**Simulate on the API (no persist)** — drop **`--dry-run=server`** for a real apply:
 
 ```bash
 helm upgrade namespaces devops/helm/platform/namespaces/ \
@@ -66,10 +85,23 @@ helm upgrade namespaces devops/helm/platform/namespaces/ \
   --dry-run=server
 ```
 
-**Apply for real** (same line without dry-run):
+**Minimum lint** (platform file only is enough for this chart):
 
 ```bash
-helm upgrade namespaces devops/helm/platform/namespaces/ \
+helm lint devops/helm/platform/namespaces \
+  -f devops/helm/platform/values/global-values.yaml
+```
+
+## Single chart: `workbench-apps-secrets`
+
+**Requires both `-f` layers** — `platform/values/global-values.yaml` leaves RabbitMQ/Redis empty; the cluster file fills them. **`helm lint`** with only the first file **fails** (by design).
+
+```bash
+helm lint devops/helm/platform/secrets \
+  -f devops/helm/platform/values/global-values.yaml \
+  -f devops/helm/clusters/local/global-values.yaml
+
+helm upgrade secrets devops/helm/platform/secrets/ \
   --server-side=true \
   --install \
   -n workbench-platform \
@@ -80,10 +112,10 @@ helm upgrade namespaces devops/helm/platform/namespaces/ \
 
 ## Umbrella chart (`workbench-umbrella`)
 
-Install everything declared in **`umbrella/Chart.yaml`** with one release. Parent **`-f`** files merge at the **parent** root; subcharts do **not** see arbitrary sibling keys—only their own subchart block and **`global`**. Put workbench settings under **`global.workbenchPartOf`** and **`global.workbenchNamespaces`** (same shape as the single-chart install) so dependencies receive them via **`.Values.global`**.
+One release applies **namespaces** and **secrets** (see **`umbrella/Chart.yaml`**). Use the **same two `-f` files** so every subchart sees a complete **`global.*`**.
 
 ```bash
-helm upgrade namespaces devops/helm/umbrella/ \
+helm upgrade umbrella devops/helm/umbrella/ \
   --server-side=true \
   --install \
   -n workbench-platform \
@@ -93,34 +125,28 @@ helm upgrade namespaces devops/helm/umbrella/ \
   --dry-run=server
 ```
 
-After you change **`platform/namespaces/`** (templates, `Chart.yaml`, default `values.yaml`), refresh the vendored package so the umbrella uses the latest subchart:
+After you change **`platform/namespaces/`**, **`platform/secrets/`**, or their **`Chart.yaml` / `values.yaml` / `values.schema.json` / `templates/`**, refresh vendored packages:
 
 ```bash
 helm dependency update devops/helm/umbrella
 ```
 
-## Lint and template
-
-Use the **same `-f` chain** you use for install:
+## Lint and template (full chain)
 
 ```bash
 helm lint devops/helm/platform/namespaces \
   -f devops/helm/platform/values/global-values.yaml \
   -f devops/helm/clusters/local/global-values.yaml
 
-helm template namespaces devops/helm/platform/namespaces \
+helm lint devops/helm/platform/secrets \
   -f devops/helm/platform/values/global-values.yaml \
   -f devops/helm/clusters/local/global-values.yaml
-```
 
-For the umbrella, use the **same `-f` chain** as for install so subcharts receive **`global.*`** and **`helm lint`** validates the real merged values:
-
-```bash
 helm lint devops/helm/umbrella \
   -f devops/helm/platform/values/global-values.yaml \
   -f devops/helm/clusters/local/global-values.yaml
 
-helm template namespaces devops/helm/umbrella \
+helm template umbrella devops/helm/umbrella \
   -f devops/helm/platform/values/global-values.yaml \
   -f devops/helm/clusters/local/global-values.yaml
 ```
@@ -131,7 +157,8 @@ For an interactive menu that builds similar commands (including **multiple `-f`*
 
 | Path | Chart name (`Chart.yaml`) | Role |
 |------|---------------------------|------|
-| `devops/helm/platform/namespaces` | `workbench-namespaces` | Declares Workbench **`Namespace`** objects and labels. **`values.schema.json`** requires **`global.workbenchPartOf`** and **`global.workbenchNamespaces`**; templates also use **`required`** / **`fail`** so bad merges error at render time. |
-| `devops/helm/umbrella` | `workbench-umbrella` | Meta-chart; depends on **`workbench-namespaces`**. |
+| `devops/helm/platform/namespaces` | `workbench-namespaces` | **`Namespace`** objects and labels. **`values.schema.json`** requires **`global.workbenchPartOf`** and **`global.workbenchNamespaces`**; templates use **`required`** / **`fail`**. |
+| `devops/helm/platform/secrets` | `workbench-apps-secrets` | **`Secret`** `workbench-apps-secrets` in the apps namespace. **`values.schema.json`** requires **merged** `global.*` including **non-empty** **`global.workbenchRabbitMq.uri`** and **`global.workbenchRedis.connectionString`** (cluster **`global-values.yaml`**). |
+| `devops/helm/umbrella` | `workbench-umbrella` | Meta-chart; depends on **`workbench-namespaces`** and **`workbench-apps-secrets`**. |
 
-See also **`devops/k8s/README.md`** for the Kustomize-oriented workflow; Helm here is mainly for bootstrap-style installs (namespaces and future platform charts).
+See also **`devops/k8s/README.md`** for the Kustomize-oriented workflow; Helm here covers bootstrap namespaces plus the apps secret (and can grow with more platform charts).

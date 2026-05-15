@@ -53,7 +53,7 @@ spec:
             - configMapRef:
                 name: workbench-worker-config
             - secretRef:
-                name: workbench-platform-secrets
+                name: workbench-apps-secrets
             - secretRef:
                 name: workbench-worker-secrets
           imagePullPolicy: IfNotPresent

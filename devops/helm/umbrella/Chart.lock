@@ -2,5 +2,8 @@ dependencies:
 - name: workbench-namespaces
   repository: file://../platform/namespaces
   version: 1.0.0-rc1
-digest: sha256:406ce445ce9599fdffab83d5dd7a435f117d1ab395cfaa1bc7b8beccebd7ae1c
-generated: "2026-05-15T10:51:16.362253+07:00"
+- name: workbench-apps-secrets
+  repository: file://../platform/secrets
+  version: 1.0.0-rc1
+digest: sha256:9175a9e7cdfa8bb403460d65ba61579dfe60c698d40ec6a3e2a9b765e28851b3
+generated: "2026-05-15T12:10:07.311523+07:00"

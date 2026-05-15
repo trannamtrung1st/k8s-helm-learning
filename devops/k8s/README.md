@@ -114,7 +114,7 @@ Resources are applied in this intent order:
 1. platform prerequisites  
    - `k8s/platform/namespaces`  
    - `k8s/platform/storage-classes/local-storage.yaml`  
-   - `k8s/platform/secrets/workbench-platform-secrets.yaml`  
+   - `k8s/platform/secrets/workbench-apps-secrets.yaml`  
 2. infra dependencies  
    - `k8s/infra/workbench-postgres-db/base`  
    - `k8s/infra/workbench-rabbitmq/base`  

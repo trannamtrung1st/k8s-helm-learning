@@ -8,3 +8,6 @@ dependencies:
   - name: workbench-namespaces
     version: 1.0.0-rc1
     repository: file://../platform/namespaces
+  - name: workbench-apps-secrets
+    version: 1.0.0-rc1
+    repository: file://../platform/secrets

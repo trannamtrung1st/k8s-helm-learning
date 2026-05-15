@@ -1,11 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": ["global"],
+  "required": [
+    "global"
+  ],
   "properties": {
     "global": {
       "type": "object",
-      "required": ["workbenchPartOf", "workbenchNamespaces"],
+      "required": [
+        "workbenchPartOf",
+        "workbenchNamespaces"
+      ],
       "properties": {
         "workbenchPartOf": {
           "type": "string",
@@ -16,10 +21,19 @@
           "minProperties": 1,
           "additionalProperties": {
             "type": "object",
-            "required": ["name", "purpose"],
+            "required": [
+              "name",
+              "purpose"
+            ],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
-              "purpose": { "type": "string", "minLength": 1 }
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
