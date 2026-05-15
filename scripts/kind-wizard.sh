@@ -156,7 +156,9 @@ create_cluster_interactive() {
   echo "Cluster '${name}' is ready."
   echo "  kubectl config use-context kind-${name}"
   echo "  ./scripts/kind-load-images.sh --cluster ${name}"
-  echo "  ./scripts/k8s-apply.sh   # from repo root"
+  echo "  ./scripts/kind-e2e-first-run.sh   # full first-run (Helm)"
+  echo "  ./scripts/helm-apply.sh           # apply only"
+  echo "  ./scripts/kind-e2e-first-run.sh --k8s   # legacy Kustomize apply"
   echo ""
 }
 

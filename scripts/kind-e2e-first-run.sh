@@ -10,7 +10,7 @@ set -euo pipefail
 # 3) label infra node
 # 4) init local PV directories
 # 5) build compose app images and load into kind
-# 6) apply kustomize stack
+# 6) apply stack (Helm by default; --k8s for legacy Kustomize)
 
 CLUSTER_NAME="workbench-0"
 WORKERS="2"
@@ -19,6 +19,7 @@ INFRA_NODE=""
 SKIP_BUILD="false"
 SKIP_LOAD="false"
 SKIP_APPLY="false"
+USE_K8S_APPLY="false"
 COMPOSE_FILE="local/docker-compose.yaml"
 
 usage() {
@@ -33,13 +34,16 @@ Options:
                          (default: first worker if present, else control-plane)
   --skip-build           skip docker compose build step
   --skip-load            skip kind image load step
-  --skip-apply           skip kubectl apply step
+  --skip-apply           skip stack apply step (Helm or Kustomize)
+  --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
+                         default: ./scripts/helm-apply.sh
   -h, --help             show help
 
 Examples:
   $0
   $0 --cluster workbench-0 --workers 1 --recreate
   $0 --infra-node workbench-0-worker --skip-build
+  $0 --k8s
 EOF
 }
 
@@ -81,6 +85,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_APPLY="true"
       shift
       ;;
+    --k8s)
+      USE_K8S_APPLY="true"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -106,6 +114,9 @@ fi
 require_cmd kind
 require_cmd kubectl
 require_cmd docker
+if [[ "${USE_K8S_APPLY}" != "true" && "${SKIP_APPLY}" != "true" ]]; then
+  require_cmd helm
+fi
 
 if [[ ! -f "${COMPOSE_FILE}" ]]; then
   echo "Compose file not found: ${COMPOSE_FILE}"
@@ -169,8 +180,13 @@ else
 fi
 
 if [[ "${SKIP_APPLY}" != "true" ]]; then
-  echo "=== Step 6: apply stack ==="
-  ./scripts/helm-apply.sh
+  if [[ "${USE_K8S_APPLY}" == "true" ]]; then
+    echo "=== Step 6: apply stack (Kustomize) ==="
+    ./scripts/k8s-apply.sh
+  else
+    echo "=== Step 6: apply stack (Helm) ==="
+    ./scripts/helm-apply.sh
+  fi
 else
   echo "=== Step 6: skip apply ==="
 fi

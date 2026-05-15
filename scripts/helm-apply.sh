@@ -12,9 +12,9 @@ set -euo pipefail
 #   HELM_RELEASE=my-release HELM_NAMESPACE=my-ns ./scripts/helm-apply.sh
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART="${ROOT}/devops/helm/workbench-umbrella"
-VALUES_PLATFORM="${ROOT}/devops/helm/platform/values/global-values.yaml"
-VALUES_CLUSTER="${ROOT}/devops/helm/clusters/local/global-values.yaml"
+CHART="${ROOT}/devops/workbench-umbrella"
+VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
+VALUES_CLUSTER="${ROOT}/devops/clusters/local/global-values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-local}"
 NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HISTORY_MAX="${HELM_HISTORY_MAX:-5}"

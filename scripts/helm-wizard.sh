@@ -496,7 +496,7 @@ wiz_dependency() {
 wiz_create_chart() {
   require_helm
   local path starter
-  path="$(prompt_nonempty_path "Chart path to create (e.g. devops/helm/my-chart)")"
+  path="$(prompt_nonempty_path "Chart path to create (e.g. devops/infra/my-chart)")"
   if [[ -e "${path}" ]]; then
     echo "That path already exists. helm create will add/overwrite scaffold files where needed."
     if ! prompt_yes_no_default_no "Continue?"; then

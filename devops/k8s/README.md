@@ -1,8 +1,8 @@
 # Kubernetes (local cluster)
 
-> **Migration:** The full stack is now available as Helm charts under **`devops/helm/`**. Prefer **`./scripts/helm-apply.sh`** from the repository root. Kustomize under **`devops/k8s/`** and **`devops/kustomization.yaml`** remain for reference; new changes belong in Helm.
+> **Migration:** The full stack is now available as Helm charts under **`devops/`** (see **`devops/README.md`**). Prefer **`./scripts/helm-apply.sh`** from the repository root. Kustomize under **`devops/k8s/`** and **`devops/kustomization.yaml`** remain for reference; new changes belong in Helm.
 
-This directory (**`devops/k8s/`**) holds **legacy manifests** (apps, infra, platform). The **top-level Kustomize entrypoint** is **`devops/kustomization.yaml`** (one directory up): apply with **`kubectl apply -k devops`** from the repository root so **RabbitMQ** and **Redis** `ConfigMap` / `Secret` generators can read canonical files from **`devops/rabbitmq/`** and **`devops/redis/`** without duplicating them under **`k8s/`**.
+This directory (**`devops/k8s/`**) holds **legacy manifests** (apps, infra, platform). The **top-level Kustomize entrypoint** is **`devops/kustomization.yaml`** (one directory up): apply with **`kubectl apply -k devops`** from the repository root so **RabbitMQ** and **Redis** `ConfigMap` / `Secret` generators can read canonical files from **`devops/infra/workbench-rabbitmq/files/`** and **`devops/infra/workbench-redis/files/`** without duplicating them under **`k8s/`**.
 
 **Naming:** folders and YAML filenames under **`k8s/`** use **kebab-case** (for example `platform/storage-classes/`, `config-map.yaml`, `stateful-set.yaml`, `persistent-volume.yaml`) so paths stay readable and consistent.
 
@@ -16,7 +16,9 @@ Apply manifests through Kustomize entrypoints (`kubectl apply -k devops` or `./s
 
 ## First run (kind, from repo root)
 
-Run these from the **repository root** so script paths and **`devops/`** / **`devops/k8s/`** resolve correctly.
+**All-in-one:** from the repository root, **`./scripts/kind-e2e-first-run.sh`** runs cluster create, infra label, volumes, image build/load, and **Helm** apply. Use **`--k8s`** for legacy Kustomize instead of Helm.
+
+Manual steps below (same flow as the e2e script). Run from the **repository root** so script paths and **`devops/`** / **`devops/k8s/`** resolve correctly.
 
 1. **Create the kind cluster** — use the interactive wizard (worker count, delete/recreate, list clusters):
 
@@ -114,8 +116,8 @@ kubectl delete --server-side -k devops
 
 **`devops/kustomization.yaml`** lists **`k8s/...`** resources and **Kustomize generators** for shared broker/cache files:
 
-- **`configMapGenerator`** → **`workbench-rabbitmq-definitions`** in **`workbench-infra`** from **`rabbitmq/definitions.json`** and **`rabbitmq/conf.d/10-workbench-definitions.conf`** (same sources as Docker Compose).
-- **`secretGenerator`** → **`workbench-redis-secrets`** in **`workbench-infra`** from **`redis/workbench.conf`**.
+- **`configMapGenerator`** → **`workbench-rabbitmq-definitions`** in **`workbench-infra`** from **`infra/workbench-rabbitmq/files/definitions.json`** and **`infra/workbench-rabbitmq/files/conf.d/10-workbench-definitions.conf`** (same sources as Docker Compose and Helm).
+- **`secretGenerator`** → **`workbench-redis-secrets`** in **`workbench-infra`** from **`infra/workbench-redis/files/workbench.conf`**.
 
 Resources are applied in this intent order:
 
@@ -138,14 +140,16 @@ The generated **`ConfigMap`** / **`Secret`** are merged with the same build as t
 
 ```text
 devops/
-├── kustomization.yaml    # top-level apply: k8s/ resources + CM/Secret generators
-├── rabbitmq/             # canonical broker definitions (Compose + Kustomize)
-├── redis/                # canonical redis config (Compose + Kustomize)
-└── k8s/
-    ├── apps/             # first-party workloads (base + overlays)
-    ├── infra/            # postgres, rabbitmq, redis, ...
-    ├── platform/         # namespaces, storage-classes, secrets, policies
-    └── ...
+├── README.md             # Helm charts + values (preferred)
+├── kustomization.yaml    # legacy apply: k8s/ resources + CM/Secret generators
+├── platform/             # Helm platform charts
+├── infra/                # Helm infra charts (rabbitmq/redis files/ here)
+├── apps/                 # Helm app charts
+├── workbench-umbrella/
+└── k8s/                  # legacy manifests (base + overlays)
+    ├── apps/
+    ├── infra/
+    └── platform/
 ```
 
 ## Namespaces

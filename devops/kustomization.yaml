@@ -3,13 +3,13 @@
 #   ./scripts/helm-apply.sh
 #
 # Legacy Kustomize entrypoint (manifests under k8s/). Kept for reference and
-# gradual migration; new changes belong in devops/helm/.
+# gradual migration; new changes belong in devops/ (Helm charts).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Apply from repository root: kubectl apply --server-side --force-conflicts -k devops
 # (or ./scripts/k8s-apply.sh). Manifests live under k8s/; shared broker/cache files
-# are sourced from rabbitmq/ and redis/ at this same devops/ level.
+# are sourced from infra/workbench-rabbitmq/files/ and infra/workbench-redis/files/.
 
 resources:
   - k8s/platform/namespaces
@@ -31,8 +31,8 @@ configMapGenerator:
     options:
       disableNameSuffixHash: true
     files:
-      - definitions.json=rabbitmq/definitions.json
-      - 10-workbench-definitions.conf=rabbitmq/conf.d/10-workbench-definitions.conf
+      - definitions.json=infra/workbench-rabbitmq/files/definitions.json
+      - 10-workbench-definitions.conf=infra/workbench-rabbitmq/files/conf.d/10-workbench-definitions.conf
 
 secretGenerator:
   - name: workbench-redis-secrets
@@ -40,4 +40,4 @@ secretGenerator:
     options:
       disableNameSuffixHash: true
     files:
-      - workbench.conf=redis/workbench.conf
+      - workbench.conf=infra/workbench-redis/files/workbench.conf

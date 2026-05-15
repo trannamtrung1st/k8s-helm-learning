@@ -15,7 +15,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
 8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components (local PVs in this repo use **node affinity** to `workbench.io/infra-node=true`; see `devops/k8s/README.md` **Local kind workflow**)
 9. (**DONE**) Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
-10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/rabbitmq/definitions.json`** where practical; evolve to a **multi-node cluster** under item **17**
+10. (**DONE**) Deploy **RabbitMQ** (or your broker) on Kubernetes — keep topology aligned with **`devops/infra/workbench-rabbitmq/files/definitions.json`** where practical; evolve to a **multi-node cluster** under item **17**
 11. (**DONE**) **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
 
 ## Hygiene and reliability
@@ -37,7 +37,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
     - **Lab track A — RabbitMQ cluster on Kubernetes:**
       - Peer discovery and cluster formation across StatefulSet replicas (or operator equivalent).
       - Queue durability/HA choices (quorum queues or mirrored queues) vs single-node trade-offs.
-      - Keep topology aligned with **`devops/rabbitmq`** where practical.
+      - Keep topology aligned with **`devops/infra/workbench-rabbitmq/files/`** where practical.
     - **Lab track B — Redis Cluster on Kubernetes:**
       - Slot-aware sharding and failover behavior (StatefulSet-based topology, operator, or upstream reference architecture).
       - Verify **cluster-aware clients** (for example, StackExchange.Redis cluster configuration).
