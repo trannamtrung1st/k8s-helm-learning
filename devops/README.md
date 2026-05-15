@@ -26,6 +26,7 @@ devops/
     workbench-api/
     workbench-worker/
     workbench-jobs/         # cleanup CronJob
+    workbench-app/          # React SPA (nginx)
   clusters/
     local/
       global-values.yaml    # connection strings + local-kind replica overlays
@@ -102,6 +103,7 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `apps/workbench-api` | `workbench-api` | API Deployment + Service |
 | `apps/workbench-worker` | `workbench-worker` | Worker Deployment + Service |
 | `apps/workbench-jobs` | `workbench-jobs` | Cleanup CronJob |
+| `apps/workbench-app` | `workbench-app` | Frontend Deployment + Service (nginx) |
 | `workbench-umbrella` | `workbench-umbrella` | All of the above |
 
 ## Release name convention

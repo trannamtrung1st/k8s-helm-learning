@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from './config'
 import type {
   CreateJobResponse,
   JobMetrics,
@@ -7,8 +8,7 @@ import type {
   ValidationErrorBody,
 } from './types'
 
-const baseUrl = () =>
-  (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api').replace(/\/$/, '')
+const baseUrl = () => getApiBaseUrl()
 
 async function throwValidationIfNeeded(res: Response): Promise<void> {
   if (res.status !== 400) return

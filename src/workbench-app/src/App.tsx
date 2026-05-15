@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import * as api from './api'
+import { getApiBaseUrl } from './config'
 import type { JobDetail, JobMetrics, JobPayload } from './types'
 import { ToastStack, useToasts } from './ToastStack'
 import { ActiveJobCard } from './components/ActiveJobCard'
@@ -192,8 +193,7 @@ function App() {
     }
   }
 
-  const apiLabel =
-    import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
+  const apiLabel = getApiBaseUrl()
 
   const activePolling =
     Boolean(activeId) &&

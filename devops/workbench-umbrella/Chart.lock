@@ -29,5 +29,8 @@ dependencies:
 - name: workbench-jobs
   repository: file://../apps/workbench-jobs
   version: 1.0.0-rc1
-digest: sha256:ac53238fe124f321b8dce909a164a53b7712bee8a2c07fa88cfec13b8ff72bb9
-generated: "2026-05-15T14:21:39.579983+07:00"
+- name: workbench-app
+  repository: file://../apps/workbench-app
+  version: 1.0.0-rc1
+digest: sha256:7434b273887da386f95c712f7a01d5259fa7de51d6c6a330550ebaf2673560d1
+generated: "2026-05-15T14:59:13.942147+07:00"

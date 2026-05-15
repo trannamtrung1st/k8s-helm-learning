@@ -5,8 +5,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-ARG VITE_API_BASE_URL=http://localhost:8080/api
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# API URL is injected at runtime via public/config.js (Helm ConfigMap in Kubernetes).
 RUN pnpm run build
 
 FROM nginx:alpine

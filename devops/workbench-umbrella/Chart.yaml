@@ -35,3 +35,6 @@ dependencies:
   - name: workbench-jobs
     version: 1.0.0-rc1
     repository: file://../apps/workbench-jobs
+  - name: workbench-app
+    version: 1.0.0-rc1
+    repository: file://../apps/workbench-app

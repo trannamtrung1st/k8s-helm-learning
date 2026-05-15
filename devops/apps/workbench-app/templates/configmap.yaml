@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ include "workbench.app.namespace" . }}
+  labels:
+    {{- include "workbench.app.labels.standard" . | nindent 4 }}
+data:
+  config.js: |
+{{- include "workbench.app.config.js" . | nindent 4 }}

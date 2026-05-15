@@ -68,6 +68,7 @@ elif [[ $# -eq 0 ]]; then
   IMAGES=(
     "workbench/workbench-api:1.0.0-rc1"
     "workbench/workbench-worker:1.0.0-rc1"
+    "workbench/workbench-app:1.0.0-rc1"
   )
 else
   IMAGES=("$@")
