@@ -30,6 +30,8 @@ devops/helm/
 
 Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`** file left to right. **Later files win** on duplicate keys.
 
+The **`workbench-namespaces`** chart includes **`values.schema.json`**: the packaged **`values.yaml`** is only **`{}`**, so **`helm lint devops/helm/platform/namespaces`** with **no `-f`** **fails by design** until you merge **`global.*`** (same **`-f`** chain as install). **`helm lint devops/helm/umbrella`** behaves the same without **`-f`** because the dependency is validated too.
+
 ## Release name convention
 
 Prefer **kebab-case** names that identify **what** and **where**:
@@ -111,10 +113,13 @@ helm template namespaces devops/helm/platform/namespaces \
   -f devops/helm/clusters/local/global-values.yaml
 ```
 
-For the umbrella:
+For the umbrella, use the **same `-f` chain** as for install so subcharts receive **`global.*`** and **`helm lint`** validates the real merged values:
 
 ```bash
-helm lint devops/helm/umbrella
+helm lint devops/helm/umbrella \
+  -f devops/helm/platform/values/global-values.yaml \
+  -f devops/helm/clusters/local/global-values.yaml
+
 helm template namespaces devops/helm/umbrella \
   -f devops/helm/platform/values/global-values.yaml \
   -f devops/helm/clusters/local/global-values.yaml
@@ -126,7 +131,7 @@ For an interactive menu that builds similar commands (including **multiple `-f`*
 
 | Path | Chart name (`Chart.yaml`) | Role |
 |------|---------------------------|------|
-| `devops/helm/platform/namespaces` | `workbench-namespaces` | Declares Workbench **`Namespace`** objects and labels. Reads **`global.workbenchPartOf`** and **`global.workbenchNamespaces`**. |
+| `devops/helm/platform/namespaces` | `workbench-namespaces` | Declares Workbench **`Namespace`** objects and labels. **`values.schema.json`** requires **`global.workbenchPartOf`** and **`global.workbenchNamespaces`**; templates also use **`required`** / **`fail`** so bad merges error at render time. |
 | `devops/helm/umbrella` | `workbench-umbrella` | Meta-chart; depends on **`workbench-namespaces`**. |
 
 See also **`devops/k8s/README.md`** for the Kustomize-oriented workflow; Helm here is mainly for bootstrap-style installs (namespaces and future platform charts).

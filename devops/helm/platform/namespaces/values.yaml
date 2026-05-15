@@ -1,0 +1,16 @@
+# =============================================================================
+# workbench-namespaces — values
+# =============================================================================
+# This chart does NOT embed the namespace list here. At install, upgrade,
+# template, and lint you MUST merge values that define global.workbenchPartOf
+# and global.workbenchNamespaces (non-empty map), for example:
+#
+#   -f devops/helm/platform/values/global-values.yaml
+#   -f devops/helm/clusters/local/global-values.yaml   # optional overlay
+#
+# values.schema.json requires `global`; this `{}` alone fails `helm lint` until
+# you pass the -f chain above (merged values must satisfy the schema).
+# See: devops/helm/README.md
+# =============================================================================
+
+{}

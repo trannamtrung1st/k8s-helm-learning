@@ -1,6 +1,11 @@
-{{- /* Namespace list from .Values.global (works for direct install and umbrella subcharts). */ -}}
+{{- /* Namespace list from .Values.global (direct install and umbrella subcharts). */ -}}
 {{- $g := .Values.global | default dict -}}
-{{- $namespaces := $g.workbenchNamespaces | default dict -}}
+{{- $_ := required "workbench-namespaces: set global.workbenchNamespaces (e.g. -f devops/helm/platform/values/global-values.yaml). See Chart description and values.yaml." $g.workbenchNamespaces -}}
+{{- $_ := required "workbench-namespaces: set global.workbenchPartOf (same -f chain). See Chart description and values.yaml." $g.workbenchPartOf -}}
+{{- $namespaces := $g.workbenchNamespaces -}}
+{{- if eq (len (keys $namespaces)) 0 -}}
+{{- fail "workbench-namespaces: global.workbenchNamespaces must contain at least one namespace entry." -}}
+{{- end -}}
 {{ $workbenchPartOf := $g.workbenchPartOf }}
 {{ range $k := keys $namespaces | sortAlpha }}
 {{ with $namespace := index $namespaces $k }}

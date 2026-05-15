@@ -444,10 +444,6 @@ FodyWeavers.xsd
 .idea
 .devcontainer/
 
-# Helm resources
-**/Chart.lock
-# charts/**/charts
-
 # Other rsources
 .env
 .envrc

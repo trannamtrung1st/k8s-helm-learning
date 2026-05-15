@@ -1,0 +1,6 @@
+dependencies:
+- name: workbench-namespaces
+  repository: file://../platform/namespaces
+  version: 1.0.0-rc1
+digest: sha256:406ce445ce9599fdffab83d5dd7a435f117d1ab395cfaa1bc7b8beccebd7ae1c
+generated: "2026-05-15T10:51:16.362253+07:00"
