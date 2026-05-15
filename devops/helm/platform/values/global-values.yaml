@@ -27,6 +27,9 @@ global:
   workbenchComponents:
     platform:
       name: platform
+  workbenchStorageClasses:
+    local:
+      name: local-storage
   workbenchRabbitMq:
     uri:
   workbenchRedis:
