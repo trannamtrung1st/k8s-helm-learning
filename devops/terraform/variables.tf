@@ -30,3 +30,9 @@ variable "main_rg_location" {
   description = "The location of the main resource group"
   default     = "South East Asia"
 }
+
+variable "unused_variable" {
+  type        = string
+  description = "The unused variable"
+  default     = "unused"
+}
