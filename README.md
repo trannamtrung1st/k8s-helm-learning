@@ -22,6 +22,7 @@ Backend is **`src/Workbench.sln`** (.NET 10, Clean Architecture: **Workbench.Dom
 | [Workbench demo spec](docs/workbench-demo-spec.md) | App requirements, v1 defaults, roadmap alignment (**Datadog** for observability) |
 | [Knowledge notes](docs/knowledge-notes.md) | Commands and short explanations (proxy, debug, PDB, TLS, Gateway API, load balancing) |
 | [Project structure](docs/project-structure.md) | `src/`, `devops/`, `local/`, and Docker Compose layout |
+| [Terraform (Azure)](devops/terraform/README.md) | Remote state, Entra OIDC federation, Storage Blob Data RBAC |
 
 ## References
 

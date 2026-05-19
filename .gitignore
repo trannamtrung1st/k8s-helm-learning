@@ -452,3 +452,7 @@ angel.yaml
 .metals/metals.mv.db
 depvalues/
 .temp/
+
+# Terraform
+.terraform/
+prod.tfvars
