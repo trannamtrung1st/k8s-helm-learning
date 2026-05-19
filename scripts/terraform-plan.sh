@@ -5,6 +5,7 @@ set -euo pipefail
 #   ./scripts/terraform-init.sh
 #   ./scripts/terraform-plan.sh
 #   ./scripts/terraform-apply.sh
+#   ./scripts/terraform-destroy.sh
 #
 # Options:
 #   --target <resource>   Limit plan to resource (repeatable)

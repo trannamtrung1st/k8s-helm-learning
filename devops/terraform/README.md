@@ -18,7 +18,8 @@ devops/terraform/
 scripts/                 # run from repository root
   terraform-init.sh      # provision workbench-tf RG + storage (az), then terraform init
   terraform-plan.sh      # plan only (run init first)
-  terraform-apply.sh     # apply or destroy (options: -y, --plan-first, --target, …)
+  terraform-apply.sh     # apply (options: -y, --plan-first, --target, …)
+  terraform-destroy.sh   # destroy (options: -y, --plan-first, --target)
 ```
 
 ## Prerequisites
@@ -41,25 +42,38 @@ az login   # required for first-time backend provisioning (local)
 
 If **`terraform init`** fails with **403** on the storage account, assign **Storage Blob Data Contributor** (local user or Entra app) — [Remote state RBAC](#remote-state-rbac-storage-blob-data-roles).
 
-### Apply / destroy (`terraform-apply.sh`)
+### Apply (`terraform-apply.sh`)
 
 | Option | Description |
 | ------ | ----------- |
-| `-y`, `--auto-approve` | Apply (or destroy) without Terraform’s confirmation prompt |
+| `-y`, `--auto-approve` | Apply without Terraform’s confirmation prompt |
 | `--plan-first` | Run **`terraform plan`** first; prompt before apply (skipped with `-y`) |
-| `--destroy` | Run **`terraform destroy`** instead of apply |
 | `--refresh-only` | Run **`terraform apply -refresh-only`** |
 | `--target <resource>` | Limit to one resource (repeatable), e.g. `azurerm_resource_group.workbench` |
 | `--replace <resource>` | Force replace on apply (repeatable) |
+| `--destroy` | Alias for **`terraform-destroy.sh`** (prefer the destroy script) |
 
 ```bash
 ./scripts/terraform-apply.sh --plan-first
 ./scripts/terraform-apply.sh -y
 ./scripts/terraform-apply.sh --target=azurerm_resource_group.workbench -y
-./scripts/terraform-apply.sh --destroy --plan-first
 ```
 
-Override var file: `VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh -y`
+### Destroy (`terraform-destroy.sh`)
+
+| Option | Description |
+| ------ | ----------- |
+| `-y`, `--auto-approve` | Destroy without Terraform’s confirmation prompt |
+| `--plan-first` | Run **`terraform plan -destroy`** first; prompt before destroy (skipped with `-y`) |
+| `--target <resource>` | Destroy only this resource (repeatable) |
+
+```bash
+./scripts/terraform-destroy.sh --plan-first
+./scripts/terraform-destroy.sh -y
+./scripts/terraform-destroy.sh --target=azurerm_resource_group.workbench --plan-first
+```
+
+Override var file: `VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh -y` (also applies to **`terraform-destroy.sh`**).
 
 **`terraform-init.sh`** provisions (when missing):
 
@@ -71,7 +85,7 @@ Override var file: `VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh 
 
 Skip provisioning if resources already exist: `./scripts/terraform-init.sh --skip-provision` or `SKIP_TF_BACKEND_PROVISION=1`.
 
-`VAR_FILE` also applies to **`terraform-plan.sh`** and **`terraform-apply.sh`**.
+`VAR_FILE` also applies to **`terraform-plan.sh`**, **`terraform-apply.sh`**, and **`terraform-destroy.sh`**.
 
 ## Variables
 

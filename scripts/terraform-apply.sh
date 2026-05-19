@@ -9,7 +9,7 @@ set -euo pipefail
 # Options:
 #   --auto-approve, -y     Apply without interactive approval
 #   --plan-first           Run plan before apply (prompts unless -y)
-#   --destroy              Run terraform destroy instead of apply
+#   --destroy              Same as ./scripts/terraform-destroy.sh (prefer that script)
 #   --refresh-only         Run terraform apply -refresh-only
 #   --target <resource>    Limit to resource (repeatable)
 #   --replace <resource>   Replace resource (repeatable; apply/destroy only)
@@ -52,7 +52,7 @@ Examples:
   ./scripts/terraform-apply.sh --plan-first
   ./scripts/terraform-apply.sh -y
   ./scripts/terraform-apply.sh --target=azurerm_resource_group.workbench
-  ./scripts/terraform-apply.sh --destroy --plan-first
+  ./scripts/terraform-destroy.sh --plan-first   # preferred for destroy
 EOF
 }
 
