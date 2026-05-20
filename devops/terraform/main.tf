@@ -43,3 +43,42 @@ resource "azurerm_key_vault" "workbench" {
   rbac_authorization_enabled  = true
   sku_name                    = "standard"
 }
+
+# RBAC Key Vault: Terraform principal must manage secrets (KV has rbac_authorization_enabled).
+resource "azurerm_role_assignment" "workbench_kv_secrets_officer" {
+  scope                = azurerm_key_vault.workbench.id
+  role_definition_name = "Key Vault Secrets Officer"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
+locals {
+  workbench_kv_secret_values = {
+    "workbench-postgres-connection-string" = var.workbench_secrets.postgres_connection_string
+    "workbench-postgres-user"              = var.workbench_secrets.postgres_user
+    "workbench-postgres-password"          = var.workbench_secrets.postgres_password
+    "workbench-postgres-database"          = var.workbench_secrets.postgres_database
+    "workbench-rabbitmq-uri"               = var.workbench_secrets.rabbitmq_uri
+    "workbench-rabbitmq-password"          = var.workbench_secrets.rabbitmq_password
+    "workbench-redis-connection-string"    = var.workbench_secrets.redis_connection_string
+    "workbench-redis-user"                 = var.workbench_secrets.redis_user
+    "workbench-redis-password"             = var.workbench_secrets.redis_password
+  }
+}
+
+resource "azurerm_key_vault_secret" "workbench" {
+  for_each = var.manage_workbench_kv_secrets ? local.workbench_kv_secret_values : {}
+
+  name         = each.key
+  value        = each.value
+  key_vault_id = azurerm_key_vault.workbench.id
+
+  depends_on = [azurerm_role_assignment.workbench_kv_secrets_officer]
+}
+
+resource "azurerm_container_registry" "acr" {
+  name                = "workbenchacr77"
+  resource_group_name = azurerm_resource_group.workbench.name
+  location            = azurerm_resource_group.workbench.location
+  sku                 = "Basic"
+  admin_enabled       = false
+}

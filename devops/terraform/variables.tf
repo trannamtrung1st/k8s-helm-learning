@@ -36,3 +36,39 @@ variable "unused_variable" {
   description = "The unused variable"
   default     = "unused"
 }
+
+variable "manage_workbench_kv_secrets" {
+  type        = bool
+  description = "When true, write workbench_secrets into Key Vault (azurerm_key_vault_secret)."
+  default     = false
+}
+
+variable "workbench_secrets" {
+  description = <<-EOT
+    Workbench credentials aligned with Helm global.workbenchPostgres / workbenchRabbitMq / workbenchRedis.
+    Supply via a private tfvars file (e.g. vars/secrets.tfvars); never commit real values.
+  EOT
+  type = object({
+    postgres_connection_string = string
+    postgres_user              = string
+    postgres_password          = string
+    postgres_database          = string
+    rabbitmq_uri               = string
+    rabbitmq_password          = string
+    redis_connection_string    = string
+    redis_user                 = string
+    redis_password             = string
+  })
+  sensitive = true
+  default = {
+    postgres_connection_string = ""
+    postgres_user              = ""
+    postgres_password          = ""
+    postgres_database          = ""
+    rabbitmq_uri               = ""
+    rabbitmq_password          = ""
+    redis_connection_string    = ""
+    redis_user                 = ""
+    redis_password             = ""
+  }
+}

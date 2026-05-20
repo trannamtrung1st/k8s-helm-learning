@@ -15,11 +15,13 @@ set -euo pipefail
 #   --replace <resource>   Replace resource (repeatable; apply/destroy only)
 #
 # Environment:
-#   VAR_FILE=vars/prod.tfvars   Var file under devops/terraform/ (default)
+#   VAR_FILE=vars/prod.tfvars
+#   SECRETS_VAR_FILE=vars/secrets.tfvars   (auto-included when the file exists)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="${ROOT}/devops/terraform"
-VAR_FILE="${VAR_FILE:-vars/prod.tfvars}"
+# shellcheck source=scripts/lib/terraform-varfiles.sh
+source "${ROOT}/scripts/lib/terraform-varfiles.sh"
 
 AUTO_APPROVE=false
 PLAN_FIRST=false
@@ -45,8 +47,9 @@ Options:
   -h, --help             Show this help
 
 Environment:
-  VAR_FILE               Var file path relative to devops/terraform/
-                         (default: vars/prod.tfvars)
+  VAR_FILE               Primary var file under devops/terraform/ (default: vars/prod.tfvars)
+  SECRETS_VAR_FILE       Secrets var file (default: vars/secrets.tfvars)
+  USE_SECRETS_TFVARS     auto | true | false — see scripts/lib/terraform-varfiles.sh
 
 Examples:
   ./scripts/terraform-apply.sh --plan-first
@@ -120,12 +123,15 @@ if [[ "${REFRESH_ONLY}" == "true" && ${#REPLACES[@]:-0} -gt 0 ]]; then
   exit 1
 fi
 
-plan_cmd=(terraform -chdir="${TF_DIR}" plan -var-file="${VAR_FILE}")
+terraform_varfiles_build "${TF_DIR}"
+VARFILES_LABEL="$(terraform_varfiles_label "${TF_DIR}")"
+
+plan_cmd=(terraform -chdir="${TF_DIR}" plan "${TERRAFORM_VARFILES[@]}")
 apply_cmd=()
 if [[ "${DESTROY}" == "true" ]]; then
-  apply_cmd=(terraform -chdir="${TF_DIR}" destroy -var-file="${VAR_FILE}")
+  apply_cmd=(terraform -chdir="${TF_DIR}" destroy "${TERRAFORM_VARFILES[@]}")
 else
-  apply_cmd=(terraform -chdir="${TF_DIR}" apply -var-file="${VAR_FILE}")
+  apply_cmd=(terraform -chdir="${TF_DIR}" apply "${TERRAFORM_VARFILES[@]}")
   if [[ "${REFRESH_ONLY}" == "true" ]]; then
     apply_cmd+=( -refresh-only )
   fi
@@ -149,7 +155,7 @@ if [[ "${AUTO_APPROVE}" == "true" ]]; then
 fi
 
 run_plan_first() {
-  echo "==> terraform plan -var-file=${VAR_FILE}"
+  echo "==> terraform plan -var-file=${VARFILES_LABEL}"
   "${plan_cmd[@]}"
 }
 
@@ -176,5 +182,5 @@ action_label="apply"
 [[ "${DESTROY}" == "true" ]] && action_label="destroy"
 [[ "${REFRESH_ONLY}" == "true" ]] && action_label="apply (refresh-only)"
 
-echo "==> terraform ${action_label} -var-file=${VAR_FILE}"
+echo "==> terraform ${action_label} -var-file=${VARFILES_LABEL}"
 exec "${apply_cmd[@]}"

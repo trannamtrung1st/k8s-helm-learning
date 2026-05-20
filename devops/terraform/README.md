@@ -11,11 +11,14 @@ devops/terraform/
   variables.tf
   outputs.tf
   vars/
-    terraform.tfvars   # optional local overrides
-    prod.tfvars        # tenant_id, subscription_id, client_id, use_oidc, …
+    terraform.tfvars        # optional local overrides (placeholders)
+    prod.tfvars             # tenant_id, subscription_id, client_id, use_oidc, …
+    secrets.tfvars          # Key Vault secret values (gitignored; create locally)
+    secrets.tfvars.example  # template for secrets.tfvars
   .terraform.lock.hcl
 
 scripts/                 # run from repository root
+  lib/terraform-varfiles.sh   # shared -var-file logic (prod + secrets)
   terraform-init.sh      # provision workbench-tf RG + storage (az), then terraform init
   terraform-plan.sh      # plan only (run init first)
   terraform-apply.sh     # apply (options: -y, --plan-first, --target, …)
@@ -29,16 +32,25 @@ scripts/                 # run from repository root
 - For **OIDC / CI**: access to **Microsoft Entra ID** to register an application and add a **federated credential**
 - For **local plan**: [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and **`az login`**
 
-Provider pin: **azurerm** `4.1.0` (see `main.tf`).
+Provider pin: **azurerm** `4.73.0` (see `main.tf`).
 
 ## Quick start (repo root)
 
 ```bash
 az login   # required for first-time backend provisioning (local)
+
+# Identity / subscription (required) — create vars/prod.tfvars (see example below)
+
+# Key Vault secret values (optional until you apply secrets)
+cp vars/secrets.tfvars.example vars/secrets.tfvars
+# edit vars/secrets.tfvars — set manage_workbench_kv_secrets = true and workbench_secrets { … }
+
 ./scripts/terraform-init.sh    # creates state RG + storage (if missing), then terraform init
-./scripts/terraform-plan.sh
-./scripts/terraform-apply.sh --plan-first   # review plan, then apply
+./scripts/terraform-plan.sh    # uses vars/prod.tfvars + vars/secrets.tfvars when present
+./scripts/terraform-apply.sh --plan-first
 ```
+
+When **`vars/secrets.tfvars`** exists, **`terraform-plan.sh`**, **`terraform-apply.sh`**, and **`terraform-destroy.sh`** automatically add **`-var-file=vars/secrets.tfvars`** after **`vars/prod.tfvars`**. With no secrets file, only **`prod.tfvars`** is used (Key Vault secret resources stay off while **`manage_workbench_kv_secrets`** defaults to **`false`**).
 
 If **`terraform init`** fails with **403** on the storage account, assign **Storage Blob Data Contributor** (local user or Entra app) — [Remote state RBAC](#remote-state-rbac-storage-blob-data-roles).
 
@@ -73,7 +85,20 @@ If **`terraform init`** fails with **403** on the storage account, assign **Stor
 ./scripts/terraform-destroy.sh --target=azurerm_resource_group.workbench --plan-first
 ```
 
-Override var file: `VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh -y` (also applies to **`terraform-destroy.sh`**).
+Override var files:
+
+```bash
+VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh -y
+USE_SECRETS_TFVARS=false ./scripts/terraform-plan.sh    # skip secrets.tfvars even if present
+USE_SECRETS_TFVARS=true ./scripts/terraform-plan.sh     # require vars/secrets.tfvars
+SECRETS_VAR_FILE=vars/my-secrets.tfvars ./scripts/terraform-plan.sh
+```
+
+| Environment variable   | Default                 | Description |
+| ---------------------- | ----------------------- | ----------- |
+| `VAR_FILE`             | `vars/prod.tfvars`      | Subscription / Entra IDs |
+| `SECRETS_VAR_FILE`     | `vars/secrets.tfvars`   | `workbench_secrets`, `manage_workbench_kv_secrets` |
+| `USE_SECRETS_TFVARS`   | `auto`                  | `auto`: include secrets file when it exists; `true`: require it; `false`: never include |
 
 **`terraform-init.sh`** provisions (when missing):
 
@@ -87,9 +112,11 @@ Skip provisioning if resources already exist: `./scripts/terraform-init.sh --ski
 
 Refresh providers/modules after constraint changes: `./scripts/terraform-init.sh --upgrade` (or combine with `--skip-provision`).
 
-`VAR_FILE` also applies to **`terraform-plan.sh`**, **`terraform-apply.sh`**, and **`terraform-destroy.sh`**.
+`VAR_FILE` / `SECRETS_VAR_FILE` apply to **`terraform-plan.sh`**, **`terraform-apply.sh`**, **`terraform-destroy.sh`**, and **`pre-commit-terraform-validate.sh`** (when **`vars/prod.tfvars`** exists).
 
 ## Variables
+
+### Identity and region (`vars/prod.tfvars`)
 
 | Variable           | Required | Default           | Description                                                                                      |
 | ------------------ | -------- | ----------------- | ------------------------------------------------------------------------------------------------ |
@@ -109,7 +136,45 @@ client_id       = "<application-client-id>"
 use_oidc        = true   # false for local: az login
 ```
 
-Do not commit real IDs to a public repository. **`.gitignore`** lists `prod.tfvars` at the repo root only; if you keep secrets in **`vars/prod.tfvars`**, add that path to **`.gitignore`** or use a private var file.
+Do not commit real IDs to a public repository.
+
+### Key Vault secrets (`vars/secrets.tfvars`)
+
+Copy **`vars/secrets.tfvars.example`** → **`vars/secrets.tfvars`** (listed in **`.gitignore`**). Set **`manage_workbench_kv_secrets = true`** to create **`azurerm_key_vault_secret`** resources in **`workbench-kv`**.
+
+| Terraform variable              | Key Vault secret names (examples) |
+| ------------------------------- | --------------------------------- |
+| `workbench_secrets.postgres_*`  | `workbench-postgres-connection-string`, `workbench-postgres-user`, `workbench-postgres-password`, `workbench-postgres-database` |
+| `workbench_secrets.rabbitmq_*`  | `workbench-rabbitmq-uri`, `workbench-rabbitmq-password` |
+| `workbench_secrets.redis_*`     | `workbench-redis-connection-string`, `workbench-redis-user`, `workbench-redis-password` |
+
+Values align with Helm **`global.workbenchPostgres`**, **`global.workbenchRabbitMq`**, and **`global.workbenchRedis`** (see **`devops/clusters/local/global-values.yaml`** for local placeholders).
+
+Example **`vars/secrets.tfvars`**:
+
+```hcl
+manage_workbench_kv_secrets = true
+
+workbench_secrets = {
+  postgres_connection_string = "Host=...;Port=5432;Database=workbench;Username=workbench;Password=..."
+  postgres_user              = "workbench"
+  postgres_password          = "..."
+  postgres_database          = "workbench"
+  rabbitmq_uri               = "amqp://workbench:...@...:5672/"
+  rabbitmq_password          = "..."
+  redis_connection_string    = "...:6379,user=workbench,password=..."
+  redis_user                 = "workbench"
+  redis_password             = "..."
+}
+```
+
+Manual Terraform (same var files as the scripts):
+
+```bash
+terraform -chdir=devops/terraform plan \
+  -var-file=vars/prod.tfvars \
+  -var-file=vars/secrets.tfvars
+```
 
 ## Authentication
 
@@ -230,7 +295,7 @@ steps:
   - run: ./scripts/terraform-apply.sh --plan-first -y
 ```
 
-Ensure **`vars/prod.tfvars`** (or CI-generated tfvars) sets **`use_oidc = true`**. Federated credential **subject** must match the workflow (repo, ref, environment).
+Ensure **`vars/prod.tfvars`** (or CI-generated tfvars) sets **`use_oidc = true`**. For Key Vault secrets in CI, add a protected **`vars/secrets.tfvars`** (or inject **`TF_VAR_workbench_secrets`** / merge into a generated tfvars file). Federated credential **subject** must match the workflow (repo, ref, environment).
 
 ---
 
@@ -357,7 +422,11 @@ terraform -chdir=devops/terraform init \
 ## What this stack creates
 
 - **`azurerm_resource_group.workbench`** — `main_rg_name`, `main_rg_location`
-- **Outputs:** `resource_group_name`, `resource_group_id`
+- **`azurerm_key_vault.workbench`** — `workbench-kv` (RBAC-enabled)
+- **`azurerm_role_assignment.workbench_kv_secrets_officer`** — Terraform principal can manage secrets
+- **`azurerm_key_vault_secret.workbench`** — nine secrets when **`manage_workbench_kv_secrets = true`** in **`vars/secrets.tfvars`**
+- **`azurerm_container_registry.acr`** — `workbenchacr77`
+- **Outputs:** `resource_group_*`, `key_vault_*`, `key_vault_secret_names`, `acr_*`
 
 ## Review notes (config)
 
@@ -366,8 +435,8 @@ terraform -chdir=devops/terraform init \
 | Backend block in `main.tf` | Required for `terraform-init.sh`; script can create `workbench-tf` RG + storage |
 | `use_oidc` default `false` | Fits local `az login`; set `true` in tfvars for CI                              |
 | `client_id` in tfvars      | Required by provider block; must match Entra app used for OIDC                  |
-| `outputs.tf`               | Exposes resource group name / id                                                |
-| `vars/prod.tfvars`         | Not covered by root `.gitignore` — avoid committing real IDs                    |
+| `vars/secrets.tfvars`      | Gitignored; scripts auto-`-var-file` when the file exists                       |
+| `vars/prod.tfvars`         | Not gitignored — avoid committing real subscription / tenant IDs                |
 
 ## Related docs
 

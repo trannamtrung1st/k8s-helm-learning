@@ -1,19 +1,22 @@
 #!/bin/bash
 # Pre-commit: terraform init (no remote backend) + validate.
-# Uses vars/prod.tfvars when present; otherwise terraform.tfvars or inline placeholders.
+# Uses vars/prod.tfvars when present; auto-includes vars/secrets.tfvars when present.
 # Does not configure the Azure remote state backend (validate does not need state).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="${ROOT}/devops/terraform"
 VAR_FILE="${PRE_COMMIT_TFVARS:-vars/prod.tfvars}"
+# shellcheck source=scripts/lib/terraform-varfiles.sh
+source "${ROOT}/scripts/lib/terraform-varfiles.sh"
 
 echo "==> terraform init -backend=false (${TF_DIR})"
 terraform -chdir="${TF_DIR}" init -backend=false -input=false
 
 if [[ -f "${TF_DIR}/${VAR_FILE}" ]]; then
-  echo "==> terraform validate -var-file=${VAR_FILE}"
-  terraform -chdir="${TF_DIR}" validate -var-file="${VAR_FILE}"
+  terraform_varfiles_build "${TF_DIR}"
+  echo "==> terraform validate -var-file=$(terraform_varfiles_label "${TF_DIR}")"
+  terraform -chdir="${TF_DIR}" validate "${TERRAFORM_VARFILES[@]}"
 elif [[ -f "${TF_DIR}/terraform.tfvars" ]]; then
   echo "==> terraform validate (auto-loaded terraform.tfvars)"
   terraform -chdir="${TF_DIR}" validate

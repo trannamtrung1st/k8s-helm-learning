@@ -17,3 +17,13 @@ output "key_vault_id" {
   description = "Azure resource ID of the Workbench key vault"
   value       = azurerm_key_vault.workbench.id
 }
+
+output "acr_name" {
+  description = "Name of the Workbench ACR"
+  value       = azurerm_container_registry.acr.name
+}
+
+output "acr_id" {
+  description = "Azure resource ID of the Workbench ACR"
+  value       = azurerm_container_registry.acr.id
+}

@@ -11,11 +11,13 @@ set -euo pipefail
 #   --target <resource>    Limit destroy to resource (repeatable)
 #
 # Environment:
-#   VAR_FILE=vars/prod.tfvars   Var file under devops/terraform/ (default)
+#   VAR_FILE=vars/prod.tfvars
+#   SECRETS_VAR_FILE=vars/secrets.tfvars   (auto-included when the file exists)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="${ROOT}/devops/terraform"
-VAR_FILE="${VAR_FILE:-vars/prod.tfvars}"
+# shellcheck source=scripts/lib/terraform-varfiles.sh
+source "${ROOT}/scripts/lib/terraform-varfiles.sh"
 
 AUTO_APPROVE=false
 PLAN_FIRST=false
@@ -35,8 +37,9 @@ Options:
   -h, --help             Show this help
 
 Environment:
-  VAR_FILE               Var file path relative to devops/terraform/
-                         (default: vars/prod.tfvars)
+  VAR_FILE               Primary var file under devops/terraform/ (default: vars/prod.tfvars)
+  SECRETS_VAR_FILE       Secrets var file (default: vars/secrets.tfvars)
+  USE_SECRETS_TFVARS     auto | true | false — see scripts/lib/terraform-varfiles.sh
 
 Examples:
   ./scripts/terraform-destroy.sh --plan-first
@@ -76,8 +79,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-plan_cmd=(terraform -chdir="${TF_DIR}" plan -destroy -var-file="${VAR_FILE}")
-destroy_cmd=(terraform -chdir="${TF_DIR}" destroy -var-file="${VAR_FILE}")
+terraform_varfiles_build "${TF_DIR}"
+VARFILES_LABEL="$(terraform_varfiles_label "${TF_DIR}")"
+
+plan_cmd=(terraform -chdir="${TF_DIR}" plan -destroy "${TERRAFORM_VARFILES[@]}")
+destroy_cmd=(terraform -chdir="${TF_DIR}" destroy "${TERRAFORM_VARFILES[@]}")
 
 if ((${#TARGETS[@]})); then
   for t in "${TARGETS[@]}"; do
@@ -97,7 +103,7 @@ confirm_destroy() {
 }
 
 if [[ "${PLAN_FIRST}" == "true" ]]; then
-  echo "==> terraform plan -destroy -var-file=${VAR_FILE}"
+  echo "==> terraform plan -destroy -var-file=${VARFILES_LABEL}"
   "${plan_cmd[@]}"
   if [[ "${AUTO_APPROVE}" != "true" ]]; then
     if ! confirm_destroy; then
@@ -108,5 +114,5 @@ if [[ "${PLAN_FIRST}" == "true" ]]; then
   fi
 fi
 
-echo "==> terraform destroy -var-file=${VAR_FILE}"
+echo "==> terraform destroy -var-file=${VARFILES_LABEL}"
 exec "${destroy_cmd[@]}"

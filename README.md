@@ -39,7 +39,7 @@ Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml)
 | Hook | What it runs |
 | ---- | ------------- |
 | General | Trailing whitespace, YAML, merge conflicts, private keys |
-| Terraform | `terraform fmt` + `terraform validate` (`scripts/pre-commit-terraform-validate.sh`, uses `vars/prod.tfvars` when present, else `terraform.tfvars` / placeholders; no remote backend) |
+| Terraform | `terraform fmt` + `terraform validate` (`scripts/pre-commit-terraform-validate.sh`, uses `vars/prod.tfvars` and auto-includes `vars/secrets.tfvars` when present; no remote backend) |
 | Helm | `helm dependency update`, `helm lint --strict`, `helm template` smoke (`scripts/pre-commit-helm-lint.sh`) |
 | Scripts | ShellCheck + `bash -n` |
 | .NET | `dotnet format --verify-no-changes` (requires SDK) |

@@ -13,10 +13,12 @@ set -euo pipefail
 #
 # Environment:
 #   VAR_FILE=vars/prod.tfvars
+#   SECRETS_VAR_FILE=vars/secrets.tfvars   (auto-included when the file exists)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TF_DIR="${ROOT}/devops/terraform"
-VAR_FILE="${VAR_FILE:-vars/prod.tfvars}"
+# shellcheck source=scripts/lib/terraform-varfiles.sh
+source "${ROOT}/scripts/lib/terraform-varfiles.sh"
 
 TARGETS=()
 
@@ -32,7 +34,9 @@ Options:
   -h, --help            Show this help
 
 Environment:
-  VAR_FILE              Var file under devops/terraform/ (default: vars/prod.tfvars)
+  VAR_FILE              Primary var file under devops/terraform/ (default: vars/prod.tfvars)
+  SECRETS_VAR_FILE      Secrets var file (default: vars/secrets.tfvars)
+  USE_SECRETS_TFVARS    auto | true | false — see scripts/lib/terraform-varfiles.sh
 EOF
 }
 
@@ -59,12 +63,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-cmd=(terraform -chdir="${TF_DIR}" plan -var-file="${VAR_FILE}")
+terraform_varfiles_build "${TF_DIR}"
+
+cmd=(terraform -chdir="${TF_DIR}" plan "${TERRAFORM_VARFILES[@]}")
 if ((${#TARGETS[@]})); then
   for t in "${TARGETS[@]}"; do
     cmd+=( -target="${t}" )
   done
 fi
 
-echo "==> terraform plan -var-file=${VAR_FILE}"
+echo "==> terraform plan -var-file=$(terraform_varfiles_label "${TF_DIR}")"
 exec "${cmd[@]}"

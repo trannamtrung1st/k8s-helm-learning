@@ -455,4 +455,4 @@ depvalues/
 
 # Terraform
 .terraform/
-prod.tfvars
+devops/terraform/vars/
