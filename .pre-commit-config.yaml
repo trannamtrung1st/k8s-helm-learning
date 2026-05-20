@@ -8,6 +8,7 @@
 #   pre-commit run --all-files
 #
 # Requires on PATH: terraform, helm (for Terraform/Helm hooks), dotnet SDK (optional)
+# Terraform validate: init -backend=false; uses vars/prod.tfvars when present (PRE_COMMIT_TFVARS to override)
 # See: https://pre-commit.com/
 
 default_language_version:
