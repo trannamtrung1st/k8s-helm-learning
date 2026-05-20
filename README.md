@@ -24,6 +24,28 @@ Backend is **`src/Workbench.sln`** (.NET 10, Clean Architecture: **Workbench.Dom
 | [Project structure](docs/project-structure.md) | `src/`, `devops/`, `local/`, and Docker Compose layout |
 | [Terraform (Azure)](devops/terraform/README.md) | Remote state, Entra OIDC federation, Storage Blob Data RBAC |
 
+## Development
+
+Git hooks via [pre-commit](https://pre-commit.com/):
+
+```bash
+pip install pre-commit   # or: brew install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+Config: [`.pre-commit-config.yaml`](.pre-commit-config.yaml)
+
+| Hook | What it runs |
+| ---- | ------------- |
+| General | Trailing whitespace, YAML, merge conflicts, private keys |
+| Terraform | `terraform fmt` + `terraform validate` (`scripts/pre-commit-terraform-validate.sh`, placeholder vars, no Azure backend) |
+| Helm | `helm dependency update`, `helm lint --strict`, `helm template` smoke (`scripts/pre-commit-helm-lint.sh`) |
+| Scripts | ShellCheck + `bash -n` |
+| .NET | `dotnet format --verify-no-changes` (requires SDK) |
+
+Requires **terraform** and **helm** on `PATH` for infra hooks.
+
 ## References
 
 - [Kubernetes documentation](https://kubernetes.io/docs/home/)

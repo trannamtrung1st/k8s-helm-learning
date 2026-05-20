@@ -1,0 +1,73 @@
+# Pre-commit hooks for this repository.
+#
+# Setup (once per clone):
+#   pip install pre-commit    # or: brew install pre-commit
+#   pre-commit install
+#
+# Run on all files:
+#   pre-commit run --all-files
+#
+# Requires on PATH: terraform, helm (for Terraform/Helm hooks), dotnet SDK (optional)
+# See: https://pre-commit.com/
+
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe] # Helm templates may use {{ }}
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: check-executables-have-shebangs
+        exclude: |
+          (?x)^(
+            devops/.*/charts/.*\.tgz|
+            \.terraform/
+          )$
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.0
+    hooks:
+      - id: terraform_fmt
+        files: ^devops/terraform/
+        args:
+          - --args=-recursive
+          - --args=-write=true
+
+  - repo: local
+    hooks:
+      - id: terraform-validate
+        name: terraform validate (devops/terraform)
+        entry: ./scripts/pre-commit-terraform-validate.sh
+        language: script
+        files: ^devops/terraform/
+        pass_filenames: false
+
+      - id: helm-lint
+        name: helm lint workbench-umbrella
+        entry: ./scripts/pre-commit-helm-lint.sh
+        language: script
+        files: ^devops/
+        pass_filenames: false
+
+      - id: shell-scripts-syntax
+        name: bash -n scripts/*.sh
+        entry: bash -c 'for f in scripts/*.sh; do bash -n "$f" || exit 1; done'
+        language: system
+        files: ^scripts/.*\.sh$
+        pass_filenames: false
+
+      - id: dotnet-format
+        name: dotnet format (verify no changes)
+        entry: dotnet format src/Workbench.sln --verify-no-changes
+        language: system
+        files: \.(cs|csproj|sln)$
+        pass_filenames: false
