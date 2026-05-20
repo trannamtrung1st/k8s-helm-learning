@@ -91,20 +91,20 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 
 ## Charts
 
-| Path | Chart name | Role |
-|------|------------|------|
-| `platform/workbench-namespaces` | `workbench-namespaces` | Namespace objects |
-| `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass |
-| `platform/workbench-apps-secrets` | `workbench-apps-secrets` | Apps-namespace broker/cache Secret |
-| `platform/workbench-policies` | `workbench-policies` | LimitRange, ResourceQuota, RabbitMQ PDB |
-| `infra/workbench-postgres` | `workbench-postgres` | Postgres StatefulSet, PV, db Secret |
-| `infra/workbench-rabbitmq` | `workbench-rabbitmq` | RabbitMQ StatefulSet, definitions ConfigMap, PV |
-| `infra/workbench-redis` | `workbench-redis` | Redis StatefulSet, config Secret |
-| `apps/workbench-api` | `workbench-api` | API Deployment + Service |
-| `apps/workbench-worker` | `workbench-worker` | Worker Deployment + Service |
-| `apps/workbench-jobs` | `workbench-jobs` | Cleanup CronJob |
-| `apps/workbench-app` | `workbench-app` | Frontend Deployment + Service (nginx) |
-| `workbench-umbrella` | `workbench-umbrella` | All of the above |
+| Path                                 | Chart name                  | Role                                            |
+| ------------------------------------ | --------------------------- | ----------------------------------------------- |
+| `platform/workbench-namespaces`      | `workbench-namespaces`      | Namespace objects                               |
+| `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
+| `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |
+| `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB         |
+| `infra/workbench-postgres`           | `workbench-postgres`        | Postgres StatefulSet, PV, db Secret             |
+| `infra/workbench-rabbitmq`           | `workbench-rabbitmq`        | RabbitMQ StatefulSet, definitions ConfigMap, PV |
+| `infra/workbench-redis`              | `workbench-redis`           | Redis StatefulSet, config Secret                |
+| `apps/workbench-api`                 | `workbench-api`             | API Deployment + Service                        |
+| `apps/workbench-worker`              | `workbench-worker`          | Worker Deployment + Service                     |
+| `apps/workbench-jobs`                | `workbench-jobs`            | Cleanup CronJob                                 |
+| `apps/workbench-app`                 | `workbench-app`             | Frontend Deployment + Service (nginx)           |
+| `workbench-umbrella`                 | `workbench-umbrella`        | All of the above                                |
 
 ## Release name convention
 
