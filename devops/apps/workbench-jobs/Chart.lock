@@ -1,0 +1,6 @@
+dependencies:
+- name: workbench-common
+  repository: file://../../platform/workbench-common
+  version: 1.0.0-rc1
+digest: sha256:563f2ffdbd5e862188c4ec5e69c2311a1a4e8ca287ca1b4e63f99111b531f7c2
+generated: "2026-05-20T13:58:40.663274+07:00"

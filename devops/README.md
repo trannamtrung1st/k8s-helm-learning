@@ -12,6 +12,7 @@ devops/
   kustomization.yaml      # legacy full-stack Kustomize (deprecated)
   k8s/                    # legacy manifests (reference)
   platform/
+    workbench-common/       # library chart (shared templates)
     workbench-namespaces/
     workbench-apps-secrets/
     workbench-storage-classes/
@@ -52,6 +53,7 @@ Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`*
 ```
 
 - **`global.*`** propagates to every subchart (namespaces, secrets, infra, apps).
+- **`global.imageRegistry`** (`workbenchacr77.azurecr.io`) — app chart images render as `<registry>/<repository>:<tag>` (e.g. `workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1`).
 - Cluster overlay fills broker/cache/db connection strings and credentials (**`global.workbenchPostgres.*`**, **`global.workbenchRabbitMq.uri`**, **`global.workbenchRedis.*`**). Infra charts leave **`user` / `password` / `database`** empty in packaged **`values.yaml`**; **`clusters/<cluster>/global-values.yaml`** supplies them.
 
 ## Full stack install
@@ -75,7 +77,7 @@ Dry-run against the API:
 # or: ./scripts/helm-apply.sh --dry-run=server
 ```
 
-The script runs **`helm dependency update`** on the umbrella chart, then **`helm upgrade --install`** with **`--history-max 5`**. Release name defaults to **`workbench-umbrella-local`** in namespace **`workbench-platform`** (`HELM_RELEASE`, `HELM_NAMESPACE`, and `HELM_HISTORY_MAX` override).
+The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then umbrella), then **`helm upgrade --install`** with **`--history-max 5`**. Release name defaults to **`workbench-umbrella-local`** in namespace **`workbench-platform`** (`HELM_RELEASE`, `HELM_NAMESPACE`, and `HELM_HISTORY_MAX` override).
 
 ## Lint and template
 
@@ -91,6 +93,23 @@ helm template umbrella devops/workbench-umbrella \
 
 **`workbench-apps-secrets`**: **`values.schema.json`** requires merged **`global.*`** including non-empty broker strings — always pass **both** `-f` files for that chart or the umbrella.
 
+### Container images (ACR)
+
+Workbench app images use **`workbenchacr77.azurecr.io`** (`global.imageRegistry` in **`platform/values/global-values.yaml`**). Infra images (Postgres, RabbitMQ, Redis) stay on Docker Hub.
+
+```bash
+ACR=workbenchacr77.azurecr.io
+az acr login --name workbenchacr77
+docker build -t "${ACR}/workbench-api:1.0.0-rc1" -f src/Workbench.Api/Dockerfile src
+docker push "${ACR}/workbench-api:1.0.0-rc1"
+# repeat for workbench-worker, workbench-jobs, workbench-app, workbench-local-gateway
+az aks update -g workbench -n workbench-aks --attach-acr workbenchacr77   # pull from AKS
+```
+
+After chart edits: **`./scripts/helm-dependency-update.sh`** (or manually **`helm dependency update`** on each dependent chart, then the umbrella) before install — refreshes vendored subcharts.
+
+**Library chart:** app and infra charts depend on **`workbench-common`** for shared helpers (`workbench.lib.image`, `workbench.lib.namespace.*`, `workbench.lib.labels.*`, `workbench.lib.infraNode.affinity`). Chart-specific templates (e.g. **`workbench.app.config.js`**) stay in the owning chart.
+
 **`workbench-namespaces`**: can lint with platform values only.
 
 For an interactive menu, use **`./scripts/helm-wizard.sh`**.
@@ -99,6 +118,7 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 
 | Path                                 | Chart name                  | Role                                            |
 | ------------------------------------ | --------------------------- | ----------------------------------------------- |
+| `platform/workbench-common`          | —                           | Library chart (`workbench.lib.*` templates)     |
 | `platform/workbench-namespaces`      | `workbench-namespaces`      | Namespace objects                               |
 | `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
 | `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |

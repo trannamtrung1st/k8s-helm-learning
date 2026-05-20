@@ -167,7 +167,7 @@ if [[ "${SKIP_LOAD}" != "true" ]]; then
   while IFS= read -r image; do
     [[ -z "${image}" ]] && continue
     case "${image}" in
-      workbench/*) IMAGES+=("${image}") ;;
+      workbenchacr77.azurecr.io/*) IMAGES+=("${image}") ;;
     esac
   done < <(docker compose -f "${COMPOSE_FILE}" config --images)
   if [[ ${#IMAGES[@]} -eq 0 ]]; then

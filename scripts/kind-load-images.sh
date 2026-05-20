@@ -6,11 +6,11 @@ set -euo pipefail
 #   ./scripts/kind-load-images.sh --cluster kind-workbench-0
 #   ./scripts/kind-load-images.sh --cluster kind-workbench-0 image1:tag image2:tag
 #   ./scripts/kind-load-images.sh --all-local
-#   ./scripts/kind-load-images.sh --all-local --prefix workbench/
+#   ./scripts/kind-load-images.sh --all-local --prefix workbenchacr77.azurecr.io/
 
 CLUSTER_NAME="workbench-0"
 ALL_LOCAL="true"
-PREFIX="workbench/"
+PREFIX="workbenchacr77.azurecr.io/"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -66,9 +66,9 @@ if [[ "${ALL_LOCAL}" == "true" ]]; then
 elif [[ $# -eq 0 ]]; then
   # Default app images used in this repo.
   IMAGES=(
-    "workbench/workbench-api:1.0.0-rc1"
-    "workbench/workbench-worker:1.0.0-rc1"
-    "workbench/workbench-app:1.0.0-rc1"
+    "workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1"
+    "workbenchacr77.azurecr.io/workbench-worker:1.0.0-rc1"
+    "workbenchacr77.azurecr.io/workbench-app:1.0.0-rc1"
   )
 else
   IMAGES=("$@")

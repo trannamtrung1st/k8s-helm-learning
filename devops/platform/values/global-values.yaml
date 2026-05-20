@@ -4,6 +4,7 @@
 #
 # All keys live under `global` so Helm propagates them to every subchart’s `.Values.global`.
 global:
+  imageRegistry: workbenchacr77.azurecr.io
   workbenchPartOf: workbench
   workbenchNamespaces:
     platform:

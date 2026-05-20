@@ -2,21 +2,21 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ include "workbench.postgres.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.db" . }}
   labels:
-    {{- include "workbench.postgres.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 4 }}
 spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
-      {{- include "workbench.postgres.labels.selector" . | nindent 6 }}
+      {{- include "workbench.lib.labels.selector.nameOnly" . | nindent 6 }}
   serviceName: {{ .Values.name | quote }}
   replicas: {{ .Values.replicas }}
   minReadySeconds: {{ .Values.minReadySeconds }}
   template:
     metadata:
       labels:
-        {{- include "workbench.postgres.labels.standard" . | nindent 8 }}
+        {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:

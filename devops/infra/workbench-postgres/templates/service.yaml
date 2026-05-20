@@ -2,12 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ include "workbench.postgres.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.db" . }}
   labels:
-    {{- include "workbench.postgres.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 4 }}
 spec:
   selector:
-    {{- include "workbench.postgres.labels.selector" . | nindent 4 }}
+    {{- include "workbench.lib.labels.selector.nameOnly" . | nindent 4 }}
   ports:
     - name: db-port
       protocol: TCP

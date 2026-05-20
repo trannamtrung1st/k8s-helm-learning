@@ -2,13 +2,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ include "workbench.worker.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.apps" . }}
   labels:
-    {{- include "workbench.worker.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.apps" . | nindent 4 }}
 spec:
   type: ClusterIP
   selector:
-    {{- include "workbench.worker.labels.selector" . | nindent 4 }}
+    {{- include "workbench.lib.labels.selector" . | nindent 4 }}
   ports:
     - name: http
       protocol: TCP

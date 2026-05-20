@@ -8,7 +8,7 @@ ttlSecondsAfterFinished: 3600
 backoffLimit: 3
 activeDeadlineSeconds: 60
 image:
-  repository: workbench/workbench-jobs
+  repository: workbench-jobs
   tag: 1.0.0-rc1
   pullPolicy: IfNotPresent
 cleanup:

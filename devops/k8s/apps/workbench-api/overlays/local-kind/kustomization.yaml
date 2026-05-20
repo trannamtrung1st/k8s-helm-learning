@@ -1,6 +1,6 @@
 # Local kind cluster: lean replicas, env labels. Load image first:
-#   docker build -t workbench/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
-#   kind load docker-image workbench/workbench-api:1.0.0-rc1 --name workbench-0
+#   docker build -t workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
+#   kind load docker-image workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1 --name workbench-0
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: workbench-apps

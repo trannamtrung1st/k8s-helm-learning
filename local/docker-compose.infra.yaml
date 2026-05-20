@@ -59,7 +59,7 @@ services:
       - workbench
 
   workbench-local-gateway:
-    image: workbench/workbench-local-gateway:1.0.0-rc1
+    image: workbenchacr77.azurecr.io/workbench-local-gateway:1.0.0-rc1
     build:
       context: ../src
       dockerfile: Workbench.LocalGateway/Dockerfile

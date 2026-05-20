@@ -3,7 +3,7 @@ kind: PersistentVolume
 metadata:
   name: {{ .Values.pv.name }}
   labels:
-    {{- include "workbench.postgres.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 4 }}
 spec:
   capacity:
     storage: {{ .Values.pv.capacity }}
@@ -13,4 +13,4 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   local:
     path: {{ .Values.pv.path }}
-  {{- include "workbench.infraNode.affinity" . | nindent 2 }}
+  {{- include "workbench.lib.infraNode.affinity" . | nindent 2 }}

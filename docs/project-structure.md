@@ -72,6 +72,8 @@ docker compose -f local/docker-compose.yaml up --build
 
 Use the first when you only need Postgres, RabbitMQ, and Redis; use the second for infra plus all app images. Add `-d` for detached mode if you prefer.
 
+**Compose wizard:** **`./scripts/compose-wizard.sh`** — interactive menu or **`./scripts/compose-wizard.sh all`** for build → push (ACR) → **`up -d`** (`INCLUDE_JOBS=1` includes the jobs profile for build/push).
+
 ## Relation to the workbench demo
 
 The application built under `src/` is intended to align with [Workbench demo spec](workbench-demo-spec.md) so platform experiments (Gateway API, observability, secrets, policies) stay on one coherent system instead of one-off demos.

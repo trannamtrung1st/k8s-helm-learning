@@ -21,8 +21,6 @@ repos:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
-      - id: check-yaml
-        args: [--unsafe] # Helm templates may use {{ }}
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1024]

@@ -20,7 +20,7 @@ spec:
         spec:
           containers:
             - name: cleanup-jobs
-              image: workbench/workbench-jobs:1.0.0-rc1
+              image: workbenchacr77.azurecr.io/workbench-jobs:1.0.0-rc1
               imagePullPolicy: IfNotPresent
               args:
                 - cleanup-old-jobs

@@ -19,8 +19,7 @@ for f in "${VALUES_PLATFORM}" "${VALUES_CLUSTER}"; do
   fi
 done
 
-echo "==> helm dependency update ${CHART}"
-helm dependency update "${CHART}"
+"${ROOT}/scripts/helm-dependency-update.sh"
 
 LINT_ARGS=(
   helm lint "${CHART}"

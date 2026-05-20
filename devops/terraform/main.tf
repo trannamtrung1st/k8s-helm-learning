@@ -75,7 +75,7 @@ resource "azurerm_key_vault_secret" "workbench" {
   depends_on = [azurerm_role_assignment.workbench_kv_secrets_officer]
 }
 
-resource "azurerm_container_registry" "acr" {
+resource "azurerm_container_registry" "workbench" {
   name                = "workbenchacr77"
   resource_group_name = azurerm_resource_group.workbench.name
   location            = azurerm_resource_group.workbench.location
@@ -99,7 +99,7 @@ resource "azurerm_kubernetes_cluster" "workbench" {
 
   default_node_pool {
     name                         = "system"
-    vm_size                      = "Standard_B2s"
+    vm_size                      = "Standard_D2s_v3"
     node_count                   = 1
     only_critical_addons_enabled = true
     temporary_name_for_rotation  = "tempsys"
@@ -117,10 +117,17 @@ resource "azurerm_kubernetes_cluster" "workbench" {
 resource "azurerm_kubernetes_cluster_node_pool" "workbench_workers" {
   name                        = "workers"
   kubernetes_cluster_id       = azurerm_kubernetes_cluster.workbench.id
-  vm_size                     = "Standard_B2s"
+  vm_size                     = "Standard_D2s_v3"
   auto_scaling_enabled        = true
   min_count                   = 1
   max_count                   = 3
   mode                        = "User"
   temporary_name_for_rotation = "tempusr"
+}
+
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  principal_id                     = azurerm_kubernetes_cluster.workbench.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.workbench.id
+  skip_service_principal_aad_check = true
 }

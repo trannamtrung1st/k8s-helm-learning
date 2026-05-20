@@ -23,7 +23,7 @@ replicas:
     count: 1
 
 images:
-  - name: workbench/workbench-api
+  - name: workbenchacr77.azurecr.io/workbench-api
     newTag: 1.0.0-rc1
 
 resources:

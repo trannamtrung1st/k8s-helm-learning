@@ -20,12 +20,17 @@ output "key_vault_id" {
 
 output "acr_name" {
   description = "Name of the Workbench ACR"
-  value       = azurerm_container_registry.acr.name
+  value       = azurerm_container_registry.workbench.name
 }
 
 output "acr_id" {
   description = "Azure resource ID of the Workbench ACR"
-  value       = azurerm_container_registry.acr.id
+  value       = azurerm_container_registry.workbench.id
+}
+
+output "acr_login_server" {
+  description = "ACR login server (image registry host)"
+  value       = azurerm_container_registry.workbench.login_server
 }
 
 output "aks_get_credentials_command" {

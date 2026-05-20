@@ -425,7 +425,7 @@ terraform -chdir=devops/terraform init \
 - **`azurerm_key_vault.workbench`** — `workbench-kv` (RBAC-enabled)
 - **`azurerm_role_assignment.workbench_kv_secrets_officer`** — Terraform principal can manage secrets
 - **`azurerm_key_vault_secret.workbench`** — nine secrets when **`manage_workbench_kv_secrets = true`** in **`vars/secrets.tfvars`**
-- **`azurerm_container_registry.acr`** — `workbenchacr77`
+- **`azurerm_container_registry.acr`** — `workbenchacr77` (`acr_login_server`: `workbenchacr77.azurecr.io`)
 - **Outputs:** `resource_group_*`, `key_vault_*`, `key_vault_secret_names`, `acr_*`
 
 ## Review notes (config)

@@ -22,7 +22,7 @@ spec:
               app.kubernetes.io/name: workbench-api
       containers:
         - name: workbench-api
-          image: workbench/workbench-api
+          image: workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1
           ports:
             - name: http
               protocol: TCP

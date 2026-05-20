@@ -2,9 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.configMap.name }}
-  namespace: {{ include "workbench.rabbitmq.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
   labels:
-    {{- include "workbench.rabbitmq.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "broker") | nindent 4 }}
 data:
   definitions.json: |
 {{ .Files.Get "files/definitions.json" | indent 4 }}

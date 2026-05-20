@@ -2,9 +2,9 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ include "workbench.jobs.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.apps" . }}
   labels:
-    {{- include "workbench.jobs.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.cronjob" . | nindent 4 }}
 spec:
   schedule: {{ .Values.schedule | quote }}
   successfulJobsHistoryLimit: {{ .Values.successfulJobsHistoryLimit }}
@@ -20,13 +20,13 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "workbench.jobs.labels.standard" . | nindent 12 }}
+            {{- include "workbench.lib.labels.standard.cronjob" . | nindent 12 }}
           annotations:
             checksum/secrets: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
         spec:
           containers:
             - name: cleanup-jobs
-              image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+              image: {{ include "workbench.lib.image" . }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               args:
                 - cleanup-old-jobs

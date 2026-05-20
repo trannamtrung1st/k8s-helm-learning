@@ -44,7 +44,7 @@ if [[ ! -f "${VALUES_CLUSTER}" ]]; then
   exit 1
 fi
 
-helm dependency update "${CHART}"
+"${ROOT}/scripts/helm-dependency-update.sh"
 
 cmd=(
   helm upgrade "${RELEASE}" "${CHART}"

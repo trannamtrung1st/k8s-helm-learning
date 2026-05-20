@@ -1,0 +1,5 @@
+apiVersion: v2
+name: workbench-common
+description: Shared Helm library templates for Workbench charts
+type: library
+version: 1.0.0-rc1

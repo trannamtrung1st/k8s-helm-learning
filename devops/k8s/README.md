@@ -59,8 +59,8 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
 4. **Build and load workload images into kind** — build locally, then load (cluster name must match kind, default `workbench-0`):
 
    ```bash
-   docker build -t workbench/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
-   docker build -t workbench/workbench-worker:1.0.0-rc1 -f src/Workbench.Worker/Dockerfile src
+   docker build -t workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
+   docker build -t workbenchacr77.azurecr.io/workbench-worker:1.0.0-rc1 -f src/Workbench.Worker/Dockerfile src
 
    ./scripts/kind-load-images.sh --cluster workbench-0
    ```

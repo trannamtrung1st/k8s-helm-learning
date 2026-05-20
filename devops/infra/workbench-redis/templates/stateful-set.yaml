@@ -5,21 +5,21 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ include "workbench.redis.namespace" . }}
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
   labels:
-    {{- include "workbench.redis.labels.standard" . | nindent 4 }}
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 4 }}
 spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
-      {{- include "workbench.redis.labels.selector" . | nindent 6 }}
+      {{- include "workbench.lib.labels.selector.nameOnly" . | nindent 6 }}
   serviceName: {{ .Values.name | quote }}
   replicas: {{ .Values.replicas }}
   minReadySeconds: {{ .Values.minReadySeconds }}
   template:
     metadata:
       labels:
-        {{- include "workbench.redis.labels.standard" . | nindent 8 }}
+        {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
