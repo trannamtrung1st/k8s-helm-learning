@@ -56,7 +56,7 @@ repos:
         name: helm lint workbench-umbrella
         entry: ./scripts/pre-commit-helm-lint.sh
         language: script
-        files: ^devops/
+        files: ^(devops/apps/|devops/clusters/|devops/infra/|devops/platform/|devops/workbench-umbrella/)$
         pass_filenames: false
 
       - id: shell-scripts-syntax
