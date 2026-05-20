@@ -125,7 +125,7 @@ fi
 if [[ "${HELM_CLUSTER}" == "aks" && "${HELM_SKIP_KV_SECRETS}" != "1" ]]; then
   # shellcheck source=scripts/lib/helm-kv-values.sh
   source "${ROOT}/scripts/lib/helm-kv-values.sh"
-  KV_VALUES_FILE="$(mktemp "${TMPDIR:-/tmp}/workbench-kv-values.XXXXXX.json")"
+  KV_VALUES_FILE="$(mktemp "${TMPDIR:-/tmp}/workbench-kv-values.XXXXXX")"
   helm_kv_values_write "${KV_VALUES_FILE}"
 fi
 
