@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "=4.73.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 
   backend "azurerm" {}
@@ -33,7 +37,7 @@ resource "azurerm_resource_group" "workbench" {
 }
 
 resource "azurerm_key_vault" "workbench" {
-  name                        = "workbench-kv"
+  name                        = local.key_vault_name
   location                    = azurerm_resource_group.workbench.location
   resource_group_name         = azurerm_resource_group.workbench.name
   enabled_for_disk_encryption = true

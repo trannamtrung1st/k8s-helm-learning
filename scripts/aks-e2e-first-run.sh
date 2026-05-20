@@ -7,7 +7,7 @@ set -euo pipefail
 # Prerequisites:
 #   - az login
 #   - devops/terraform/vars/prod.tfvars (and vars/secrets.tfvars for Key Vault secrets)
-#   - Key Vault Secrets User on workbench-kv for helm apply (after Terraform)
+#   - Key Vault Secrets User on the Workbench Key Vault for helm apply (after Terraform)
 #
 # Flow:
 #   1) terraform init (remote backend + providers)

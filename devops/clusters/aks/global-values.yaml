@@ -9,7 +9,7 @@
 #
 # global.workbenchPostgres / workbenchRabbitMq / workbenchRedis below use CHANGEME
 # placeholders for lint/template. helm-apply.sh merges real values from Key Vault
-# (workbench-kv) as the final -f overlay unless --skip-kv-secrets is set.
+# (terraform output key_vault_name) as the final -f overlay unless --skip-kv-secrets is set.
 
 global:
   workbenchStorageClasses:

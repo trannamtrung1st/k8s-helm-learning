@@ -5,9 +5,16 @@
 # Sourced by helm-apply.sh when --cluster aks (unless --skip-kv-secrets).
 #
 # Environment:
-#   KEY_VAULT_NAME  Vault name (default: workbench-kv)
+#   KEY_VAULT_NAME  Vault name (from terraform output key_vault_name)
 
-KEY_VAULT_NAME="${KEY_VAULT_NAME:-workbench-kv}"
+helm_kv_resolve_vault_name() {
+  if [[ -z "${KEY_VAULT_NAME:-}" ]]; then
+    # shellcheck source=scripts/lib/terraform-outputs.sh
+    source "${ROOT}/scripts/lib/terraform-outputs.sh"
+    terraform_outputs_apply_env
+  fi
+  : "${KEY_VAULT_NAME:?KEY_VAULT_NAME not set. Run terraform apply or export KEY_VAULT_NAME.}"
+}
 
 helm_kv_require_tools() {
   local cmd
@@ -40,6 +47,7 @@ helm_kv_fetch_secret() {
 # Usage: helm_kv_values_write <output.json>
 helm_kv_values_write() {
   local out_file="$1"
+  helm_kv_resolve_vault_name
   helm_kv_require_tools
 
   echo "==> Reading Helm secrets from Key Vault: ${KEY_VAULT_NAME}" >&2

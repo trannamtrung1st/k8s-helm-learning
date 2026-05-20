@@ -10,7 +10,7 @@ set -euo pipefail
 #   ./scripts/helm-apply.sh --dry-run=server
 #
 # AKS: credentials in devops/clusters/aks/global-values.yaml are placeholders (CHANGEME).
-# helm-apply reads matching secrets from Azure Key Vault (default: workbench-kv) and merges
+# helm-apply reads matching secrets from Azure Key Vault (terraform output key_vault_name) and merges
 # them as a final -f overlay. Requires az + jq and Key Vault Secrets User (or Officer).
 #   KEY_VAULT_NAME=my-kv ./scripts/helm-apply.sh --cluster aks
 #   ./scripts/helm-apply.sh --cluster aks --skip-kv-secrets   # file values only (lint/dev)
@@ -60,7 +60,7 @@ usage() {
   echo "  -h, --help            Show this help"
   echo ""
   echo "AKS Key Vault (when --cluster aks and not --skip-kv-secrets):"
-  echo "  KEY_VAULT_NAME        Vault name (default: workbench-kv)"
+  echo "  KEY_VAULT_NAME        Vault name (from terraform output key_vault_name)"
   echo ""
   echo "Context (see devops/clusters/<cluster>/cluster.conf):"
   echo "  KUBECTL_CONTEXT       Explicit kubectl context"
@@ -122,6 +122,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# shellcheck source=scripts/lib/terraform-outputs.sh
+source "${ROOT}/scripts/lib/terraform-outputs.sh"
+terraform_outputs_apply_env
 
 VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
