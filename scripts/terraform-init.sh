@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 # Provision Azure remote-state resources (if missing), then terraform init.
 # Run from repository root:

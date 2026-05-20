@@ -5,31 +5,102 @@ set -euo pipefail
 # Run from repository root. Requires helm and kubectl context.
 #
 #   ./scripts/helm-apply.sh
-#   ./scripts/helm-apply.sh --dry-run
+#   ./scripts/helm-apply.sh --cluster local
+#   ./scripts/helm-apply.sh --cluster aks --dry-run
 #   ./scripts/helm-apply.sh --dry-run=server
 #
-# Override release, namespace, cluster overlay, or history limit:
-#   HELM_CLUSTER=aks HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-apply.sh
-#   HELM_RELEASE=my-release HELM_NAMESPACE=my-ns ./scripts/helm-apply.sh
+# AKS: credentials in devops/clusters/aks/global-values.yaml are placeholders (CHANGEME).
+# helm-apply reads matching secrets from Azure Key Vault (default: workbench-kv) and merges
+# them as a final -f overlay. Requires az + jq and Key Vault Secrets User (or Officer).
+#   KEY_VAULT_NAME=my-kv ./scripts/helm-apply.sh --cluster aks
+#   ./scripts/helm-apply.sh --cluster aks --skip-kv-secrets   # file values only (lint/dev)
+#
+# Switches kubectl context from devops/clusters/<cluster>/cluster.conf before apply.
+#   ./scripts/helm-apply.sh --cluster local    # kind-workbench-0 (default)
+#   ./scripts/helm-apply.sh --cluster aks      # workbench-aks (fetches creds if missing)
+#   ./scripts/helm-apply.sh --context my-ctx --cluster aks
+#   ./scripts/helm-apply.sh --skip-context-switch
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHART="${ROOT}/devops/workbench-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
-VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
-VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
-RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
-NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
+HELM_RELEASE="${HELM_RELEASE:-}"
+HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HISTORY_MAX="${HELM_HISTORY_MAX:-5}"
+HELM_SKIP_KV_SECRETS="${HELM_SKIP_KV_SECRETS:-0}"
+HELM_SKIP_CONTEXT_SWITCH="${HELM_SKIP_CONTEXT_SWITCH:-0}"
+KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
+KV_VALUES_FILE=""
+
+cleanup() {
+  if [[ -n "${KV_VALUES_FILE}" && -f "${KV_VALUES_FILE}" ]]; then
+    rm -f "${KV_VALUES_FILE}"
+  fi
+}
+trap cleanup EXIT
+
+list_helm_clusters() {
+  find "${ROOT}/devops/clusters" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
+}
+
+usage() {
+  sed -n '4,15p' "$0" | sed 's/^# \{0,1\}//'
+  echo ""
+  echo "Options:"
+  echo "  --cluster <name>      Values overlay under devops/clusters/<name>/ (default: local)"
+  echo "  --context <name>      kubectl context (overrides cluster.conf; default from cluster)"
+  echo "  --skip-context-switch Do not change kubectl context before apply"
+  echo "  --skip-kv-secrets     Skip Azure Key Vault overlay (AKS only; uses file values as-is)"
+  echo "  --dry-run             Server-side dry-run (same as --dry-run=server)"
+  echo "  -h, --help            Show this help"
+  echo ""
+  echo "AKS Key Vault (when --cluster aks and not --skip-kv-secrets):"
+  echo "  KEY_VAULT_NAME        Vault name (default: workbench-kv)"
+  echo ""
+  echo "Context (see devops/clusters/<cluster>/cluster.conf):"
+  echo "  KUBECTL_CONTEXT       Explicit kubectl context"
+  echo "  KIND_CLUSTER_NAME     kind cluster for --cluster local (default: workbench-0)"
+  echo "  AKS_RESOURCE_GROUP    AKS RG for --cluster aks (default: workbench)"
+  echo "  AKS_CLUSTER_NAME      AKS name for --cluster aks (default: workbench-aks)"
+  echo "  HELM_FETCH_AKS_CREDENTIALS  auto|false — run az aks get-credentials if context missing"
+  echo ""
+  echo "Available clusters:"
+  list_helm_clusters | sed 's/^/  /'
+}
 
 extra_args=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --cluster)
+      if [[ $# -lt 2 || -z "${2:-}" ]]; then
+        echo "Missing value for --cluster" >&2
+        exit 1
+      fi
+      HELM_CLUSTER="$2"
+      shift 2
+      ;;
+    --skip-kv-secrets)
+      HELM_SKIP_KV_SECRETS=1
+      shift
+      ;;
+    --context)
+      if [[ $# -lt 2 || -z "${2:-}" ]]; then
+        echo "Missing value for --context" >&2
+        exit 1
+      fi
+      KUBECTL_CONTEXT="$2"
+      shift 2
+      ;;
+    --skip-context-switch)
+      HELM_SKIP_CONTEXT_SWITCH=1
+      shift
+      ;;
     --dry-run)
       extra_args+=(--dry-run=server)
       shift
       ;;
     -h|--help)
-      sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+      usage
       exit 0
       ;;
     *)
@@ -39,12 +110,32 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
+VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
+RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
+NAMESPACE="${HELM_NAMESPACE}"
+
 if [[ ! -f "${VALUES_CLUSTER}" ]]; then
-  echo "Missing cluster values: ${VALUES_CLUSTER} (set HELM_CLUSTER or create the file)" >&2
+  echo "Missing cluster values: ${VALUES_CLUSTER}" >&2
+  echo "Set --cluster or HELM_CLUSTER. Available:" >&2
+  list_helm_clusters | sed 's/^/  /' >&2
   exit 1
 fi
 
+if [[ "${HELM_CLUSTER}" == "aks" && "${HELM_SKIP_KV_SECRETS}" != "1" ]]; then
+  # shellcheck source=scripts/lib/helm-kv-values.sh
+  source "${ROOT}/scripts/lib/helm-kv-values.sh"
+  KV_VALUES_FILE="$(mktemp "${TMPDIR:-/tmp}/workbench-kv-values.XXXXXX.json")"
+  helm_kv_values_write "${KV_VALUES_FILE}"
+fi
+
 "${ROOT}/scripts/helm-dependency-update.sh"
+
+if [[ "${HELM_SKIP_CONTEXT_SWITCH}" != "1" ]]; then
+  # shellcheck source=scripts/lib/helm-kubectl-context.sh
+  source "${ROOT}/scripts/lib/helm-kubectl-context.sh"
+  helm_kubectl_use_context "${HELM_CLUSTER}"
+fi
 
 cmd=(
   helm upgrade "${RELEASE}" "${CHART}"
@@ -54,8 +145,11 @@ cmd=(
   --create-namespace
   -f "${VALUES_PLATFORM}"
   -f "${VALUES_CLUSTER}"
-  --history-max "${HISTORY_MAX}"
 )
+if [[ -n "${KV_VALUES_FILE}" ]]; then
+  cmd+=(-f "${KV_VALUES_FILE}")
+fi
+cmd+=(--history-max "${HISTORY_MAX}")
 if ((${#extra_args[@]} > 0)); then
   cmd+=("${extra_args[@]}")
 fi
