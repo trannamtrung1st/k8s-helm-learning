@@ -5,10 +5,10 @@ metadata:
   namespace: workbench-apps
 spec:
   limits:
-    - default: # this section defines default limits
-        cpu: "2"
-      defaultRequest: # this section defines default requests
-        cpu: "100m"
+    - default:
+        cpu: "500m"
+      defaultRequest:
+        cpu: "50m"
       max:
-        cpu: "4"
+        cpu: "1"
       type: Container

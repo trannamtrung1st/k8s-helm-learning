@@ -8,14 +8,16 @@ set -euo pipefail
 #   ./scripts/helm-apply.sh --dry-run
 #   ./scripts/helm-apply.sh --dry-run=server
 #
-# Override release, namespace, or history limit:
+# Override release, namespace, cluster overlay, or history limit:
+#   HELM_CLUSTER=aks HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-apply.sh
 #   HELM_RELEASE=my-release HELM_NAMESPACE=my-ns ./scripts/helm-apply.sh
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHART="${ROOT}/devops/workbench-umbrella"
+HELM_CLUSTER="${HELM_CLUSTER:-local}"
 VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
-VALUES_CLUSTER="${ROOT}/devops/clusters/local/global-values.yaml"
-RELEASE="${HELM_RELEASE:-workbench-umbrella-local}"
+VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
+RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
 NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HISTORY_MAX="${HELM_HISTORY_MAX:-5}"
 
@@ -27,7 +29,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -h|--help)
-      sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -36,6 +38,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ ! -f "${VALUES_CLUSTER}" ]]; then
+  echo "Missing cluster values: ${VALUES_CLUSTER} (set HELM_CLUSTER or create the file)" >&2
+  exit 1
+fi
 
 helm dependency update "${CHART}"
 

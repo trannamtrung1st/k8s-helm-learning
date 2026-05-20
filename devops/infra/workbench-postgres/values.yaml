@@ -8,13 +8,14 @@ minReadySeconds: 10
 terminationGracePeriodSeconds: 10
 service:
   port: 5432
+# Burstable QoS — sized for small nodes (e.g. AKS Standard_B2s).
 resources:
   limits:
     cpu: 500m
     memory: 512Mi
   requests:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 200m
+    memory: 384Mi
 pvc:
   storageClassName: standard
   size: 1Gi

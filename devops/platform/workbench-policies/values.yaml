@@ -1,16 +1,17 @@
 workbenchLimitRange:
   name: workbench-limit-range
-  defaultCpuLimit: 2
-  defaultCpuRequest: 100m
-  maxCpuLimit: 4
+  defaultCpuLimit: 500m
+  defaultCpuRequest: 50m
+  maxCpuLimit: 1
 
 workbenchRabbitMqPdb:
   name: workbench-rabbitmq-pdb
   maxUnavailable: 1
 
+# Apps namespace only — sized for ~3x Standard_B2s AKS (override in clusters/aks/).
 workbenchResourceQuota:
   name: workbench-resource-quota
-  requestsCpu: 7
-  requestsMemory: "10Gi"
-  limitsCpu: 7
-  limitsMemory: "10Gi"
+  requestsCpu: 2
+  requestsMemory: 3Gi
+  limitsCpu: 3
+  limitsMemory: 4Gi

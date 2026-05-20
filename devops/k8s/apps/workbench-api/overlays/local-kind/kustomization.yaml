@@ -8,7 +8,7 @@ resources:
   - ../../base
 replicas:
   - name: workbench-api
-    count: 5
+    count: 2
 labels:
   - includeSelectors: false
     includeTemplates: true

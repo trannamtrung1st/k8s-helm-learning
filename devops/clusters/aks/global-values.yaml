@@ -1,0 +1,50 @@
+# Cluster overlay for AKS — 3x Standard_B2s (2 vCPU, 4 GiB per node).
+# Merged after devops/platform/values/global-values.yaml.
+#
+# Budget (~schedulable after AKS system pods): ~3.5 CPU / ~9 GiB cluster-wide.
+# This overlay keeps total requests near ~1.2 CPU / ~1.8 GiB so pods can spread.
+#
+# Install:
+#   HELM_CLUSTER=aks HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-apply.sh
+
+global:
+  workbenchPostgres:
+    connectionString: Host=workbench-postgres-db.workbench-db.svc.cluster.local;Port=5432;Database=workbench;Username=workbench;Password=CHANGEME
+    user: workbench
+    password: CHANGEME
+    database: workbench
+  workbenchRabbitMq:
+    uri: amqp://workbench:CHANGEME@workbench-rabbitmq.workbench-infra.svc.cluster.local:5672/
+  workbenchRedis:
+    connectionString: workbench-redis.workbench-infra.svc.cluster.local:6379,user=workbench,password=CHANGEME
+    user: workbench
+    password: CHANGEME
+
+workbench-api:
+  replicaCount: 2
+  environment: aks
+  topologySpread:
+    enabled: true
+    maxSkew: 1
+    minDomains: 2
+
+workbench-worker:
+  replicaCount: 1
+  environment: aks
+
+workbench-app:
+  replicaCount: 1
+  environment: aks
+  config:
+    apiBaseUrl: /api
+
+workbench-policies:
+  workbenchLimitRange:
+    defaultCpuLimit: 500m
+    defaultCpuRequest: 50m
+    maxCpuLimit: 1
+  workbenchResourceQuota:
+    requestsCpu: 2
+    requestsMemory: 3Gi
+    limitsCpu: 3
+    limitsMemory: 4Gi

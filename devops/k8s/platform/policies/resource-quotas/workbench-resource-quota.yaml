@@ -5,7 +5,7 @@ metadata:
   namespace: workbench-apps
 spec:
   hard:
-    requests.cpu: "7"
-    requests.memory: "10Gi"
-    limits.cpu: "7"
-    limits.memory: "10Gi"
+    requests.cpu: "2"
+    requests.memory: "3Gi"
+    limits.cpu: "3"
+    limits.memory: "4Gi"

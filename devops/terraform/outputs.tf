@@ -27,3 +27,8 @@ output "acr_id" {
   description = "Azure resource ID of the Workbench ACR"
   value       = azurerm_container_registry.acr.id
 }
+
+output "aks_get_credentials_command" {
+  description = "Azure CLI command to merge AKS credentials into your local kubeconfig"
+  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.workbench.name} --name ${azurerm_kubernetes_cluster.workbench.name}"
+}

@@ -82,3 +82,45 @@ resource "azurerm_container_registry" "acr" {
   sku                 = "Basic"
   admin_enabled       = false
 }
+
+resource "azurerm_kubernetes_cluster" "workbench" {
+  name                              = "workbench-aks"
+  location                          = azurerm_resource_group.workbench.location
+  resource_group_name               = azurerm_resource_group.workbench.name
+  dns_prefix                        = "workbench-aks"
+  role_based_access_control_enabled = true
+  oidc_issuer_enabled               = true
+  workload_identity_enabled         = true
+  kubernetes_version                = "1.35.4"
+
+  api_server_access_profile {
+    authorized_ip_ranges = var.authorized_ip_ranges
+  }
+
+  default_node_pool {
+    name                         = "system"
+    vm_size                      = "Standard_B2s"
+    node_count                   = 1
+    only_critical_addons_enabled = true
+    temporary_name_for_rotation  = "tempsys"
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = {
+    Environment = "Production"
+  }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "workbench_workers" {
+  name                        = "workers"
+  kubernetes_cluster_id       = azurerm_kubernetes_cluster.workbench.id
+  vm_size                     = "Standard_B2s"
+  auto_scaling_enabled        = true
+  min_count                   = 1
+  max_count                   = 3
+  mode                        = "User"
+  temporary_name_for_rotation = "tempusr"
+}

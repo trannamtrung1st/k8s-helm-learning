@@ -72,3 +72,9 @@ variable "workbench_secrets" {
     redis_password             = ""
   }
 }
+
+variable "authorized_ip_ranges" {
+  type        = list(string)
+  description = "The IP ranges authorized to access the AKS API server"
+  default     = ["0.0.0.0/0"]
+}

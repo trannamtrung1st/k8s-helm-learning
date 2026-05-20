@@ -18,15 +18,17 @@ global:
     user: workbench
     password: workbench
 
-# local-kind overlay equivalents (formerly k8s/apps/*/overlays/local-kind)
+# local-kind overlay — lean replicas (fits small clusters; was 5 API / 2 worker)
 workbench-api:
-  replicaCount: 5
+  replicaCount: 2
   environment: local-kind
   topologySpread:
     enabled: true
+    maxSkew: 1
+    minDomains: 2
 
 workbench-worker:
-  replicaCount: 2
+  replicaCount: 1
   environment: local-kind
 
 workbench-app:

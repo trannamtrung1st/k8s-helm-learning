@@ -29,7 +29,9 @@ devops/
     workbench-app/          # React SPA (nginx)
   clusters/
     local/
-      global-values.yaml    # connection strings + local-kind replica overlays
+      global-values.yaml    # kind / dev — connection strings + lean replicas
+    aks/
+      global-values.yaml    # AKS 3x Standard_B2s — same sizing targets
   workbench-umbrella/       # all charts above
     Chart.yaml
     Chart.lock
@@ -58,7 +60,11 @@ From the repository root (after kind cluster, infra node label, volumes, and ima
 
 ```bash
 ./scripts/helm-apply.sh
+# AKS (3x Standard_B2s):
+HELM_CLUSTER=aks ./scripts/helm-apply.sh
 ```
+
+**Resource sizing:** chart defaults use **Burstable** QoS and low **requests** so the full stack schedules on small nodes (~**1.2 CPU** / **~1.8 GiB** requests cluster-wide with API×2). See **`clusters/aks/global-values.yaml`** for replica and quota overrides.
 
 **First-time kind setup (all steps):** **`./scripts/kind-e2e-first-run.sh`** — Helm apply by default; pass **`--k8s`** for legacy Kustomize.
 

@@ -37,13 +37,13 @@ spec:
               mountPath: /etc/rabbitmq/definitions
               readOnly: true
           imagePullPolicy: IfNotPresent
-          resources: # QoS: Guaranteed
+          resources: # QoS: Burstable
             limits:
               cpu: 500m
               memory: 512Mi
             requests:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 200m
+              memory: 384Mi
           startupProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]

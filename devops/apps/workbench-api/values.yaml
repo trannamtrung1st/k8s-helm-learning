@@ -21,8 +21,8 @@ topologySpread:
   minDomains: 2
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 300m
+    memory: 256Mi
   requests:
     cpu: 100m
     memory: 128Mi
