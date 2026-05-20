@@ -85,6 +85,8 @@ Override var file: `VAR_FILE=vars/terraform.tfvars ./scripts/terraform-apply.sh 
 
 Skip provisioning if resources already exist: `./scripts/terraform-init.sh --skip-provision` or `SKIP_TF_BACKEND_PROVISION=1`.
 
+Refresh providers/modules after constraint changes: `./scripts/terraform-init.sh --upgrade` (or combine with `--skip-provision`).
+
 `VAR_FILE` also applies to **`terraform-plan.sh`**, **`terraform-apply.sh`**, and **`terraform-destroy.sh`**.
 
 ## Variables

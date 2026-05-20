@@ -1,9 +1,11 @@
 #!/bin/bash
+set -euo pipefail
 
 # Provision Azure remote-state resources (if missing), then terraform init.
 # Run from repository root:
 #   ./scripts/terraform-init.sh
-#   ./scripts/terraform-init.sh --skip-provision   # init only
+#   ./scripts/terraform-init.sh --skip-provision
+#   ./scripts/terraform-init.sh --upgrade
 #
 # Requires: terraform, Azure CLI (az) logged in for provisioning
 # -backend-config is only valid for `terraform init`, not `plan`.
@@ -19,9 +21,26 @@ TF_STATE_KEY="${TF_STATE_KEY:-terraform.tfstate}"
 TF_STATE_LOCATION="${TF_STATE_LOCATION:-southeastasia}"
 
 SKIP_PROVISION="${SKIP_TF_BACKEND_PROVISION:-false}"
+UPGRADE=false
 
 usage() {
-  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+  cat <<'EOF'
+Provision Azure remote-state backend (optional), then terraform init.
+
+Usage:
+  ./scripts/terraform-init.sh [options]
+
+Options:
+  --skip-provision   Skip az provisioning (RG, storage account, container)
+  --upgrade          Pass -upgrade to terraform init (refresh providers/modules)
+  -h, --help         Show this help
+
+Environment:
+  VAR_FILE                  Var file under devops/terraform/ (default: vars/prod.tfvars)
+  TF_STATE_*                Backend resource names (see script defaults)
+  TF_BACKEND_USE_OIDC       Backend auth (default: true)
+  SKIP_TF_BACKEND_PROVISION Set true to skip provisioning (same as --skip-provision)
+EOF
 }
 
 _tfvar() {
@@ -36,6 +55,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-provision)
       SKIP_PROVISION=true
+      shift
+      ;;
+    --upgrade)
+      UPGRADE=true
       shift
       ;;
     -h|--help)
@@ -59,7 +82,6 @@ if [[ -n "${_main_location}" ]]; then
   case "${_main_location}" in
     "South East Asia"|"Southeast Asia") TF_STATE_LOCATION=southeastasia ;;
     *)
-      # Use tfvars value as-is if it is already an Azure region slug (e.g. southeastasia)
       TF_STATE_LOCATION="${_main_location}"
       ;;
   esac
@@ -68,7 +90,7 @@ fi
 provision_tf_backend() {
   if ! command -v az >/dev/null 2>&1; then
     echo "Azure CLI (az) is required to provision the remote state backend." >&2
-    echo "Install az or run: SKIP_TF_BACKEND_PROVISION=1 ./scripts/terraform-init.sh --skip-provision" >&2
+    echo "Install az or run: ./scripts/terraform-init.sh --skip-provision" >&2
     exit 1
   fi
 
@@ -131,7 +153,7 @@ provision_tf_backend() {
 if [[ "${SKIP_PROVISION}" != "true" ]]; then
   provision_tf_backend
 else
-  echo "==> Skipping backend provisioning (SKIP_TF_BACKEND_PROVISION / --skip-provision)"
+  echo "==> Skipping backend provisioning (--skip-provision)"
 fi
 
 if [[ -z "${TENANT_ID}" ]]; then
@@ -139,12 +161,20 @@ if [[ -z "${TENANT_ID}" ]]; then
   exit 1
 fi
 
-echo "==> terraform init"
-terraform -chdir="${TF_DIR}" init \
-  -backend-config="resource_group_name=${TF_STATE_RG}" \
-  -backend-config="storage_account_name=${TF_STATE_STORAGE_ACCOUNT}" \
-  -backend-config="container_name=${TF_STATE_CONTAINER}" \
-  -backend-config="key=${TF_STATE_KEY}" \
-  -backend-config="use_azuread_auth=true" \
-  -backend-config="use_oidc=${TF_BACKEND_USE_OIDC:-true}" \
+init_cmd=(
+  terraform -chdir="${TF_DIR}" init
+  -backend-config="resource_group_name=${TF_STATE_RG}"
+  -backend-config="storage_account_name=${TF_STATE_STORAGE_ACCOUNT}"
+  -backend-config="container_name=${TF_STATE_CONTAINER}"
+  -backend-config="key=${TF_STATE_KEY}"
+  -backend-config="use_azuread_auth=true"
+  -backend-config="use_oidc=${TF_BACKEND_USE_OIDC:-true}"
   -backend-config="tenant_id=${TENANT_ID}"
+)
+
+if [[ "${UPGRADE}" == "true" ]]; then
+  init_cmd+=( -upgrade )
+fi
+
+echo "==> terraform init${UPGRADE:+ -upgrade}"
+exec "${init_cmd[@]}"
