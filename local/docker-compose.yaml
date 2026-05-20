@@ -13,6 +13,7 @@ include:
 services:
   workbench-api:
     image: workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1
+    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Api/Dockerfile
@@ -49,6 +50,7 @@ services:
 
   workbench-worker:
     image: workbenchacr77.azurecr.io/workbench-worker:1.0.0-rc1
+    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Worker/Dockerfile
@@ -84,6 +86,7 @@ services:
 
   workbench-jobs:
     image: workbenchacr77.azurecr.io/workbench-jobs:1.0.0-rc1
+    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Jobs/Dockerfile
@@ -102,6 +105,7 @@ services:
 
   workbench-app:
     image: workbenchacr77.azurecr.io/workbench-app:1.0.0-rc1
+    platform: linux/amd64
     build:
       context: ../src/workbench-app
       dockerfile: Dockerfile

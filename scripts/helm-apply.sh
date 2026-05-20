@@ -20,6 +20,8 @@ set -euo pipefail
 #   ./scripts/helm-apply.sh --cluster aks      # workbench-aks (fetches creds if missing)
 #   ./scripts/helm-apply.sh --context my-ctx --cluster aks
 #   ./scripts/helm-apply.sh --skip-context-switch
+#
+# Server-side apply uses --force-conflicts (override field manager conflicts). Pass --no-force-conflicts to skip.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHART="${ROOT}/devops/workbench-umbrella"
@@ -29,6 +31,7 @@ HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HISTORY_MAX="${HELM_HISTORY_MAX:-5}"
 HELM_SKIP_KV_SECRETS="${HELM_SKIP_KV_SECRETS:-0}"
 HELM_SKIP_CONTEXT_SWITCH="${HELM_SKIP_CONTEXT_SWITCH:-0}"
+HELM_FORCE_CONFLICTS="${HELM_FORCE_CONFLICTS:-1}"
 KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
 KV_VALUES_FILE=""
 
@@ -52,6 +55,8 @@ usage() {
   echo "  --skip-context-switch Do not change kubectl context before apply"
   echo "  --skip-kv-secrets     Skip Azure Key Vault overlay (AKS only; uses file values as-is)"
   echo "  --dry-run             Server-side dry-run (same as --dry-run=server)"
+  echo "  --force               Server-side apply with --force-conflicts (default)"
+  echo "  --no-force-conflicts  Do not pass --force-conflicts to helm upgrade"
   echo "  -h, --help            Show this help"
   echo ""
   echo "AKS Key Vault (when --cluster aks and not --skip-kv-secrets):"
@@ -97,6 +102,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       extra_args+=(--dry-run=server)
+      shift
+      ;;
+    --force)
+      HELM_FORCE_CONFLICTS=1
+      shift
+      ;;
+    --no-force-conflicts)
+      HELM_FORCE_CONFLICTS=0
       shift
       ;;
     -h|--help)
@@ -146,6 +159,9 @@ cmd=(
   -f "${VALUES_PLATFORM}"
   -f "${VALUES_CLUSTER}"
 )
+if [[ "${HELM_FORCE_CONFLICTS}" == "1" ]]; then
+  cmd+=(--force-conflicts)
+fi
 if [[ -n "${KV_VALUES_FILE}" ]]; then
   cmd+=(-f "${KV_VALUES_FILE}")
 fi

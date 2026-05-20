@@ -21,7 +21,7 @@ spec:
       labels:
         {{- include "workbench.lib.labels.pod" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print .Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config: {{ include (print .Template.BasePath "/config-map.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       {{- if .Values.topologySpread.enabled }}

@@ -32,7 +32,7 @@ devops/
     local/
       global-values.yaml    # kind / dev — connection strings + lean replicas
     aks/
-      global-values.yaml    # AKS 3x Standard_B2s — same sizing targets
+      global-values.yaml    # AKS 3x Standard_D2s_v3 — same sizing targets
   workbench-umbrella/       # all charts above
     Chart.yaml
     Chart.lock
@@ -62,7 +62,7 @@ From the repository root (after kind cluster, infra node label, volumes, and ima
 
 ```bash
 ./scripts/helm-apply.sh
-# AKS (3x Standard_B2s):
+# AKS (3x Standard_D2s_v3):
 HELM_CLUSTER=aks ./scripts/helm-apply.sh
 ```
 

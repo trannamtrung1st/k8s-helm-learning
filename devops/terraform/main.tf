@@ -105,6 +105,16 @@ resource "azurerm_kubernetes_cluster" "workbench" {
     temporary_name_for_rotation  = "tempsys"
   }
 
+  key_vault_secrets_provider {
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "2m"
+  }
+
+  network_profile {
+    network_plugin    = "kubenet"
+    load_balancer_sku = "standard"
+  }
+
   identity {
     type = "SystemAssigned"
   }
@@ -119,8 +129,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "workbench_workers" {
   kubernetes_cluster_id       = azurerm_kubernetes_cluster.workbench.id
   vm_size                     = "Standard_D2s_v3"
   auto_scaling_enabled        = true
-  min_count                   = 1
-  max_count                   = 3
+  min_count                   = 2
+  max_count                   = 4
   mode                        = "User"
   temporary_name_for_rotation = "tempusr"
 }

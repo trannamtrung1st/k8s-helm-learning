@@ -8,7 +8,7 @@ workbenchRabbitMqPdb:
   name: workbench-rabbitmq-pdb
   maxUnavailable: 1
 
-# Apps namespace only — sized for ~3x Standard_B2s AKS (override in clusters/aks/).
+# Apps namespace only — sized for ~3x Standard_D2s_v3 AKS (override in clusters/aks/).
 workbenchResourceQuota:
   name: workbench-resource-quota
   requestsCpu: 2

@@ -42,23 +42,15 @@ spec:
           startupProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 5
+            {{- toYaml .Values.probes.startup | nindent 12 }}
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 3
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
       volumes:
         - name: workbench-rabbitmq-definitions-conf
           configMap:
@@ -80,7 +72,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOncePod
-        storageClassName: {{ .Values.pvc.storageClassName | quote }}
+        storageClassName: {{ include "workbench.lib.storageClasses.pvcName" . | quote }}
         resources:
           requests:
             storage: {{ .Values.pvc.size }}

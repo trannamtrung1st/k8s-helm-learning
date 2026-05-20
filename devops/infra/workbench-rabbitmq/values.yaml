@@ -6,19 +6,34 @@ image:
   tag: 4-management-alpine
 replicas: 1
 revisionHistoryLimit: 3
-minReadySeconds: 10
-terminationGracePeriodSeconds: 10
+minReadySeconds: 20
+terminationGracePeriodSeconds: 60
 service:
   amqpPort: 5672
+probes:
+  startup:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 30
+  readiness:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  liveness:
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+# RabbitMQ requires at least 1 CPU (request and limit). Do not reduce below 1 CPU.
 resources:
   limits:
-    cpu: 500m
+    cpu: "1"
     memory: 512Mi
   requests:
-    cpu: 200m
-    memory: 384Mi
+    cpu: "1"
+    memory: 512Mi
 pvc:
-  storageClassName: standard
   size: 512Mi
 pv:
   name: workbench-rabbitmq-volume

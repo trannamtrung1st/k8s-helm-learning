@@ -1,4 +1,4 @@
-# Cluster overlay for AKS — 3x Standard_B2s (2 vCPU, 4 GiB per node).
+# Cluster overlay for AKS — 3x Standard_D2s_v3 (2 vCPU, 4 GiB per node).
 # Merged after devops/platform/values/global-values.yaml.
 #
 # Budget (~schedulable after AKS system pods): ~3.5 CPU / ~9 GiB cluster-wide.
@@ -12,6 +12,9 @@
 # (workbench-kv) as the final -f overlay unless --skip-kv-secrets is set.
 
 global:
+  workbenchStorageClasses:
+    pvc:
+      name: managed-csi
   workbenchPostgres:
     connectionString: Host=workbench-postgres-db.workbench-db.svc.cluster.local;Port=5432;Database=workbench;Username=workbench;Password=CHANGEME
     user: workbench

@@ -12,6 +12,7 @@ services:
       POSTGRES_USER: workbench
       POSTGRES_PASSWORD: workbench
       POSTGRES_DB: workbench
+      PGDATA: /var/lib/postgresql/pgdata
     ports:
       - "5432:5432"
     healthcheck:
@@ -60,6 +61,7 @@ services:
 
   workbench-local-gateway:
     image: workbenchacr77.azurecr.io/workbench-local-gateway:1.0.0-rc1
+    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.LocalGateway/Dockerfile

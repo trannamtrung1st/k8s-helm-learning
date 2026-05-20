@@ -80,3 +80,7 @@ nodeAffinity:
             values:
               - {{ .Values.global.workbenchInfraNode.labelValue | quote }}
 {{- end -}}
+
+{{- define "workbench.lib.storageClasses.pvcName" -}}
+{{- required "set global.workbenchStorageClasses.pvc.name (cluster -f overlay; local=standard, aks=managed-csi)." .Values.global.workbenchStorageClasses.pvc.name -}}
+{{- end -}}

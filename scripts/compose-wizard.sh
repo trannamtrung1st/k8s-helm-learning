@@ -58,8 +58,8 @@ compose_with_profile() {
 }
 
 compose_build() {
-  echo "==> docker compose build ($(basename "${COMPOSE_FILE}")) INCLUDE_JOBS=${INCLUDE_JOBS}"
-  compose_with_profile build
+  echo "==> docker compose build ($(basename "${COMPOSE_FILE}")) INCLUDE_JOBS=${INCLUDE_JOBS} platform=linux/amd64"
+  DOCKER_DEFAULT_PLATFORM=linux/amd64 compose_with_profile build
 }
 
 compose_push() {

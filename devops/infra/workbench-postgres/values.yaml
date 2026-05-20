@@ -4,11 +4,29 @@ image:
   tag: "16-alpine"
 replicas: 1
 revisionHistoryLimit: 3
-minReadySeconds: 10
-terminationGracePeriodSeconds: 10
+minReadySeconds: 20
+terminationGracePeriodSeconds: 60
 service:
   port: 5432
-# Burstable QoS — sized for small nodes (e.g. AKS Standard_B2s).
+data:
+  mountPath: /var/lib/postgresql
+  pgdataPath: /var/lib/postgresql/pgdata
+probes:
+  startup:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 30
+  readiness:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  liveness:
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+# Burstable QoS — sized for small nodes (e.g. AKS Standard_D2s_v3).
 resources:
   limits:
     cpu: 500m
@@ -17,7 +35,6 @@ resources:
     cpu: 200m
     memory: 384Mi
 pvc:
-  storageClassName: standard
   size: 1Gi
 pv:
   name: workbench-postgres-db-volume
@@ -27,3 +44,5 @@ pv:
 secrets:
   name: workbench-postgres-db-secrets
   # user, password, database: set via global.workbenchPostgres in cluster global-values.yaml
+configMap:
+  name: workbench-postgres-db-config

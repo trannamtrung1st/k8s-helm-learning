@@ -156,7 +156,7 @@ echo "=== Step 4: initialize volume directories ==="
 
 if [[ "${SKIP_BUILD}" != "true" ]]; then
   echo "=== Step 5a: build compose images ==="
-  docker compose -f "${COMPOSE_FILE}" build
+  DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f "${COMPOSE_FILE}" build
 else
   echo "=== Step 5a: skip build ==="
 fi

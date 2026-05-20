@@ -6,10 +6,25 @@ image:
   tag: 7-alpine
 replicas: 1
 revisionHistoryLimit: 3
-minReadySeconds: 10
-terminationGracePeriodSeconds: 10
+minReadySeconds: 20
+terminationGracePeriodSeconds: 30
 service:
   port: 6379
+probes:
+  startup:
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 5
+    failureThreshold: 30
+  readiness:
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+    successThreshold: 1
+  liveness:
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
 # redisCli user/password: set via global.workbenchRedis in cluster global-values.yaml
 resources:
   limits:

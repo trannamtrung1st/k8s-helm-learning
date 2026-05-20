@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ include "workbench.lib.namespace.db" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 4 }}
+data:
+  PGDATA: {{ .Values.data.pgdataPath | quote }}

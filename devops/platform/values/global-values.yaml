@@ -31,6 +31,8 @@ global:
   workbenchStorageClasses:
     local:
       name: local-storage
+    pvc:
+      name: standard
   workbenchInfraNode:
     labelKey: workbench.io/infra-node
     labelValue: "true"

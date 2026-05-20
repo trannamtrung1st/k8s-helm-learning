@@ -17,6 +17,9 @@ spec:
     metadata:
       labels:
         {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "database") | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print .Template.BasePath "/config-map.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print .Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
@@ -26,11 +29,13 @@ spec:
             - containerPort: {{ .Values.service.port }}
               name: db-port
           envFrom:
+            - configMapRef:
+                name: {{ .Values.configMap.name }}
             - secretRef:
                 name: {{ .Values.secrets.name }}
           volumeMounts:
             - name: {{ .Values.name }}-volume
-              mountPath: /var/lib/postgresql/data
+              mountPath: {{ .Values.data.mountPath | quote }}
           imagePullPolicy: IfNotPresent
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -42,10 +47,16 @@ spec:
                 - {{ required "workbench-postgres: set global.workbenchPostgres.user (cluster -f overlay)." .Values.global.workbenchPostgres.user }}
                 - -d
                 - {{ required "workbench-postgres: set global.workbenchPostgres.database (cluster -f overlay)." .Values.global.workbenchPostgres.database }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 5
+            {{- toYaml .Values.probes.startup | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ required "workbench-postgres: set global.workbenchPostgres.user (cluster -f overlay)." .Values.global.workbenchPostgres.user }}
+                - -d
+                - {{ required "workbench-postgres: set global.workbenchPostgres.database (cluster -f overlay)." .Values.global.workbenchPostgres.database }}
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
           readinessProbe:
             exec:
               command:
@@ -54,16 +65,14 @@ spec:
                 - {{ required "workbench-postgres: set global.workbenchPostgres.user (cluster -f overlay)." .Values.global.workbenchPostgres.user }}
                 - -d
                 - {{ required "workbench-postgres: set global.workbenchPostgres.database (cluster -f overlay)." .Values.global.workbenchPostgres.database }}
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 3
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
   volumeClaimTemplates:
     - metadata:
         name: {{ .Values.name }}-volume
       spec:
         accessModes:
           - ReadWriteOncePod
-        storageClassName: {{ .Values.pvc.storageClassName | quote }}
+        storageClassName: {{ include "workbench.lib.storageClasses.pvcName" . | quote }}
         resources:
           requests:
             storage: {{ .Values.pvc.size }}

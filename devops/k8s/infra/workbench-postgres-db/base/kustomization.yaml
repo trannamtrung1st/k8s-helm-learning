@@ -7,4 +7,20 @@ resources:
   - stateful-set.yaml
   - service.yaml
   - secrets.yaml
+  - config-map.yaml
   - persistent-volume.yaml
+  - cluster-values.yaml
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: workbench-cluster-values
+      fieldPath: data.pvcStorageClassName
+    targets:
+      - select:
+          kind: StatefulSet
+          name: workbench-postgres-db
+        fieldPaths:
+          - spec.volumeClaimTemplates.0.spec.storageClassName
+        options:
+          create: true

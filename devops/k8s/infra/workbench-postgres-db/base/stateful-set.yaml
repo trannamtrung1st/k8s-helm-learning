@@ -9,7 +9,7 @@ spec:
       app.kubernetes.io/name: workbench-postgres-db
   serviceName: "workbench-postgres-db"
   replicas: 1 # by default is 1
-  minReadySeconds: 10 # by default is 0
+  minReadySeconds: 20
   template:
     metadata:
       labels:
@@ -18,7 +18,7 @@ spec:
         app.kubernetes.io/part-of: workbench
         app.kubernetes.io/managed-by: kustomize
     spec:
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: 60
       containers:
         - name: workbench-postgres-db
           image: postgres:16-alpine
@@ -26,11 +26,13 @@ spec:
             - containerPort: 5432
               name: db-port
           envFrom:
+            - configMapRef:
+                name: workbench-postgres-db-config
             - secretRef:
                 name: workbench-postgres-db-secrets
           volumeMounts:
             - name: workbench-postgres-db-volume
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           imagePullPolicy: IfNotPresent
           resources: # QoS: Burstable (small-node friendly)
             limits:
@@ -45,20 +47,26 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
-            failureThreshold: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "workbench", "-d", "workbench"]
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "workbench", "-d", "workbench"]
-            periodSeconds: 5
+            periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 6
+            successThreshold: 1
   volumeClaimTemplates:
     - metadata:
         name: workbench-postgres-db-volume
       spec:
         # volumeName: workbench-postgres-db-volume # static volume name, no dynamic provisioning
         accessModes: ["ReadWriteOncePod"]
-        storageClassName: "standard"
         resources:
           requests:
             storage: 1Gi
