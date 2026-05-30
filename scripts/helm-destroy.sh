@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Uninstall the Workbench umbrella Helm release from the target cluster.
+# Uninstall the Workbench Helm releases from the target cluster (main umbrella, then CRDs umbrella).
 # Run from repository root. Requires helm and kubectl context.
 #
 #   ./scripts/helm-destroy.sh
@@ -11,11 +11,17 @@ set -euo pipefail
 # Switches kubectl context from devops/clusters/<cluster>/cluster.conf before uninstall
 # (same as helm-apply.sh). Override release or namespace:
 #   HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-destroy.sh --cluster aks
+#   HELM_CRDS_RELEASE=workbench-crds-umbrella-aks ./scripts/helm-destroy.sh --cluster aks
+#   HELM_CRDS_NAMESPACE=kube-system ./scripts/helm-destroy.sh --cluster local
 #   HELM_NAMESPACE=workbench-platform ./scripts/helm-destroy.sh --cluster local
+#
+# Cluster-scoped CRDs installed by the operator may remain after uninstall; delete manually if needed.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 HELM_RELEASE="${HELM_RELEASE:-}"
+HELM_CRDS_RELEASE="${HELM_CRDS_RELEASE:-}"
+HELM_CRDS_NAMESPACE="${HELM_CRDS_NAMESPACE:-kube-system}"
 HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HELM_SKIP_CONTEXT_SWITCH="${HELM_SKIP_CONTEXT_SWITCH:-0}"
 KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
@@ -29,7 +35,7 @@ list_helm_clusters() {
 
 usage() {
   cat <<'EOF'
-Uninstall the Workbench umbrella Helm release from the target cluster.
+Uninstall Workbench Helm releases (main umbrella, then CRDs umbrella) from the target cluster.
 
 Usage:
   ./scripts/helm-destroy.sh [options]
@@ -45,8 +51,10 @@ Options:
 
 Environment:
   HELM_CLUSTER          Same as --cluster (default: local)
-  HELM_RELEASE          Release name (default: workbench-umbrella-<cluster>)
-  HELM_NAMESPACE        Namespace (default: workbench-platform)
+  HELM_RELEASE          Main release name (default: workbench-umbrella-<cluster>)
+  HELM_CRDS_RELEASE     CRDs release name (default: workbench-crds-umbrella-<cluster>)
+  HELM_CRDS_NAMESPACE   CRDs Helm release namespace (default: kube-system)
+  HELM_NAMESPACE        Main release namespace (default: workbench-platform)
   KUBECTL_CONTEXT       Explicit kubectl context
   KIND_CLUSTER_NAME     kind cluster for --cluster local (default: workbench-0)
   AKS_RESOURCE_GROUP    AKS RG for --cluster aks (default: workbench)
@@ -126,6 +134,7 @@ done
 
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
+CRDS_RELEASE="${HELM_CRDS_RELEASE:-workbench-crds-umbrella-${HELM_CLUSTER}}"
 NAMESPACE="${HELM_NAMESPACE}"
 
 if [[ ! -f "${VALUES_CLUSTER}" ]]; then
@@ -170,4 +179,21 @@ if ((${#extra_args[@]} > 0)); then
 fi
 
 echo "==> ${cmd[*]}"
-exec "${cmd[@]}"
+"${cmd[@]}"
+
+if helm status "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}" >/dev/null 2>&1; then
+  crds_cmd=(helm uninstall "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}")
+elif helm status "${CRDS_RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+  echo "CRDs release found in legacy namespace '${NAMESPACE}' (pre kube-system split)."
+  crds_cmd=(helm uninstall "${CRDS_RELEASE}" -n "${NAMESPACE}")
+  if [[ "${HELM_WAIT}" == "true" ]]; then
+    crds_cmd+=(--wait)
+  fi
+  if [[ "${HELM_KEEP_HISTORY}" == "true" ]]; then
+    crds_cmd+=(--keep-history)
+  fi
+  echo "==> ${crds_cmd[*]}"
+  "${crds_cmd[@]}"
+else
+  echo "CRDs release '${CRDS_RELEASE}' not found in '${HELM_CRDS_NAMESPACE}' or '${NAMESPACE}' (skip)."
+fi

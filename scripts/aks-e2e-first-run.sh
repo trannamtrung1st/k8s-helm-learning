@@ -14,7 +14,7 @@ set -euo pipefail
 #   2) terraform apply (AKS, ACR, Key Vault, …)
 #   3) fetch AKS kubeconfig and set kubectl context
 #   4) verify cluster nodes
-#   5) build app images (linux/amd64) via Docker Compose
+#   5) build app images (multi-arch via buildx) via compose-wizard
 #   6) push app images to ACR
 #   7) helm apply --cluster aks (Key Vault credential overlay)
 #   8) verify namespaces and pods
@@ -261,7 +261,7 @@ else
 fi
 
 if [[ "${SKIP_BUILD}" != "true" ]]; then
-  echo "=== Step 5: build app images (linux/amd64) ==="
+  echo "=== Step 5: build and push app images (multi-arch buildx) ==="
   export INCLUDE_JOBS
   ./scripts/compose-wizard.sh build
 else

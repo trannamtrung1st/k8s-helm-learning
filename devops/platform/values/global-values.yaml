@@ -38,6 +38,8 @@ global:
     labelValue: "true"
   workbenchRabbitMq:
     name: workbench-rabbitmq
+    user:
+    password:
     uri:
   workbenchRedis:
     connectionString:

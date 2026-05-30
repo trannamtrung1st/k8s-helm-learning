@@ -1,0 +1,48 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "broker") | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+  resources:
+    {{- toYaml .Values.resources | nindent 4 }}
+  persistence:
+    storage: {{ .Values.pvc.size }}
+    storageClassName: {{ include "workbench.lib.storageClasses.pvcName" . | quote }}
+  terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+  override:
+    statefulSet:
+      spec:
+        minReadySeconds: {{ .Values.minReadySeconds }}
+        template:
+          metadata:
+            annotations:
+              checksum/config: {{ include (print .Template.BasePath "/config-map.yaml") . | sha256sum }}
+              checksum/default-user: {{ include (print .Template.BasePath "/default-user-secret.yaml") . | sha256sum }}
+          spec:
+            containers:
+              - name: rabbitmq
+                volumeMounts:
+                  - name: definitions
+                    mountPath: {{ .Values.definitions.confMountPath | quote }}
+                    subPath: {{ .Values.definitions.confFileName }}
+                    readOnly: true
+                  - name: definitions
+                    mountPath: {{ .Values.definitions.jsonMountPath | quote }}
+                    subPath: {{ .Values.definitions.jsonFileName }}
+                    readOnly: true
+                startupProbe:
+                  {{- include "workbench-rabbitmq.probe" (dict "root" . "settings" .Values.probes.startup) | nindent 18 }}
+                livenessProbe:
+                  {{- include "workbench-rabbitmq.probe" (dict "root" . "settings" .Values.probes.liveness) | nindent 18 }}
+                readinessProbe:
+                  {{- include "workbench-rabbitmq.probe" (dict "root" . "settings" .Values.probes.readiness) | nindent 18 }}
+            volumes:
+              - name: definitions
+                configMap:
+                  name: {{ .Values.configMap.name }}
+                  defaultMode: 420

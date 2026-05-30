@@ -111,6 +111,11 @@ write_kind_config() {
   } >"${file}"
 }
 
+# macOS mktemp requires trailing XXXXXX (no .yaml suffix after placeholders).
+kind_wizard_mktemp_config() {
+  mktemp "${TMPDIR:-/tmp}/kind-wizard.XXXXXX"
+}
+
 create_cluster_interactive() {
   require_kind
   require_docker
@@ -144,7 +149,7 @@ create_cluster_interactive() {
   if [[ "${workers}" -eq 0 ]]; then
     kind create cluster --name "${name}"
   else
-    tmp="$(mktemp "${TMPDIR:-/tmp}/kind-wizard.XXXXXX.yaml")"
+    tmp="$(kind_wizard_mktemp_config)"
     write_kind_config "${workers}" "${tmp}"
     echo "Using config (${tmp}):"
     cat "${tmp}"
@@ -214,7 +219,7 @@ recreate_cluster_interactive() {
   if [[ "${workers}" -eq 0 ]]; then
     kind create cluster --name "${name}"
   else
-    tmp="$(mktemp "${TMPDIR:-/tmp}/kind-wizard.XXXXXX.yaml")"
+    tmp="$(kind_wizard_mktemp_config)"
     write_kind_config "${workers}" "${tmp}"
     cat "${tmp}"
     kind create cluster --name "${name}" --config "${tmp}"
@@ -278,7 +283,7 @@ cmd_create_cli() {
   if [[ "${workers}" -eq 0 ]]; then
     kind create cluster --name "${name}"
   else
-    tmp="$(mktemp "${TMPDIR:-/tmp}/kind-wizard.XXXXXX.yaml")"
+    tmp="$(kind_wizard_mktemp_config)"
     write_kind_config "${workers}" "${tmp}"
     kind create cluster --name "${name}" --config "${tmp}"
     rm -f "${tmp}"
@@ -341,7 +346,7 @@ cmd_recreate_cli() {
   if [[ "${workers}" -eq 0 ]]; then
     kind create cluster --name "${name}"
   else
-    tmp="$(mktemp "${TMPDIR:-/tmp}/kind-wizard.XXXXXX.yaml")"
+    tmp="$(kind_wizard_mktemp_config)"
     write_kind_config "${workers}" "${tmp}"
     kind create cluster --name "${name}" --config "${tmp}"
     rm -f "${tmp}"

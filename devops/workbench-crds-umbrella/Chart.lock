@@ -1,0 +1,6 @@
+dependencies:
+- name: rabbitmq-operator
+  repository: file://../crds/rabbitmq-operator
+  version: 1.0.0-rc1
+digest: sha256:d278a74fc4de7497a1fbbecf2ab136ae19bf80464aa79e8eaf4c3a64f6fca425
+generated: "2026-05-30T20:48:31.627108+07:00"

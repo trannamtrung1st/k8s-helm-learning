@@ -28,6 +28,8 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
 
    Non-interactive examples: `./scripts/kind-wizard.sh create --name workbench-0 --workers 1`, `./scripts/kind-wizard.sh recreate --name workbench-0 --workers 0`.
 
+   **Images:** build multi-arch with **`./scripts/compose-wizard.sh build`** (loads your host arch into Docker) and **`push`** ( **`linux/amd64,linux/arm64`** → ACR). Load into kind: **`./scripts/kind-load-images.sh --cluster workbench-0`**.
+
    Then point kubectl at the cluster (kind sets this after create; if needed):
 
    ```bash
@@ -35,7 +37,7 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
    kubectl get nodes
    ```
 
-2. **Label the infra node** — Postgres and RabbitMQ use **local** PVs under `/mnt/disks/...` with **node affinity** to `workbench.io/infra-node=true`. Pick the node that will host those paths (often a **worker** on multi-node kind; the only node on single-node clusters). The Kubernetes **node name** matches the kind **Docker container name** (for example `workbench-0-worker`).
+2. **Label the infra node** — **Postgres** (and **legacy Kustomize RabbitMQ**) use **local** PVs under `/mnt/disks/...` with **node affinity** to `workbench.io/infra-node=true`. The **Helm** path uses **dynamic PVC** for RabbitMQ (`standard` / `managed-csi`) — no `/mnt/disks/workbench-rabbitmq` or infra-node label required for RabbitMQ on Helm. Pick the node that will host Postgres paths (often a **worker** on multi-node kind; the only node on single-node clusters). The Kubernetes **node name** matches the kind **Docker container name** (for example `workbench-0-worker`).
 
    ```bash
    ./scripts/k8s-node-label-wizard.sh
@@ -56,12 +58,10 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
 
    Override discovery: `./scripts/k8s-volumes-init.sh --node <kind-container-name>`.
 
-4. **Build and load workload images into kind** — build locally, then load (cluster name must match kind, default `workbench-0`):
+4. **Build and load workload images into kind** — multi-arch buildx (loads host arch for local), then load (default cluster `workbench-0`):
 
    ```bash
-   docker build -t workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1 -f src/Workbench.Api/Dockerfile src
-   docker build -t workbenchacr77.azurecr.io/workbench-worker:1.0.0-rc1 -f src/Workbench.Worker/Dockerfile src
-
+   ./scripts/compose-wizard.sh build
    ./scripts/kind-load-images.sh --cluster workbench-0
    ```
 
@@ -86,9 +86,17 @@ kubectl get pods -n workbench-infra
 kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps
+# Helm / RabbitMQ operator:
+kubectl get pods -n rabbitmq-system
+kubectl get rabbitmqclusters -n workbench-infra
+kubectl get pvc -n workbench-infra
 ```
 
-If Postgres or RabbitMQ stay **Pending**, confirm the infra label and that `./scripts/k8s-volumes-init.sh` ran successfully on those nodes.
+**Pending troubleshooting**
+
+- **Postgres** stays **Pending** (Helm or legacy Kustomize): confirm the infra-node label and that `./scripts/k8s-volumes-init.sh` ran successfully on those nodes.
+- **RabbitMQ** stays **Pending** on **Helm**: check `kubectl get rabbitmqclusters -n workbench-infra`, operator pods in `rabbitmq-system`, and PVC/StorageClass binding (`kubectl get pvc -n workbench-infra`).
+- **RabbitMQ** stays **Pending** on **legacy Kustomize**: same as Postgres — infra label and volume init.
 
 **Clear local PV data** (destructive): `./scripts/k8s-volumes-clear.sh --yes` — same node discovery by `workbench.io/infra-node=true`, or pass `--node` once.
 
@@ -142,9 +150,11 @@ The generated **`ConfigMap`** / **`Secret`** are merged with the same build as t
 devops/
 ├── README.md             # Helm charts + values (preferred)
 ├── kustomization.yaml    # legacy apply: k8s/ resources + CM/Secret generators
+├── crds/                 # cluster prerequisites (RabbitMQ Cluster Operator)
 ├── platform/             # Helm platform charts
 ├── infra/                # Helm infra charts (rabbitmq/redis files/ here)
 ├── apps/                 # Helm app charts
+├── workbench-crds-umbrella/
 ├── workbench-umbrella/
 └── k8s/                  # legacy manifests (base + overlays)
     ├── apps/
@@ -167,7 +177,8 @@ kubectl apply --server-side -k devops/k8s/platform/namespaces
 
 ## Local volumes and the infra node label
 
-- PV manifests: `k8s/infra/workbench-postgres-db/base/persistent-volume.yaml`, `k8s/infra/workbench-rabbitmq/base/persistent-volume.yaml` — **required** affinity to `workbench.io/infra-node=true`.
+- **Legacy Kustomize PV manifests:** `k8s/infra/workbench-postgres-db/base/persistent-volume.yaml`, `k8s/infra/workbench-rabbitmq/base/persistent-volume.yaml` — **required** affinity to `workbench.io/infra-node=true`.
+- **Helm path:** Postgres may still use a local PV; **RabbitMQ uses dynamic PVC** via the Cluster Operator (`devops/infra/workbench-rabbitmq`) — the legacy RabbitMQ PV under `k8s/infra/workbench-rabbitmq/base` does **not** apply to Helm installs.
 - Volume scripts discover nodes with that label; keep **kubectl context** aligned with the kind cluster when using discovery.
 
 ## Kustomize usage notes

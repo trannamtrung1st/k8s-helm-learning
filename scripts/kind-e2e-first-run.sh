@@ -21,6 +21,7 @@ SKIP_LOAD="false"
 SKIP_APPLY="false"
 USE_K8S_APPLY="false"
 COMPOSE_FILE="local/docker-compose.yaml"
+INCLUDE_JOBS="${INCLUDE_JOBS:-1}"
 
 usage() {
   cat <<EOF
@@ -32,8 +33,9 @@ Options:
   --recreate             delete existing cluster with same name first
   --infra-node <name>    node to label as workbench.io/infra-node=true
                          (default: first worker if present, else control-plane)
-  --skip-build           skip docker compose build step
+  --skip-build           skip app image build step (compose-wizard build)
   --skip-load            skip kind image load step
+  --no-jobs              omit workbench-jobs from build and kind load
   --skip-apply           skip stack apply step (Helm or Kustomize)
   --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
                          default: ./scripts/helm-apply.sh
@@ -75,6 +77,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-build)
       SKIP_BUILD="true"
+      shift
+      ;;
+    --no-jobs)
+      INCLUDE_JOBS=0
       shift
       ;;
     --skip-load)
@@ -155,26 +161,17 @@ echo "=== Step 4: initialize volume directories ==="
 ./scripts/k8s-volumes-init.sh
 
 if [[ "${SKIP_BUILD}" != "true" ]]; then
-  echo "=== Step 5a: build compose images ==="
-  DOCKER_DEFAULT_PLATFORM=linux/amd64 docker compose -f "${COMPOSE_FILE}" build
+  echo "=== Step 5a: build app images (buildx multi-arch, load host arch) ==="
+  export INCLUDE_JOBS
+  ./scripts/compose-wizard.sh build
 else
   echo "=== Step 5a: skip build ==="
 fi
 
 if [[ "${SKIP_LOAD}" != "true" ]]; then
-  echo "=== Step 5b: load compose images into kind ==="
-  IMAGES=()
-  while IFS= read -r image; do
-    [[ -z "${image}" ]] && continue
-    case "${image}" in
-      workbenchacr77.azurecr.io/*) IMAGES+=("${image}") ;;
-    esac
-  done < <(docker compose -f "${COMPOSE_FILE}" config --images)
-  if [[ ${#IMAGES[@]} -eq 0 ]]; then
-    echo "No workbench images found in compose config."
-    exit 1
-  fi
-  ./scripts/kind-load-images.sh --cluster "${CLUSTER_NAME}" "${IMAGES[@]}"
+  echo "=== Step 5b: load app images into kind ==="
+  export INCLUDE_JOBS
+  ./scripts/kind-load-images.sh --cluster "${CLUSTER_NAME}"
 else
   echo "=== Step 5b: skip load ==="
 fi
@@ -192,9 +189,12 @@ else
 fi
 
 echo "=== Verify ==="
+kubectl get crd rabbitmqclusters.rabbitmq.com
 kubectl get ns
+kubectl get pods -n rabbitmq-system
 kubectl get pods -n workbench-db
 kubectl get pods -n workbench-infra
+kubectl get rabbitmqclusters -n workbench-infra
 kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps

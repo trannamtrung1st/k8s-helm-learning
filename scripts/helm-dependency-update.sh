@@ -1,6 +1,6 @@
 #!/bin/bash
 # Refresh packaged Helm dependencies (charts/*.tgz, Chart.lock) for Workbench:
-# charts that depend on workbench-common, then the umbrella.
+# charts that depend on workbench-common, then CRDs umbrella, then main umbrella.
 #
 # From repository root:
 #   ./scripts/helm-dependency-update.sh
@@ -15,6 +15,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CRDS_UMBRELLA="${ROOT}/devops/workbench-crds-umbrella"
 UMBRELLA="${ROOT}/devops/workbench-umbrella"
 
 SUBCHARTS=(
@@ -46,6 +47,9 @@ for rel in "${SUBCHARTS[@]}"; do
   echo "==> helm dependency update \"${chart_dir}\" $*"
   helm dependency update "${chart_dir}" "$@"
 done
+
+echo "==> helm dependency update \"${CRDS_UMBRELLA}\" $*"
+helm dependency update "${CRDS_UMBRELLA}" "$@"
 
 echo "==> helm dependency update \"${UMBRELLA}\" $*"
 helm dependency update "${UMBRELLA}" "$@"

@@ -26,7 +26,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
-    # Single source: devops/infra/workbench-rabbitmq/files/ (same files for Helm + legacy Kustomize).
+    # User/password from definitions.json at boot (same file as Helm/Kustomize).
     volumes:
       - ../devops/infra/workbench-rabbitmq/files/conf.d/10-workbench-definitions.conf:/etc/rabbitmq/conf.d/10-workbench-definitions.conf:ro
       - ../devops/infra/workbench-rabbitmq/files/definitions.json:/etc/rabbitmq/definitions/definitions.json:ro
@@ -61,7 +61,6 @@ services:
 
   workbench-local-gateway:
     image: workbenchacr77.azurecr.io/workbench-local-gateway:1.0.0-rc1
-    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.LocalGateway/Dockerfile

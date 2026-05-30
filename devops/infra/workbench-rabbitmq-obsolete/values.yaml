@@ -4,19 +4,13 @@ configMap:
 image:
   repository: rabbitmq
   tag: 4-management-alpine
-replicas: 3
+replicas: 1
+revisionHistoryLimit: 3
 minReadySeconds: 20
 terminationGracePeriodSeconds: 60
-definitions:
-  confFileName: 10-workbench-definitions.conf
-  confMountPath: /etc/rabbitmq/conf.d/10-workbench-definitions.conf
-  jsonFileName: definitions.json
-  jsonMountPath: /etc/rabbitmq/definitions/definitions.json
+service:
+  amqpPort: 5672
 probes:
-  command:
-    - rabbitmq-diagnostics
-    - -q
-    - ping
   startup:
     initialDelaySeconds: 10
     periodSeconds: 5
@@ -41,4 +35,8 @@ resources:
     memory: 512Mi
 pvc:
   size: 512Mi
-  # storageClassName: set via global.workbenchStorageClasses.pvc.name (local=standard, aks=managed-csi)
+pv:
+  name: workbench-rabbitmq-volume
+  storageClassName: local-storage
+  capacity: 512Mi
+  path: /mnt/disks/workbench-rabbitmq

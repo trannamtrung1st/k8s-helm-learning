@@ -1,8 +1,8 @@
 # Full stack: infra + workbench-local-gateway (YARP), workbench-api, workbench-worker, workbench-app
 # Browser/API entry: localhost:8080 (/api/* → API, /swagger → Swashbuckle). API has no host port.
 # Run from repo root: docker compose -f local/docker-compose.yaml up --build
-#
-# App services use image tag 1.0.0-rc1 (bump when releasing). `image` + `build` tags the local build.
+# workbench-jobs is profile "jobs" (one-shot cleanup); not built by plain compose build/up.
+# Build all app images (incl. jobs): ./scripts/compose-wizard.sh build
 # Backend build context: ../src (Workbench.*). Frontend: ../src/workbench-app.
 
 name: workbench
@@ -13,7 +13,6 @@ include:
 services:
   workbench-api:
     image: workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1
-    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Api/Dockerfile
@@ -50,7 +49,6 @@ services:
 
   workbench-worker:
     image: workbenchacr77.azurecr.io/workbench-worker:1.0.0-rc1
-    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Worker/Dockerfile
@@ -86,7 +84,6 @@ services:
 
   workbench-jobs:
     image: workbenchacr77.azurecr.io/workbench-jobs:1.0.0-rc1
-    platform: linux/amd64
     build:
       context: ../src
       dockerfile: Workbench.Jobs/Dockerfile
@@ -105,7 +102,6 @@ services:
 
   workbench-app:
     image: workbenchacr77.azurecr.io/workbench-app:1.0.0-rc1
-    platform: linux/amd64
     build:
       context: ../src/workbench-app
       dockerfile: Dockerfile

@@ -21,6 +21,8 @@ global:
     password: CHANGEME
     database: workbench
   workbenchRabbitMq:
+    user: workbench
+    password: CHANGEME
     uri: amqp://workbench:CHANGEME@workbench-rabbitmq.workbench-infra.svc.cluster.local:5672/
   workbenchRedis:
     connectionString: workbench-redis.workbench-infra.svc.cluster.local:6379,user=workbench,password=CHANGEME

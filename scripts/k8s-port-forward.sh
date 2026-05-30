@@ -6,7 +6,9 @@ set -euo pipefail
 # Usage:
 #   ./scripts/k8s-port-forward.sh svc/workbench-api 8080:80
 #   ./scripts/k8s-port-forward.sh -n workbench-apps svc/workbench-api 8080:80
-#   ./scripts/k8s-port-forward.sh -n workbench-infra pod/workbench-rabbitmq-0 15672:15672
+#   ./scripts/k8s-port-forward.sh -n workbench-infra svc/workbench-rabbitmq 15672:15672
+#   ./scripts/k8s-port-forward.sh -n workbench-infra pod/workbench-rabbitmq-server-0 15672:15672
+#   (legacy Kustomize pod name: workbench-rabbitmq-0)
 #   ./scripts/k8s-port-forward.sh -n workbench-infra sts/workbench-redis 6379:6379
 #   ./scripts/k8s-port-forward.sh --address 0.0.0.0 -n workbench-apps svc/workbench-api 8080:80
 #
@@ -38,7 +40,8 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: $0 [-n <namespace>] [-a <bind-address>] <type/name> <local:remote> [<local:remote> ...]"
       echo "Examples:"
       echo "  $0 -n workbench-apps svc/workbench-api 8080:80"
-      echo "  $0 -n workbench-infra pod/workbench-rabbitmq-0 15672:15672"
+      echo "  $0 -n workbench-infra svc/workbench-rabbitmq 15672:15672"
+      echo "  $0 -n workbench-infra pod/workbench-rabbitmq-server-0 15672:15672"
       exit 0
       ;;
     *)

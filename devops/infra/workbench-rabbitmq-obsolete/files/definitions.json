@@ -1,17 +1,11 @@
 {
-  "vhosts": [
-    {
-      "name": "/"
-    }
-  ],
+  "vhosts": [{ "name": "/" }],
   "users": [
     {
       "name": "workbench",
       "password_hash": "b1hecxqsGyvVQutYDLnvqJ0xmDLtzBpye72xo1MzeYYbOXAu",
       "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": [
-        "administrator"
-      ]
+      "tags": ["administrator"]
     }
   ],
   "permissions": [
@@ -40,9 +34,7 @@
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
-      "arguments": {
-        "x-queue-type": "quorum"
-      }
+      "arguments": {}
     }
   ],
   "bindings": [

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Interactive (or scripted) Docker Compose helper: build → push → up -d.
+# Interactive (or scripted) Docker Compose helper: multi-arch build → push → up -d.
 # Expects Compose file under local/ with ACR image tags (workbenchacr77.azurecr.io/...).
 #
 # From repo root:
@@ -13,14 +13,18 @@
 #   ./scripts/compose-wizard.sh down --volumes
 #
 # Environment:
-#   COMPOSE_FILE   Full path (default: <repo>/local/docker-compose.yaml)
-#   INCLUDE_JOBS   Default 1: --profile jobs for build/push (workbench-jobs). Set 0 to skip.
+#   COMPOSE_FILE          Full path (default: <repo>/local/docker-compose.yaml)
+#   INCLUDE_JOBS          Default 1: include workbench-jobs in build/push
+#   WORKBENCH_PLATFORMS   Default linux/amd64,linux/arm64 (push only)
 #
 # Before push: az acr login --name workbenchacr77   (or docker login to the registry)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/docker-buildx.sh
+source "${ROOT}/scripts/lib/docker-buildx.sh"
+
 COMPOSE_FILE="${COMPOSE_FILE:-${ROOT}/local/docker-compose.yaml}"
 INCLUDE_JOBS="${INCLUDE_JOBS:-1}"
 
@@ -58,23 +62,19 @@ compose_with_profile() {
 }
 
 compose_build() {
-  echo "==> docker compose build ($(basename "${COMPOSE_FILE}")) INCLUDE_JOBS=${INCLUDE_JOBS} platform=linux/amd64"
-  DOCKER_DEFAULT_PLATFORM=linux/amd64 compose_with_profile build
+  echo "==> multi-arch buildx (load host arch for local) platforms push=${WORKBENCH_PLATFORMS}"
+  workbench_buildx_build_apps "${ROOT}" "${INCLUDE_JOBS}" load
 }
 
 compose_push() {
-  local -a services=(workbench-api workbench-worker workbench-app workbench-local-gateway)
-  if [[ "${INCLUDE_JOBS}" == "1" ]]; then
-    services+=(workbench-jobs)
-  fi
   if ! command -v az >/dev/null 2>&1; then
     echo "Azure CLI ('az') is required for ACR login before push." >&2
     exit 1
   fi
   echo "==> az acr login --name workbenchacr77"
   az acr login --name workbenchacr77
-  echo "==> docker compose push: ${services[*]}"
-  compose_with_profile push "${services[@]}"
+  echo "==> multi-arch buildx push (${WORKBENCH_PLATFORMS})"
+  workbench_buildx_build_apps "${ROOT}" "${INCLUDE_JOBS}" push
 }
 
 compose_up() {
@@ -110,8 +110,8 @@ interactive_menu() {
   compose_file_must_exist
   echo ""
   echo "=== Docker Compose wizard ($(basename "${COMPOSE_FILE}")) ==="
-  echo "  1) build"
-  echo "  2) push (workbench images → registry; run: az acr login --name workbenchacr77)"
+  echo "  1) build (buildx, load host arch)"
+  echo "  2) push (buildx multi-arch → ACR)"
   echo "  3) up -d"
   echo "  4) build + push + up -d"
   echo "  5) down"

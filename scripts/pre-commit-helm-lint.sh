@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CRDS_CHART="${ROOT}/devops/workbench-crds-umbrella"
 CHART="${ROOT}/devops/workbench-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
@@ -61,6 +62,12 @@ for f in "${VALUES_PLATFORM}" "${VALUES_CLUSTER}"; do
 done
 
 "${ROOT}/scripts/helm-dependency-update.sh"
+
+echo "==> helm lint ${CRDS_CHART} --strict"
+helm lint "${CRDS_CHART}" --strict
+
+echo "==> helm template (smoke) ${CRDS_CHART}"
+helm template pre-commit-crds-smoke "${CRDS_CHART}" >/dev/null
 
 LINT_ARGS=(
   helm lint "${CHART}"

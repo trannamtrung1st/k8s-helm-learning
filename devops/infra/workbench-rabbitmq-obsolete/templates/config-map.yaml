@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "broker") | nindent 4 }}
+data:
+  definitions.json: |
+{{ .Files.Get "files/definitions.json" | indent 4 }}
+  10-workbench-definitions.conf: |
+{{ .Files.Get "files/conf.d/10-workbench-definitions.conf" | indent 4 }}

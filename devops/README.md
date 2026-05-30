@@ -2,7 +2,7 @@
 
 This directory (**`devops/`**) holds **Helm charts**, **values overlays**, and **legacy Kustomize** manifests for Workbench. Charts ship minimal **`values.yaml`** files; shared defaults live under **`platform/values/`**, and per-cluster overrides under **`clusters/<cluster-name>/`**.
 
-**Preferred install:** umbrella chart + `./scripts/helm-apply.sh` from the repository root.
+**Preferred install:** CRDs umbrella, then main umbrella, via `./scripts/helm-apply.sh` from the repository root.
 
 ## Layout
 
@@ -19,6 +19,12 @@ devops/
     workbench-policies/     # LimitRange, ResourceQuota, PDB
     values/
       global-values.yaml
+  crds/
+    rabbitmq-operator/      # RabbitMQ Cluster Operator (CRD + controller, rabbitmq-system)
+  workbench-crds-umbrella/  # cluster prerequisites (operators)
+    Chart.yaml
+    Chart.lock
+    charts/
   infra/
     workbench-postgres/
     workbench-rabbitmq/     # files/definitions.json, files/conf.d/…
@@ -33,7 +39,7 @@ devops/
       global-values.yaml    # kind / dev — connection strings + lean replicas
     aks/
       global-values.yaml    # AKS 3x Standard_D2s_v3 — same sizing targets
-  workbench-umbrella/       # all charts above
+  workbench-umbrella/       # platform, infra, and apps (not CRDs/operators)
     Chart.yaml
     Chart.lock
     charts/                 # vendored .tgz (refresh after subchart edits)
@@ -54,7 +60,8 @@ Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`*
 
 - **`global.*`** propagates to every subchart (namespaces, secrets, infra, apps).
 - **`global.imageRegistry`** (`workbenchacr77.azurecr.io`) — app chart images render as `<registry>/<repository>:<tag>` (e.g. `workbenchacr77.azurecr.io/workbench-api:1.0.0-rc1`).
-- Cluster overlay fills broker/cache/db connection strings and credentials (**`global.workbenchPostgres.*`**, **`global.workbenchRabbitMq.uri`**, **`global.workbenchRedis.*`**). Infra charts leave **`user` / `password` / `database`** empty in packaged **`values.yaml`**; **`clusters/<cluster>/global-values.yaml`** supplies them.
+- Cluster overlay fills broker/cache/db connection strings and credentials (**`global.workbenchPostgres.*`**, **`global.workbenchRabbitMq.user` / `password` / `uri`**, **`global.workbenchRedis.*`**). RabbitMQ **`user` / `password`** feed the operator **`workbench-rabbitmq-default-user`** Secret; **`definitions.json`** still declares the same user (password hash) for Compose/Kustomize and boot import. Keep values aligned with the hash in **`definitions.json`** (local default: **`workbench` / `workbench`**).
+- **Local kind:** app images use **`workbenchacr77.azurecr.io/...`** from **`global.imageRegistry`** (same as AKS). Build with **`./scripts/compose-wizard.sh build`** (buildx; push creates **`linux/amd64,linux/arm64`** manifest).
 
 ## Full stack install
 
@@ -77,7 +84,35 @@ Dry-run against the API:
 # or: ./scripts/helm-apply.sh --dry-run=server
 ```
 
-The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then umbrella), then **`helm upgrade --install`** with **`--history-max 5`**. Release name defaults to **`workbench-umbrella-local`** in namespace **`workbench-platform`** (`HELM_RELEASE`, `HELM_NAMESPACE`, and `HELM_HISTORY_MAX` override).
+The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then CRDs umbrella, then main umbrella), then:
+
+1. **`helm upgrade --install`** for **`workbench-crds-umbrella-<cluster>`** (`devops/workbench-crds-umbrella`) — RabbitMQ Cluster Operator
+2. **`kubectl wait`** for CRD **`rabbitmqclusters.rabbitmq.com`** **Established** (skipped on `--dry-run`)
+3. **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform, infra, apps
+
+CRDs release Helm metadata lives in **`kube-system`** (`HELM_CRDS_NAMESPACE`); the main stack uses **`workbench-platform`** (`HELM_NAMESPACE`) and owns that namespace via **`workbench-namespaces`**. Override **`HELM_CRDS_RELEASE`**, **`HELM_RELEASE`**, and **`HELM_CRD_WAIT_TIMEOUT`** (default **120s**). **`HELM_HISTORY_MAX`** applies to both upgrades.
+
+**`./scripts/helm-destroy.sh`** uninstalls the main release, then the CRDs release. Cluster-scoped **CRD** objects may remain until you delete them manually (Helm does not remove CRDs on uninstall).
+
+**Failed or pending upgrade** (e.g. `pending-upgrade`, schema errors mid-apply):
+
+```bash
+./scripts/helm-recover.sh --cluster local -y   # rollback if possible, else uninstall
+./scripts/helm-apply.sh
+```
+
+Use **`--main-only`** or **`--crds-only`** to target one release. Requires **`jq`**.
+
+After apply, verify:
+
+```bash
+kubectl get crd rabbitmqclusters.rabbitmq.com
+kubectl get pods -n rabbitmq-system
+kubectl get rabbitmqclusters -n workbench-infra
+kubectl get pvc -n workbench-infra
+```
+
+**RabbitMQ sizing (local kind):** [`clusters/local/global-values.yaml`](clusters/local/global-values.yaml) sets **`workbench-rabbitmq.replicas: 1`** (chart default is **3** at **1 CPU** each). Infra charts (**Postgres**, **RabbitMQ**, **Redis**) use **`replicas`**; app charts use **`replicaCount`**.
 
 ## Lint and template
 
@@ -106,7 +141,7 @@ docker push "${ACR}/workbench-api:1.0.0-rc1"
 az aks update -g workbench -n workbench-aks --attach-acr workbenchacr77   # pull from AKS
 ```
 
-After chart edits: **`./scripts/helm-dependency-update.sh`** (or manually **`helm dependency update`** on each dependent chart, then the umbrella) before install — refreshes vendored subcharts.
+After chart edits: **`./scripts/helm-dependency-update.sh`** (or manually **`helm dependency update`** on each dependent chart, then CRDs umbrella, then main umbrella) before install — refreshes vendored subcharts.
 
 **Library chart:** app and infra charts depend on **`workbench-common`** for shared helpers (`workbench.lib.image`, `workbench.lib.namespace.*`, `workbench.lib.labels.*`, `workbench.lib.infraNode.affinity`). Chart-specific templates (e.g. **`workbench.app.config.js`**) stay in the owning chart.
 
@@ -123,14 +158,16 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
 | `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |
 | `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB         |
+| `crds/rabbitmq-operator`             | `rabbitmq-operator`         | RabbitMQ Cluster Operator (CRD, `rabbitmq-system`) |
+| `workbench-crds-umbrella`            | `workbench-crds-umbrella`   | CRDs/operators prerequisite release               |
 | `infra/workbench-postgres`           | `workbench-postgres`        | Postgres StatefulSet, PV, db Secret             |
-| `infra/workbench-rabbitmq`           | `workbench-rabbitmq`        | RabbitMQ StatefulSet, definitions ConfigMap, PV |
+| `infra/workbench-rabbitmq`           | `workbench-rabbitmq`        | `RabbitmqCluster` CR, `{name}-default-user` Secret, definitions ConfigMap |
 | `infra/workbench-redis`              | `workbench-redis`           | Redis StatefulSet, config Secret                |
 | `apps/workbench-api`                 | `workbench-api`             | API Deployment + Service                        |
 | `apps/workbench-worker`              | `workbench-worker`          | Worker Deployment + Service                     |
 | `apps/workbench-jobs`                | `workbench-jobs`            | Cleanup CronJob                                 |
 | `apps/workbench-app`                 | `workbench-app`             | Frontend Deployment + Service (nginx)           |
-| `workbench-umbrella`                 | `workbench-umbrella`        | All of the above                                |
+| `workbench-umbrella`                 | `workbench-umbrella`        | Platform, infra, and apps (not CRDs/operators)  |
 
 ## Release name convention
 
@@ -138,7 +175,7 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 <app>-<env>
 ```
 
-Examples: **`workbench-umbrella-local`**, **`workbench-namespaces-local`**. Platform charts typically install into **`workbench-platform`**.
+Examples: **`workbench-crds-umbrella-local`** (release metadata in **`kube-system`**), **`workbench-umbrella-local`** (in **`workbench-platform`**), **`workbench-namespaces-local`**.
 
 ## Single-chart examples
 
