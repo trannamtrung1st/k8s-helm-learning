@@ -42,9 +42,16 @@ global:
     password:
     uri:
   workbenchRedis:
+    name: workbench-redis
+    port: 6379
     connectionString:
     user:
     password:
+    cluster:
+      enabled: false
+      replicas: 6
+      masters: 3
+      replicasPerMaster: 1
   workbenchPostgres:
     connectionString:
     user:

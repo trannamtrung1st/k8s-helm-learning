@@ -5,7 +5,7 @@
 #
 #   1) devops/platform/values/global-values.yaml  — structure + secret name
 #   2) devops/clusters/<cluster>/global-values.yaml — non-empty
-#      global.workbenchRabbitMq.uri and global.workbenchRedis.connectionString
+#      global.workbenchRabbitMq.uri and global.workbenchRedis (cluster or connectionString)
 #
 # `platform/values/global-values.yaml` leaves those two fields empty on purpose;
 # the cluster file supplies real URIs. `values.schema.json` enforces non-empty

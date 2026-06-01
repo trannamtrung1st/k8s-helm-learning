@@ -1,0 +1,57 @@
+{{- $redis := .Values.global.workbenchRedis | default dict -}}
+{{- $cluster := $redis.cluster | default dict -}}
+{{- if not ($cluster.enabled | default false) }}
+{{- /* standalone — no cluster bootstrap */ -}}
+{{- else }}
+{{- $cliUser := required "workbench-redis: set global.workbenchRedis.user" $redis.user -}}
+{{- $cliPassword := required "workbench-redis: set global.workbenchRedis.password" $redis.password -}}
+{{- $replicas := int (include "workbench.lib.redis.replicas" .) -}}
+{{- $nodes := list -}}
+{{- range $i := until $replicas -}}
+{{- $nodes = append $nodes (include "workbench.lib.redis.endpoint" (dict "Values" $.Values "ordinal" $i)) -}}
+{{- end -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.name }}-cluster-init
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 4 }}
+  # Not needed - one-time job, can re-run manually.
+  # annotations:
+  #   helm.sh/hook: post-install,post-upgrade
+  #   helm.sh/hook-weight: "5"
+  #   helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 12
+  template:
+    metadata:
+      labels:
+        {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache-init") | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: cluster-init
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          env:
+            - name: REDISCLI_AUTH
+              value: {{ $cliPassword | quote }}
+            - name: REDIS_USER
+              value: {{ $cliUser | quote }}
+            - name: REDIS_NODES
+              value: {{ join " " $nodes | quote }}
+            - name: CLUSTER_REPLICAS
+              value: {{ $cluster.replicasPerMaster | default 0 | toString | quote }}
+            - name: CLUSTER_MASTERS
+              value: {{ $cluster.masters | default 3 | toString | quote }}
+          command: ["sh", "/scripts/cluster-init.sh"]
+          volumeMounts:
+            - name: cluster-init
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: cluster-init
+          configMap:
+            name: {{ .Values.name }}-cluster-init
+            defaultMode: 0555
+{{- end }}

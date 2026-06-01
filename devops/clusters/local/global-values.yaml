@@ -19,9 +19,13 @@ global:
     password: workbench
     uri: amqp://workbench:workbench@workbench-rabbitmq.workbench-infra.svc.cluster.local:5672/
   workbenchRedis:
-    connectionString: workbench-redis.workbench-infra.svc.cluster.local:6379,user=workbench,password=workbench
     user: workbench
     password: workbench
+    cluster:
+      enabled: true
+      replicas: 6
+      masters: 3
+      replicasPerMaster: 1
 
 # local-kind overlay — lean replicas (fits small clusters; was 5 API / 2 worker)
 # Infra charts use `replicas`; app charts use `replicaCount`.

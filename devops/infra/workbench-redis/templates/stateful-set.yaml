@@ -1,6 +1,14 @@
 {{- $redis := .Values.global.workbenchRedis | default dict -}}
 {{- $cliUser := required "workbench-redis: set global.workbenchRedis.user (cluster -f overlay)." $redis.user -}}
 {{- $cliPassword := required "workbench-redis: set global.workbenchRedis.password (cluster -f overlay)." $redis.password -}}
+{{- $cluster := $redis.cluster | default dict -}}
+{{- $clusterEnabled := $cluster.enabled | default false -}}
+{{- $replicas := .Values.replicas -}}
+{{- if $clusterEnabled }}
+{{- $replicas = int (include "workbench.lib.redis.replicas" .) -}}
+{{- end -}}
+{{- $svcName := include "workbench.lib.redis.name" . -}}
+{{- $infraNs := include "workbench.lib.namespace.infra" . -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -14,7 +22,7 @@ spec:
     matchLabels:
       {{- include "workbench.lib.labels.selector.nameOnly" . | nindent 6 }}
   serviceName: {{ .Values.name | quote }}
-  replicas: {{ .Values.replicas }}
+  replicas: {{ $replicas }}
   minReadySeconds: {{ .Values.minReadySeconds }}
   template:
     metadata:
@@ -25,14 +33,39 @@ spec:
       containers:
         - name: {{ .Values.name }}
           image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          {{- if $clusterEnabled }}
+          command:
+            - redis-server
+            - /etc/redis/workbench.conf
+            - --cluster-announce-hostname
+            - $(POD_NAME).{{ $svcName }}.{{ $infraNs }}.svc.cluster.local
+            - --cluster-announce-port
+            - {{ .Values.service.port | quote }}
+            - --cluster-announce-bus-port
+            - {{ .Values.service.clusterBusPort | quote }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          {{- else }}
           command: ["redis-server", "/etc/redis/workbench.conf"]
+          {{- end }}
           ports:
             - containerPort: {{ .Values.service.port }}
               name: redis-port
+            {{- if $clusterEnabled }}
+            - containerPort: {{ .Values.service.clusterBusPort }}
+              name: redis-bus
+            {{- end }}
           volumeMounts:
             - name: {{ .Values.secrets.name }}
               mountPath: /etc/redis
               readOnly: true
+            {{- if $clusterEnabled }}
+            - name: redis-data
+              mountPath: /data
+            {{- end }}
           imagePullPolicy: IfNotPresent
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -70,3 +103,7 @@ spec:
         - name: {{ .Values.secrets.name }}
           secret:
             secretName: {{ .Values.secrets.name }}
+        {{- if $clusterEnabled }}
+        - name: redis-data
+          emptyDir: {}
+        {{- end }}

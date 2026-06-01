@@ -28,7 +28,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
     - Focus on cache and idempotency patterns before cluster complexity.
     - Practice persistence and eviction behavior for a single Redis node.
     - Use this as baseline before Redis Cluster in item **17**.
-17. (**DOING**) **StatefulSets** in depth
+17. (**DONE**) **StatefulSets** in depth
     - **Goal:** Understand stable pod identity, ordered rollout, and volume claim templates (beyond "installing a single chart and stopping there").
     - **What to practice:**
       - Stateful pod identity (`pod-0`, `pod-1`, ...), governing **headless** Service, and per-pod DNS.
@@ -39,7 +39,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
       - Queue durability/HA choices (quorum queues or mirrored queues) vs single-node trade-offs.
       - Compare operator-managed lifecycle with the legacy hand-written StatefulSet under **`devops/k8s/infra/workbench-rabbitmq/base`** (reference only).
       - Keep topology aligned with **`devops/infra/workbench-rabbitmq/files/`** where practical.
-    - **Lab track B — Redis Cluster on Kubernetes:**
+    - (**DONE**) **Lab track B — Redis Cluster on Kubernetes:**
       - Slot-aware sharding and failover behavior (StatefulSet-based topology, operator, or upstream reference architecture).
       - Verify **cluster-aware clients** (for example, StackExchange.Redis cluster configuration).
       - Contrast with one standalone Redis behind a Service (what problems that does and does not solve).

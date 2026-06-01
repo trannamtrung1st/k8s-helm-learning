@@ -1,0 +1,14 @@
+{{- $redis := .Values.global.workbenchRedis | default dict -}}
+{{- $cluster := $redis.cluster | default dict -}}
+{{- if $cluster.enabled | default false }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-cluster-init
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 4 }}
+data:
+  cluster-init.sh: |
+{{ .Files.Get "files/cluster-init.sh" | nindent 4 }}
+{{- end }}

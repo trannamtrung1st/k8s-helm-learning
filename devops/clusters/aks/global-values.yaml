@@ -25,9 +25,13 @@ global:
     password: CHANGEME
     uri: amqp://workbench:CHANGEME@workbench-rabbitmq.workbench-infra.svc.cluster.local:5672/
   workbenchRedis:
-    connectionString: workbench-redis.workbench-infra.svc.cluster.local:6379,user=workbench,password=CHANGEME
     user: workbench
     password: CHANGEME
+    cluster:
+      enabled: true
+      replicas: 6
+      masters: 3
+      replicasPerMaster: 1
 
 workbench-api:
   replicaCount: 2

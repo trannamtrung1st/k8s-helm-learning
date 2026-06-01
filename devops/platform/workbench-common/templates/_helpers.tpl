@@ -84,3 +84,22 @@ nodeAffinity:
 {{- define "workbench.lib.storageClasses.pvcName" -}}
 {{- required "set global.workbenchStorageClasses.pvc.name (cluster -f overlay; local=standard, aks=managed-csi)." .Values.global.workbenchStorageClasses.pvc.name -}}
 {{- end -}}
+
+{{- define "workbench.lib.redis.clusterEnabled" -}}
+{{- if .Values.global.workbenchRedis.cluster }}{{ .Values.global.workbenchRedis.cluster.enabled }}{{ else }}false{{ end -}}
+{{- end -}}
+
+{{- define "workbench.lib.redis.name" -}}
+{{- .Values.global.workbenchRedis.name | default "workbench-redis" -}}
+{{- end -}}
+
+{{- define "workbench.lib.redis.replicas" -}}
+{{- if .Values.global.workbenchRedis.cluster }}{{ .Values.global.workbenchRedis.cluster.replicas | default 6 }}{{ else }}1{{ end -}}
+{{- end -}}
+
+{{- define "workbench.lib.redis.endpoint" -}}
+{{- $name := include "workbench.lib.redis.name" . -}}
+{{- $ns := include "workbench.lib.namespace.infra" . -}}
+{{- $port := .Values.global.workbenchRedis.port | default 6379 -}}
+{{- printf "%s-%d.%s.%s.svc.cluster.local:%v" $name .ordinal $name $ns $port -}}
+{{- end -}}

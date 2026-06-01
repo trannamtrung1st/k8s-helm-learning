@@ -52,14 +52,13 @@ helm_kv_values_write() {
 
   echo "==> Reading Helm secrets from Key Vault: ${KEY_VAULT_NAME}" >&2
 
-  local pg_conn pg_user pg_pass pg_db rmq_uri rmq_pass redis_conn redis_user redis_pass
+  local pg_conn pg_user pg_pass pg_db rmq_uri rmq_pass redis_user redis_pass
   pg_conn="$(helm_kv_fetch_secret workbench-postgres-connection-string)"
   pg_user="$(helm_kv_fetch_secret workbench-postgres-user)"
   pg_pass="$(helm_kv_fetch_secret workbench-postgres-password)"
   pg_db="$(helm_kv_fetch_secret workbench-postgres-database)"
   rmq_uri="$(helm_kv_fetch_secret workbench-rabbitmq-uri)"
   rmq_pass="$(helm_kv_fetch_secret workbench-rabbitmq-password)"
-  redis_conn="$(helm_kv_fetch_secret workbench-redis-connection-string)"
   redis_user="$(helm_kv_fetch_secret workbench-redis-user)"
   redis_pass="$(helm_kv_fetch_secret workbench-redis-password)"
 
@@ -70,7 +69,6 @@ helm_kv_values_write() {
     --arg pg_db "${pg_db}" \
     --arg rmq_uri "${rmq_uri}" \
     --arg rmq_pass "${rmq_pass}" \
-    --arg redis_conn "${redis_conn}" \
     --arg redis_user "${redis_user}" \
     --arg redis_pass "${redis_pass}" \
     '{
@@ -87,9 +85,14 @@ helm_kv_values_write() {
           uri: $rmq_uri
         },
         workbenchRedis: {
-          connectionString: $redis_conn,
           user: $redis_user,
-          password: $redis_pass
+          password: $redis_pass,
+          cluster: {
+            enabled: true,
+            replicas: 6,
+            masters: 3,
+            replicasPerMaster: 1
+          }
         }
       }
     }' >"${out_file}"

@@ -66,9 +66,18 @@
         },
         "workbenchRedis": {
           "type": "object",
-          "required": ["connectionString"],
+          "required": ["user", "password"],
           "properties": {
-            "connectionString": { "type": "string", "minLength": 1 }
+            "connectionString": { "type": ["string", "null"] },
+            "user": { "type": "string", "minLength": 1 },
+            "password": { "type": "string", "minLength": 1 },
+            "cluster": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "replicas": { "type": "integer", "minimum": 2 }
+              }
+            }
           }
         }
       }

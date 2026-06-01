@@ -10,6 +10,7 @@ minReadySeconds: 20
 terminationGracePeriodSeconds: 30
 service:
   port: 6379
+  clusterBusPort: 16379
 probes:
   startup:
     initialDelaySeconds: 10
