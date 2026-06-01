@@ -1,0 +1,72 @@
+{{- $redis := .Values.global.workbenchRedis | default dict -}}
+{{- $cliUser := required "workbench-redis: set global.workbenchRedis.user (cluster -f overlay)." $redis.user -}}
+{{- $cliPassword := required "workbench-redis: set global.workbenchRedis.password (cluster -f overlay)." $redis.password -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ include "workbench.lib.namespace.infra" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      {{- include "workbench.lib.labels.selector.nameOnly" . | nindent 6 }}
+  serviceName: {{ .Values.name | quote }}
+  replicas: {{ .Values.replicas }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "workbench.lib.labels.standard.infra" (dict "ctx" . "component" "cache") | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ .Values.name }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
+          command: ["redis-server", "/etc/redis/workbench.conf"]
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: redis-port
+          volumeMounts:
+            - name: {{ .Values.secrets.name }}
+              mountPath: /etc/redis
+              readOnly: true
+          imagePullPolicy: IfNotPresent
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            exec:
+              command:
+                - redis-cli
+                - --user
+                - {{ $cliUser }}
+                - -a
+                - {{ $cliPassword }}
+                - ping
+            {{- toYaml .Values.probes.startup | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - --user
+                - {{ $cliUser }}
+                - -a
+                - {{ $cliPassword }}
+                - ping
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - --user
+                - {{ $cliUser }}
+                - -a
+                - {{ $cliPassword }}
+                - ping
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+      volumes:
+        - name: {{ .Values.secrets.name }}
+          secret:
+            secretName: {{ .Values.secrets.name }}
