@@ -17,9 +17,6 @@ var cs = builder.Configuration.GetConnectionString("Default")
 var rabbitUri = builder.Configuration["RabbitMq:Uri"]
     ?? throw new InvalidOperationException("RabbitMq:Uri is required");
 
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"]
-    ?? throw new InvalidOperationException("Redis:ConnectionString is required");
-
 var consumerConcurrency = builder.Configuration.GetValue("RabbitMq:ConsumerConcurrency", 4);
 var prefetchPerConsumer = builder.Configuration.GetValue("RabbitMq:PrefetchPerConsumer", 10);
 var rabbitSettings = new RabbitMqSettings(rabbitUri, consumerConcurrency, prefetchPerConsumer);
@@ -27,7 +24,7 @@ var rabbitSettings = new RabbitMqSettings(rabbitUri, consumerConcurrency, prefet
 builder.Services.AddWorkbenchPersistence(cs);
 builder.Services.AddWorkbenchApplicationServices();
 builder.Services.AddWorkbenchRabbitMqWorker(rabbitSettings);
-builder.Services.AddWorkbenchRedis(redisConnectionString);
+builder.Services.AddWorkbenchRedis(builder.Configuration);
 
 builder.Services.AddHealthChecks()
     .AddCheck("live", () => HealthCheckResult.Healthy(), tags: ["live"])

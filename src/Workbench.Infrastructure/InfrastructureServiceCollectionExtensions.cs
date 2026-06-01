@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using Workbench.Application.Abstractions;
 using Workbench.Infrastructure.Messaging;
@@ -17,12 +19,12 @@ public static class InfrastructureServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddWorkbenchRedis(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddWorkbenchRedis(this IServiceCollection services, IConfiguration configuration)
     {
-        if (string.IsNullOrWhiteSpace(connectionString))
-            throw new InvalidOperationException("Redis:ConnectionString (or env Redis__ConnectionString) is required.");
-
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(connectionString));
+        services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(
+                sp.GetRequiredService<IOptions<RedisOptions>>().Value.ToConfigurationOptions()));
         services.AddSingleton<IWorkbenchJobMetrics, RedisWorkbenchJobMetrics>();
         services.AddSingleton<RedisPingHealthCheck>();
         return services;

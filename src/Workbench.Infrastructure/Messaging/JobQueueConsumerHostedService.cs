@@ -87,7 +87,7 @@ internal sealed class JobQueueConsumerHostedService(
             }
 
             lock (_channelLock)
-                _consumerChannels = [..created];
+                _consumerChannels = [.. created];
             created = [];
 
             logger.LogInformation(
