@@ -17,10 +17,18 @@ spec:
     - Egress
   ingress: []
   egress:
-    - to: # [IMPORTANT] allow access to cluster DNS
+    - to: # [IMPORTANT] CoreDNS lives in kube-system; podSelector alone only matches same namespace
         - namespaceSelector:
             matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
               k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
     - to:
         - namespaceSelector:
             matchLabels:
