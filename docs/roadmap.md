@@ -46,7 +46,10 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 
 ## Edge HTTP, identity of traffic, secrets at scale
 
-18. Configure **Gateway API** — install a **gateway implementation** (controller), then **Gateway**, **HTTPRoute**, and **ReferenceGrant** for cross-namespace routing rules
+18. (**DOING**) Configure **Gateway API** and **external service** routing
+    - **Ingress (L7):** install a **gateway implementation** (controller); **Gateway**, **HTTPRoute**, and **ReferenceGrant** for cross-namespace rules to in-cluster **Services** (e.g. `workbench-app`, `workbench-api` via **`workbench-public-gateway`**)
+    - **External ingress (L4):** practice **`Service`** **`LoadBalancer`** / **`NodePort`** where Gateway API is not the right fit; compare L4 vs L7 edge (cost, scope, TLS termination)
+    - **External backends / egress:** register off-cluster hosts with a Kubernetes **`Service`** (**`ExternalName`**, or **Endpoints** for external IPs) and, with **Istio ambient**, **`ServiceEntry`** so mesh workloads resolve and reach external dependencies (HTTPS APIs, managed SaaS, etc.) with consistent policy and telemetry
 19. Configure **TLS** with cert-manager (including certificates for **Gateway** TLS listeners and Services as needed)
 20. Configure **DNS** routing (records to load balancer / **Gateway** addresses; optional ExternalDNS)
 21. Configure secret management with **External Secrets Operator** (replace long-lived plain Secrets for Postgres, broker, apps)
