@@ -1,3 +1,11 @@
+# Sample NetworkPolicy (roadmap item 27). Opt-in: requires a CNI that enforces NetworkPolicy.
+# Denies all ingress to workbench-worker; allows all egress to workbench-infra (RabbitMQ, Redis).
+# Worker also uses Postgres in workbench-db and cluster DNS — extend before enabling in production.
+workbenchWorkerNetworkPolicy:
+  enabled: false
+  name: workbench-worker-sample
+  workerName: workbench-worker
+
 workbenchLimitRange:
   name: workbench-limit-range
   defaultCpuLimit: 500m

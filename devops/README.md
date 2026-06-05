@@ -16,7 +16,7 @@ devops/
     workbench-namespaces/
     workbench-apps-secrets/
     workbench-storage-classes/
-    workbench-policies/     # LimitRange, ResourceQuota, PDB
+    workbench-policies/     # LimitRange, ResourceQuota, PDB, sample NetworkPolicy
     values/
       global-values.yaml
   crds/
@@ -157,7 +157,7 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `platform/workbench-namespaces`      | `workbench-namespaces`      | Namespace objects                               |
 | `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
 | `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |
-| `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB         |
+| `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB, sample worker NetworkPolicy |
 | `crds/rabbitmq-operator`             | `rabbitmq-operator`         | RabbitMQ Cluster Operator (CRD, `rabbitmq-system`) |
 | `workbench-crds-umbrella`            | `workbench-crds-umbrella`   | CRDs/operators prerequisite release               |
 | `infra/workbench-postgres`           | `workbench-postgres`        | Postgres StatefulSet, PV, db Secret             |

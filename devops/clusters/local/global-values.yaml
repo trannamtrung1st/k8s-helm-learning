@@ -53,3 +53,7 @@ workbench-app:
   environment: local-kind
   config:
     apiBaseUrl: http://localhost:8080/api/wb
+
+workbench-policies:
+  workbenchWorkerNetworkPolicy:
+    enabled: true
