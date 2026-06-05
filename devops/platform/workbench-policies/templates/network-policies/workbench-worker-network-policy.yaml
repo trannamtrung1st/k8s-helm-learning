@@ -17,6 +17,10 @@ spec:
     - Egress
   ingress: []
   egress:
+    - to: # [IMPORTANT] allow access to cluster DNS
+        - namespaceSelector:
+            matchLabels:
+              k8s-app: kube-dns
     - to:
         - namespaceSelector:
             matchLabels:
