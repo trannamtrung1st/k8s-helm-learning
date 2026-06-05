@@ -75,6 +75,6 @@ else
 fi
 
 echo "Gateway API CRDs:"
-kubectl get crd | rg 'gateway\.networking\.k8s\.io' || true
+kubectl get crd 2>/dev/null | grep 'gateway.networking.k8s.io' || true
 
 echo "Done."

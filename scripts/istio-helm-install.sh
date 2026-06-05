@@ -77,7 +77,7 @@ require_cmd helm
 require_cmd kubectl
 
 echo "==> helm repo add istio ${ISTIO_HELM_REPO}"
-if helm repo list -o json 2>/dev/null | rg -q '"name":"istio"'; then
+if helm repo list 2>/dev/null | grep -qE '^istio[[:space:]]'; then
   echo "Helm repo 'istio' already configured."
 else
   helm repo add istio "${ISTIO_HELM_REPO}"

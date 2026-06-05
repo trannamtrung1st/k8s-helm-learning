@@ -140,7 +140,7 @@ echo "=== Step 1: create kind cluster ==="
 if [[ "${RECREATE}" == "true" ]]; then
   ./scripts/kind-wizard.sh recreate --name "${CLUSTER_NAME}" --workers "${WORKERS}"
 else
-  if kind get clusters | awk '{print $1}' | rg -x "${CLUSTER_NAME}" >/dev/null 2>&1; then
+  if kind get clusters | awk '{print $1}' | grep -qx "${CLUSTER_NAME}"; then
     echo "Cluster '${CLUSTER_NAME}' already exists (skip create)."
   else
     ./scripts/kind-wizard.sh create --name "${CLUSTER_NAME}" --workers "${WORKERS}"
