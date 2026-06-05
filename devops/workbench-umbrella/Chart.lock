@@ -11,6 +11,9 @@ dependencies:
 - name: workbench-policies
   repository: file://../platform/workbench-policies
   version: 1.0.0-rc1
+- name: workbench-public-gateway
+  repository: file://../platform/gateways/workbench-public-gateway
+  version: 1.0.0-rc1
 - name: workbench-postgres
   repository: file://../infra/workbench-postgres
   version: 1.0.0-rc1
@@ -32,5 +35,5 @@ dependencies:
 - name: workbench-app
   repository: file://../apps/workbench-app
   version: 1.0.0-rc1
-digest: sha256:7434b273887da386f95c712f7a01d5259fa7de51d6c6a330550ebaf2673560d1
-generated: "2026-05-30T20:48:31.687913+07:00"
+digest: sha256:7c9457f652f00d5697d6757a98d135af5d686e1a59d2d540f7d672a02257f5f6
+generated: "2026-06-05T20:52:10.55883+07:00"

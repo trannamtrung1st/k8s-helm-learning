@@ -1,21 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
-# Uninstall the Workbench Helm releases from the target cluster (main umbrella, then CRDs umbrella).
+# Uninstall the Workbench application stack (main umbrella only by default).
 # Run from repository root. Requires helm and kubectl context.
 #
+# Default: remove workbench-umbrella-<cluster> only so cluster platform layers stay
+# installed (Istio ambient, Gateway API CRDs, workbench-public-gateway, RabbitMQ
+# operator / CRDs umbrella). Re-apply with ./scripts/helm-apply.sh without recreating
+# the cluster.
+#
 #   ./scripts/helm-destroy.sh
-#   ./scripts/helm-destroy.sh --cluster local
-#   ./scripts/helm-destroy.sh --cluster aks -y
+#   ./scripts/helm-destroy.sh --cluster local -y
+#   ./scripts/helm-destroy.sh --cluster aks --with-crds -y   # also remove operator CRDs release
 #
 # Switches kubectl context from devops/clusters/<cluster>/cluster.conf before uninstall
 # (same as helm-apply.sh). Override release or namespace:
 #   HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-destroy.sh --cluster aks
-#   HELM_CRDS_RELEASE=workbench-crds-umbrella-aks ./scripts/helm-destroy.sh --cluster aks
-#   HELM_CRDS_NAMESPACE=kube-system ./scripts/helm-destroy.sh --cluster local
+#   HELM_CRDS_RELEASE=workbench-crds-umbrella-aks ./scripts/helm-destroy.sh --cluster aks --with-crds
 #   HELM_NAMESPACE=workbench-platform ./scripts/helm-destroy.sh --cluster local
-#
-# Cluster-scoped CRDs installed by the operator may remain after uninstall; delete manually if needed.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
@@ -28,6 +30,7 @@ KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
 AUTO_APPROVE=false
 HELM_WAIT=false
 HELM_KEEP_HISTORY=false
+UNINSTALL_CRDS=false
 
 list_helm_clusters() {
   find "${ROOT}/devops/clusters" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
@@ -35,7 +38,23 @@ list_helm_clusters() {
 
 usage() {
   cat <<'EOF'
-Uninstall Workbench Helm releases (main umbrella, then CRDs umbrella) from the target cluster.
+Uninstall Workbench Helm releases from the target cluster.
+
+By default removes only workbench-umbrella-<cluster> (apps, infra, platform subcharts
+in the umbrella). Keeps cluster platform installs so you can helm-apply again without
+recreating the cluster:
+
+  Preserved (default destroy):
+    - Istio ambient (istio-base, istiod, istio-cni, ztunnel in istio-system)
+    - Kubernetes Gateway API CRDs
+    - (none — gateway and HTTPRoutes ship in workbench-umbrella and are removed with it)
+    - workbench-crds-umbrella-<cluster> (RabbitMQ Cluster Operator)
+
+  Removed (default destroy):
+    - workbench-umbrella-<cluster> (workbench-apps, workbench-infra, workbench-db, …)
+
+Use --with-crds to also uninstall workbench-crds-umbrella-<cluster>. Cluster-scoped
+CRD objects may remain until deleted manually (Helm does not remove CRDs on uninstall).
 
 Usage:
   ./scripts/helm-destroy.sh [options]
@@ -44,6 +63,7 @@ Options:
   --cluster <name>      Cluster overlay name (default: local)
   --context <name>      kubectl context (overrides cluster.conf)
   --skip-context-switch Do not change kubectl context before uninstall
+  --with-crds           Also uninstall workbench-crds-umbrella-<cluster>
   --wait                Wait for resources to be removed before returning
   --keep-history        Keep release history after uninstall
   -y, --auto-approve    Skip confirmation prompt
@@ -63,7 +83,8 @@ Environment:
 
 Examples:
   ./scripts/helm-destroy.sh --cluster local
-  ./scripts/helm-destroy.sh --cluster aks --wait -y
+  ./scripts/helm-destroy.sh --cluster local -y
+  ./scripts/helm-destroy.sh --cluster aks --with-crds --wait -y
 EOF
   echo ""
   echo "Available clusters:"
@@ -84,6 +105,24 @@ confirm_uninstall() {
   read -r -p "Uninstall Helm release '${release}' in namespace '${namespace}'? [y/N] " reply
   reply="$(echo "${reply}" | tr '[:upper:]' '[:lower:]')"
   [[ "${reply}" == "y" || "${reply}" == "yes" ]]
+}
+
+helm_uninstall_release() {
+  local release="$1"
+  local namespace="$2"
+  local -a cmd
+  cmd=(helm uninstall "${release}" -n "${namespace}")
+  if [[ "${HELM_WAIT}" == "true" ]]; then
+    cmd+=(--wait)
+  fi
+  if [[ "${HELM_KEEP_HISTORY}" == "true" ]]; then
+    cmd+=(--keep-history)
+  fi
+  if ((${#extra_args[@]} > 0)); then
+    cmd+=("${extra_args[@]}")
+  fi
+  echo "==> ${cmd[*]}"
+  "${cmd[@]}"
 }
 
 extra_args=()
@@ -107,6 +146,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-context-switch)
       HELM_SKIP_CONTEXT_SWITCH=1
+      shift
+      ;;
+    --with-crds)
+      UNINSTALL_CRDS=true
       shift
       ;;
     --wait)
@@ -152,48 +195,53 @@ if [[ "${HELM_SKIP_CONTEXT_SWITCH}" != "1" ]]; then
   helm_kubectl_use_context "${HELM_CLUSTER}"
 fi
 
-if ! helm status "${RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
-  echo "Release '${RELEASE}' not found in namespace '${NAMESPACE}' (cluster: ${HELM_CLUSTER})." >&2
-  exit 1
-fi
+uninstalled_any=false
 
-echo "==> helm status ${RELEASE} -n ${NAMESPACE}"
-helm status "${RELEASE}" -n "${NAMESPACE}"
+if helm status "${RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+  echo "==> helm status ${RELEASE} -n ${NAMESPACE}"
+  helm status "${RELEASE}" -n "${NAMESPACE}"
 
-if [[ "${AUTO_APPROVE}" != "true" ]]; then
-  if ! confirm_uninstall "${RELEASE}" "${NAMESPACE}"; then
-    echo "Aborted."
-    exit 0
+  if [[ "${AUTO_APPROVE}" != "true" ]]; then
+    if ! confirm_uninstall "${RELEASE}" "${NAMESPACE}"; then
+      echo "Aborted."
+      exit 0
+    fi
   fi
-fi
 
-cmd=(helm uninstall "${RELEASE}" -n "${NAMESPACE}")
-if [[ "${HELM_WAIT}" == "true" ]]; then
-  cmd+=(--wait)
-fi
-if [[ "${HELM_KEEP_HISTORY}" == "true" ]]; then
-  cmd+=(--keep-history)
-fi
-if ((${#extra_args[@]} > 0)); then
-  cmd+=("${extra_args[@]}")
-fi
-
-echo "==> ${cmd[*]}"
-"${cmd[@]}"
-
-if helm status "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}" >/dev/null 2>&1; then
-  crds_cmd=(helm uninstall "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}")
-elif helm status "${CRDS_RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
-  echo "CRDs release found in legacy namespace '${NAMESPACE}' (pre kube-system split)."
-  crds_cmd=(helm uninstall "${CRDS_RELEASE}" -n "${NAMESPACE}")
-  if [[ "${HELM_WAIT}" == "true" ]]; then
-    crds_cmd+=(--wait)
-  fi
-  if [[ "${HELM_KEEP_HISTORY}" == "true" ]]; then
-    crds_cmd+=(--keep-history)
-  fi
-  echo "==> ${crds_cmd[*]}"
-  "${crds_cmd[@]}"
+  helm_uninstall_release "${RELEASE}" "${NAMESPACE}"
+  uninstalled_any=true
 else
-  echo "CRDs release '${CRDS_RELEASE}' not found in '${HELM_CRDS_NAMESPACE}' or '${NAMESPACE}' (skip)."
+  echo "Release '${RELEASE}' not found in namespace '${NAMESPACE}' (skip main umbrella)."
 fi
+
+if [[ "${UNINSTALL_CRDS}" == "true" ]]; then
+  crds_namespace=""
+  if helm status "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}" >/dev/null 2>&1; then
+    crds_namespace="${HELM_CRDS_NAMESPACE}"
+  elif helm status "${CRDS_RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
+    echo "CRDs release found in legacy namespace '${NAMESPACE}' (pre kube-system split)."
+    crds_namespace="${NAMESPACE}"
+  fi
+
+  if [[ -n "${crds_namespace}" ]]; then
+    if [[ "${AUTO_APPROVE}" != "true" ]]; then
+      if ! confirm_uninstall "${CRDS_RELEASE}" "${crds_namespace}"; then
+        echo "Aborted before CRDs uninstall."
+        exit 0
+      fi
+    fi
+    helm_uninstall_release "${CRDS_RELEASE}" "${crds_namespace}"
+    uninstalled_any=true
+  else
+    echo "CRDs release '${CRDS_RELEASE}' not found in '${HELM_CRDS_NAMESPACE}' or '${NAMESPACE}' (skip)."
+  fi
+else
+  echo "Keeping platform CRDs release '${CRDS_RELEASE}' (pass --with-crds to uninstall)."
+  echo "Keeping Istio / Gateway API CRDs (not managed by this script)."
+fi
+
+if [[ "${uninstalled_any}" != "true" ]]; then
+  echo "Nothing to uninstall."
+fi
+
+echo "Done. Re-apply stack: ./scripts/helm-apply.sh --cluster ${HELM_CLUSTER}"

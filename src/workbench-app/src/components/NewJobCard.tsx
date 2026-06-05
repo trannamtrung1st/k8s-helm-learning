@@ -159,7 +159,7 @@ export function NewJobCard(props: Props) {
           publishes to the queue for the worker.{' '}
           <strong className="font-medium text-slate-300">Sync</strong> calls{' '}
           <code className="rounded border border-slate-600 bg-slate-800 px-1 py-0.5 text-[0.7rem] text-slate-100">
-            POST /v1/work
+            POST /api/wb/work
           </code>{' '}
           and runs load in the API process (no job row, no worker).
         </p>

@@ -68,7 +68,7 @@ public sealed class JobsApplicationService(
         if (errors.Count > 0)
             return new SyncWorkValidationFailed(errors);
 
-        logger.LogInformation("Sync workload starting (POST /v1/work)");
+        logger.LogInformation("Sync workload starting (POST /api/wb/work)");
         var metrics =
             await LoadSimulator.RunAsync(payload, logger, cancellationToken).ConfigureAwait(false);
         logger.LogInformation("Sync workload completed in {ElapsedMs} ms", metrics.WallClockMs);

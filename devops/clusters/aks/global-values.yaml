@@ -33,6 +33,10 @@ global:
       masters: 3
       replicasPerMaster: 1
 
+workbench-public-gateway:
+  annotations:
+    networking.istio.io/service-type: LoadBalancer
+
 workbench-api:
   replicaCount: 2
   environment: aks
@@ -49,7 +53,7 @@ workbench-app:
   replicaCount: 1
   environment: aks
   config:
-    apiBaseUrl: /api
+    apiBaseUrl: /api/wb
 
 workbench-policies:
   workbenchLimitRange:

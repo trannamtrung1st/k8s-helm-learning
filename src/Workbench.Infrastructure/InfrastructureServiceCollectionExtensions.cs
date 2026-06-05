@@ -47,6 +47,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         services.AddSingleton(settings);
         services.AddSingleton<RabbitMqBus>();
+        services.AddSingleton<RabbitMqBusHealthCheck>();
         services.AddHostedService(sp => sp.GetRequiredService<RabbitMqBus>());
         services.AddHostedService<JobQueueConsumerHostedService>();
         services.AddScoped<IJobQueuePublisher, RabbitMqJobQueuePublisher>();

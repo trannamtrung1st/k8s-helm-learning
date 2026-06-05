@@ -58,7 +58,7 @@ builder.Services.AddSwaggerGen(o =>
         Title = "Workbench API",
         Version = "v1",
         Description =
-            "Synthetic load jobs: enqueue, list, get, sync workloads, and Redis-backed counters (GET /v1/metrics).",
+            "Synthetic load jobs: enqueue, list, get, sync workloads, and Redis-backed counters (GET /api/wb/metrics).",
     });
 });
 
@@ -66,11 +66,11 @@ var app = builder.Build();
 
 app.UseCors();
 
-app.UseSwagger();
+app.UseSwagger(o => o.RouteTemplate = "api/wb/swagger/{documentName}/swagger.json");
 app.UseSwaggerUI(o =>
 {
-    o.RoutePrefix = "swagger";
-    o.SwaggerEndpoint("/swagger/v1/swagger.json", "Workbench API v1");
+    o.RoutePrefix = "api/wb/swagger";
+    o.SwaggerEndpoint("v1/swagger.json", "Workbench API v1");
 });
 
 var livePredicate = new Func<HealthCheckRegistration, bool>(r => r.Tags.Contains("live"));
@@ -85,14 +85,14 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
-var jobsApi = app.MapGroup("/v1");
+var jobsApi = app.MapGroup("/api/wb");
 
 jobsApi.MapPost("/jobs", async (JobPayload body, IJobsApplicationService jobs, CancellationToken ct) =>
 {
     var result = await jobs.EnqueueJobAsync(body, ct).ConfigureAwait(false);
     return result switch
     {
-        EnqueueJobSuccess s => Results.Created($"/v1/jobs/{s.Id:D}", new { id = s.Id, status = s.Status }),
+        EnqueueJobSuccess s => Results.Created($"/api/wb/jobs/{s.Id:D}", new { id = s.Id, status = s.Status }),
         EnqueueJobValidationFailed v => ValidationFailed(v.Errors),
         _ => Results.Problem(),
     };

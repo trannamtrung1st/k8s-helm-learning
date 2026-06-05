@@ -20,7 +20,7 @@ async function throwValidationIfNeeded(res: Response): Promise<void> {
 }
 
 export async function createJob(payload: JobPayload): Promise<CreateJobResponse> {
-  const res = await fetch(`${baseUrl()}/v1/jobs`, {
+  const res = await fetch(`${baseUrl()}/jobs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -31,7 +31,7 @@ export async function createJob(payload: JobPayload): Promise<CreateJobResponse>
 }
 
 export async function runSyncWork(payload: JobPayload): Promise<SyncWorkResponse> {
-  const res = await fetch(`${baseUrl()}/v1/work`, {
+  const res = await fetch(`${baseUrl()}/work`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -42,20 +42,20 @@ export async function runSyncWork(payload: JobPayload): Promise<SyncWorkResponse
 }
 
 export async function getJob(id: string): Promise<JobDetail | null> {
-  const res = await fetch(`${baseUrl()}/v1/jobs/${id}`)
+  const res = await fetch(`${baseUrl()}/jobs/${id}`)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return (await res.json()) as JobDetail
 }
 
 export async function listJobs(limit: number): Promise<JobDetail[]> {
-  const res = await fetch(`${baseUrl()}/v1/jobs?limit=${limit}`)
+  const res = await fetch(`${baseUrl()}/jobs?limit=${limit}`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return (await res.json()) as JobDetail[]
 }
 
 export async function getJobMetrics(): Promise<JobMetrics> {
-  const res = await fetch(`${baseUrl()}/v1/metrics`)
+  const res = await fetch(`${baseUrl()}/metrics`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return (await res.json()) as JobMetrics
 }

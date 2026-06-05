@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'http://localhost:8080/api'
+const DEFAULT_API_BASE_URL = 'http://localhost:8080/api/wb'
 
 /** API base URL: runtime config.js (Helm ConfigMap) → Vite env → default. */
 export function getApiBaseUrl(): string {

@@ -14,8 +14,23 @@ service:
 configMap:
   name: workbench-app-config
 config:
-  # Browser-reachable API URL (e.g. port-forward workbench-api to :8080).
-  apiBaseUrl: http://localhost:8080/api
+  # Browser-reachable API URL via gateway (port-forward workbench-public-gateway-istio :8080).
+  apiBaseUrl: http://localhost:8080/api/wb
+httpRoute:
+  enabled: true
+  annotations: {}
+  labels: {}
+  parentRefs:
+    - name: workbench-public-gateway
+      namespace: istio-system
+  hostnames: []
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - port: 80
 resources:
   limits:
     cpu: 200m

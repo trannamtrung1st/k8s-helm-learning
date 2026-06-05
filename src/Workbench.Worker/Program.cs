@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using RabbitMQ.Client;
 using Workbench.Application;
 using Workbench.Infrastructure;
 using Workbench.Infrastructure.Messaging;
@@ -27,14 +26,8 @@ builder.Services.AddWorkbenchRabbitMqWorker(rabbitSettings);
 builder.Services.AddWorkbenchRedis(builder.Configuration);
 
 builder.Services.AddHealthChecks()
-    .AddCheck("live", () => HealthCheckResult.Healthy(), tags: ["live"])
     .AddNpgSql(cs, tags: ["ready"])
-    .AddAsyncCheck("rabbitmq", async () =>
-    {
-        var factory = new ConnectionFactory { Uri = new Uri(rabbitUri) };
-        await using var conn = await factory.CreateConnectionAsync().ConfigureAwait(false);
-        return HealthCheckResult.Healthy();
-    }, tags: ["ready"])
+    .AddCheck<RabbitMqBusHealthCheck>("rabbitmq", tags: ["live", "ready"])
     .AddCheck<RedisPingHealthCheck>("redis", tags: ["ready"]);
 
 var app = builder.Build();

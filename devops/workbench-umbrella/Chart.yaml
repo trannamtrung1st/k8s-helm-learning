@@ -17,6 +17,9 @@ dependencies:
   - name: workbench-policies
     version: 1.0.0-rc1
     repository: file://../platform/workbench-policies
+  - name: workbench-public-gateway
+    version: 1.0.0-rc1
+    repository: file://../platform/gateways/workbench-public-gateway
   - name: workbench-postgres
     version: 1.0.0-rc1
     repository: file://../infra/workbench-postgres

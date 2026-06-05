@@ -32,6 +32,10 @@ global:
 workbench-rabbitmq:
   replicas: 3
 
+workbench-public-gateway:
+  annotations:
+    networking.istio.io/service-type: ClusterIP
+
 workbench-api:
   replicaCount: 2
   environment: local-kind
@@ -48,4 +52,4 @@ workbench-app:
   replicaCount: 1
   environment: local-kind
   config:
-    apiBaseUrl: http://localhost:8080/api
+    apiBaseUrl: http://localhost:8080/api/wb

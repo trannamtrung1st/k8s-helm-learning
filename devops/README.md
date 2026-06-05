@@ -88,11 +88,11 @@ The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`wor
 
 1. **`helm upgrade --install`** for **`workbench-crds-umbrella-<cluster>`** (`devops/workbench-crds-umbrella`) — RabbitMQ Cluster Operator
 2. **`kubectl wait`** for CRD **`rabbitmqclusters.rabbitmq.com`** **Established** (skipped on `--dry-run`)
-3. **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform, infra, apps
+3. **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform (incl. **`workbench-public-gateway`**), infra, apps (incl. **HTTPRoutes** on **`workbench-api`** and **`workbench-app`**)
 
 CRDs release Helm metadata lives in **`kube-system`** (`HELM_CRDS_NAMESPACE`); the main stack uses **`workbench-platform`** (`HELM_NAMESPACE`) and owns that namespace via **`workbench-namespaces`**. Override **`HELM_CRDS_RELEASE`**, **`HELM_RELEASE`**, and **`HELM_CRD_WAIT_TIMEOUT`** (default **120s**). **`HELM_HISTORY_MAX`** applies to both upgrades.
 
-**`./scripts/helm-destroy.sh`** uninstalls the main release, then the CRDs release. Cluster-scoped **CRD** objects may remain until you delete them manually (Helm does not remove CRDs on uninstall).
+**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install) and **Gateway API CRDs** stay installed by default; the **RabbitMQ operator** release stays unless you pass **`--with-crds`**. Cluster-scoped **CRD** objects may remain until you delete them manually (Helm does not remove CRDs on uninstall).
 
 **Failed or pending upgrade** (e.g. `pending-upgrade`, schema errors mid-apply):
 

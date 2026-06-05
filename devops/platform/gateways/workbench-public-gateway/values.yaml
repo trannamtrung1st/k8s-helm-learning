@@ -1,0 +1,40 @@
+# Installed via workbench-umbrella (./scripts/helm-apply.sh). Standalone:
+#   helm upgrade --install workbench-public-gateway . -n workbench-platform \
+#   -f ../../values/global-values.yaml -f ../../../clusters/local/global-values.yaml
+#
+# Istio annotates the generated Service from this Gateway. Use ClusterIP on kind
+# (port-forward); use LoadBalancer on cloud clusters.
+
+enabled: true
+
+name: workbench-public-gateway
+namespace: istio-system
+component: gateway
+gatewayClassName: istio
+
+# HTTPRoutes: only namespaces with app.kubernetes.io/part-of=<global.workbenchPartOf>
+# (set in template; requires -f ../../values/global-values.yaml).
+
+# Merged with standard chart labels in templates/gateway.yaml.
+labels: {}
+
+# Istio Gateway Service type (kind/local: ClusterIP; AKS: often LoadBalancer).
+annotations:
+  networking.istio.io/service-type: ClusterIP
+
+listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    # hostname: workbench.local
+
+  # Uncomment for TLS termination (requires a Secret in the Gateway namespace).
+  # - name: https
+  #   protocol: HTTPS
+  #   port: 443
+  #   hostname: workbench.local
+  #   tls:
+  #     mode: Terminate
+  #     certificateRefs:
+  #       - name: workbench-public-tls
+  #         kind: Secret

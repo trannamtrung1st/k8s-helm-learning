@@ -15,6 +15,21 @@ configMap:
   name: workbench-api-config
 secrets:
   name: workbench-api-secrets
+httpRoute:
+  enabled: true
+  annotations: {}
+  labels: {}
+  parentRefs:
+    - name: workbench-public-gateway
+      namespace: istio-system
+  hostnames: []
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/wb
+      backendRefs:
+        - port: 80
 topologySpread:
   enabled: false
   maxSkew: 1
