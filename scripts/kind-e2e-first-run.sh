@@ -7,6 +7,7 @@ set -euo pipefail
 # Mirrors devops/k8s/README.md first-run flow:
 # 1) create/recreate kind cluster
 # 2) set kubectl context
+# 2b) install Istio ambient + Gateway API CRDs (Helm; see scripts/istio-helm-install.sh)
 # 3) label infra node
 # 4) init local PV directories
 # 5) build compose app images and load into kind
@@ -19,6 +20,7 @@ INFRA_NODE=""
 SKIP_BUILD="false"
 SKIP_LOAD="false"
 SKIP_APPLY="false"
+SKIP_ISTIO="false"
 USE_K8S_APPLY="false"
 COMPOSE_FILE="local/docker-compose.yaml"
 INCLUDE_JOBS="${INCLUDE_JOBS:-1}"
@@ -37,6 +39,7 @@ Options:
   --skip-load            skip kind image load step
   --no-jobs              omit workbench-jobs from build and kind load
   --skip-apply           skip stack apply step (Helm or Kustomize)
+  --skip-istio           skip Istio ambient Helm install (+ Gateway API CRDs)
   --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
                          default: ./scripts/helm-apply.sh
   -h, --help             show help
@@ -91,6 +94,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_APPLY="true"
       shift
       ;;
+    --skip-istio)
+      SKIP_ISTIO="true"
+      shift
+      ;;
     --k8s)
       USE_K8S_APPLY="true"
       shift
@@ -120,7 +127,7 @@ fi
 require_cmd kind
 require_cmd kubectl
 require_cmd docker
-if [[ "${USE_K8S_APPLY}" != "true" && "${SKIP_APPLY}" != "true" ]]; then
+if [[ "${SKIP_ISTIO}" != "true" || ( "${USE_K8S_APPLY}" != "true" && "${SKIP_APPLY}" != "true" ) ]]; then
   require_cmd helm
 fi
 
@@ -143,6 +150,13 @@ fi
 echo "=== Step 2: set kubectl context ==="
 kubectl config use-context "kind-${CLUSTER_NAME}" >/dev/null
 kubectl get nodes -o wide
+
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  echo "=== Step 2b: install Istio ambient (Helm) + Gateway API CRDs ==="
+  ./scripts/istio-helm-install.sh
+else
+  echo "=== Step 2b: skip Istio Helm install ==="
+fi
 
 if [[ -z "${INFRA_NODE}" ]]; then
   # Prefer first worker in multi-node cluster; else control-plane in single-node.
@@ -198,5 +212,8 @@ kubectl get rabbitmqclusters -n workbench-infra
 kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  kubectl get pods -n istio-system
+fi
 
 echo "Done."

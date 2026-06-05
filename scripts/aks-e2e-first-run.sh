@@ -42,6 +42,7 @@ SKIP_CREDENTIALS="false"
 SKIP_BUILD="false"
 SKIP_PUSH="false"
 SKIP_APPLY="false"
+SKIP_ISTIO="false"
 SKIP_KV_SECRETS="false"
 ATTACH_ACR="false"
 
@@ -71,6 +72,9 @@ Options:
     --skip-apply               Skip helm apply
     --skip-kv-secrets          Pass --skip-kv-secrets to helm-apply
     --no-jobs                  Omit workbench-jobs from compose build/push
+
+  Istio:
+    --skip-istio               Skip Istio ambient Helm install (+ Gateway API CRDs)
 
   -h, --help                   Show this help
 
@@ -155,6 +159,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_APPLY="true"
       shift
       ;;
+    --skip-istio)
+      SKIP_ISTIO="true"
+      shift
+      ;;
     --skip-kv-secrets)
       SKIP_KV_SECRETS="true"
       shift
@@ -192,7 +200,7 @@ require_cmd docker
 if [[ "${SKIP_TERRAFORM}" != "true" ]]; then
   require_cmd terraform
 fi
-if [[ "${SKIP_APPLY}" != "true" ]]; then
+if [[ "${SKIP_ISTIO}" != "true" || "${SKIP_APPLY}" != "true" ]]; then
   require_cmd helm
 fi
 if [[ "${SKIP_BUILD}" != "true" || "${SKIP_PUSH}" != "true" ]]; then
@@ -249,6 +257,14 @@ helm_kubectl_use_context "${HELM_CLUSTER}"
 
 echo "=== Step 4: verify cluster ==="
 kubectl get nodes -o wide
+
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  echo "=== Step 4c: install Istio ambient (Helm) + Gateway API CRDs ==="
+  ./scripts/istio-helm-install.sh
+else
+  echo "=== Step 4c: skip Istio Helm install ==="
+fi
+
 if [[ "${ATTACH_ACR}" == "true" ]]; then
   echo "=== Step 4b: attach ACR to AKS (optional) ==="
   echo "==> az aks update --resource-group ${AKS_RESOURCE_GROUP} --name ${AKS_CLUSTER_NAME} --attach-acr ${ACR_NAME}"
@@ -294,5 +310,8 @@ kubectl get pods -n workbench-infra
 kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  kubectl get pods -n istio-system
+fi
 
 echo "Done."

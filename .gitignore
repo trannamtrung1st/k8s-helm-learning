@@ -150,6 +150,9 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# Istio CLI download cache (scripts/istio-install.sh)
+.cache/istio-*/
+
 # TFS 2012 Local Workspace
 $tf/
 
