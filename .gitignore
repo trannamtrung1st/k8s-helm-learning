@@ -459,3 +459,6 @@ depvalues/
 # Terraform
 .terraform/
 devops/terraform/vars/
+
+# mkcert local CA Helm overlay (scripts/local-tls-prep.sh)
+devops/clusters/local/local-ca.values.yaml

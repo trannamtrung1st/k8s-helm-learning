@@ -14,6 +14,10 @@ dependencies:
   - name: workbench-apps-secrets
     version: 1.0.0-rc1
     repository: file://../platform/workbench-apps-secrets
+  - name: workbench-local-ca-secret
+    version: 1.0.0-rc1
+    repository: file://../platform/workbench-local-ca-secret
+    condition: workbench-local-ca-secret.enabled
   - name: workbench-policies
     version: 1.0.0-rc1
     repository: file://../platform/workbench-policies

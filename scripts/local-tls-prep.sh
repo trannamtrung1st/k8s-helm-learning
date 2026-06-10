@@ -11,10 +11,13 @@ set -euo pipefail
 # Steps:
 #   1) Add hostname to /etc/hosts (on by default)
 #   2) Install mkcert local CA (trusted by macOS / browsers)
+#   3) Write Helm values overlay for workbench-local-ca-secret
 #
 # Domain certificates are handled separately (e.g. cert-manager).
 # Requires mkcert on PATH (e.g. brew install mkcert).
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCAL_CA_VALUES="${ROOT}/devops/clusters/local/local-ca.values.yaml"
 DOMAIN="${MKCERT_DOMAIN:-k8slearning.com}"
 HOSTS_IP="${MKCERT_HOSTS_IP:-127.0.0.1}"
 ADD_HOSTS="true"
@@ -23,7 +26,7 @@ usage() {
   cat <<EOF
 Usage: $0 [options]
 
-Add a local hostname to /etc/hosts and install mkcert local CA.
+Add a local hostname to /etc/hosts, install mkcert local CA, and write Helm values for workbench-local-ca-secret.
 
 Options:
   -d, --domain <name>     Hostname for /etc/hosts (default: ${DOMAIN})
@@ -68,6 +71,29 @@ add_hosts_entry() {
   echo "    Added: ${ip} ${domain}"
 }
 
+write_local_ca_values() {
+  local caroot crt_file key_file
+
+  caroot="$(mkcert -CAROOT)"
+  crt_file="${caroot}/rootCA.pem"
+  key_file="${caroot}/rootCA-key.pem"
+
+  if [[ ! -f "${crt_file}" || ! -f "${key_file}" ]]; then
+    echo "mkcert CA files not found under ${caroot}" >&2
+    exit 1
+  fi
+
+  echo "==> Writing ${LOCAL_CA_VALUES}"
+  {
+    echo "workbench-local-ca-secret:"
+    echo "  enabled: true"
+    echo "  tlsCrt: |"
+    sed 's/^/    /' "${crt_file}"
+    echo "  tlsKey: |"
+    sed 's/^/    /' "${key_file}"
+  } > "${LOCAL_CA_VALUES}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--domain)
@@ -106,5 +132,7 @@ fi
 
 echo "==> mkcert -install"
 mkcert -install
+
+write_local_ca_values
 
 echo "Done."

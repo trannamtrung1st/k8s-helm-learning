@@ -25,6 +25,8 @@ global:
   workbenchSecrets:
     apps:
       name: workbench-apps-secrets
+    localCa:
+      name: workbench-local-ca-secret
   workbenchComponents:
     platform:
       name: platform
