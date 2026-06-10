@@ -28,7 +28,7 @@ httpListener:
   hostname: ""
 
 httpsListener:
-  enabled: false
+  enabled: true
   name: https
   port: 443
   hostname: ""
