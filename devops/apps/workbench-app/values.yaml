@@ -18,23 +18,13 @@ config:
   apiBaseUrl: http://localhost:8080/api/wb
 httpRoute:
   enabled: true
-  annotations: {}
-  labels: {}
-  parentRefs:
-    - name: workbench-public-gateway
-      namespace: istio-system
-  hostnames: []
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - port: 80
+  parentGatewayName: workbench-public-gateway
+  parentGatewayNamespace: istio-system
+  hostname: ""
+  pathPrefix: /
+  pathMatchType: PathPrefix
 resources:
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
+  limitsCpu: 200m
+  limitsMemory: 128Mi
+  requestsCpu: 50m
+  requestsMemory: 64Mi

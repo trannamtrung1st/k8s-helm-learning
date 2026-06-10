@@ -3,17 +3,11 @@
 {{- end -}}
 
 {{- define "workbench-public-gateway.allowedRoutes" -}}
-{{- $ctx := .ctx -}}
-{{- $listener := .listener -}}
-{{- if $listener.allowedRoutes -}}
-{{- toYaml $listener.allowedRoutes }}
-{{- else -}}
 namespaces:
   from: Selector
   selector:
     matchLabels:
-      app.kubernetes.io/part-of: {{ include "workbench-public-gateway.partOf" $ctx }}
-{{- end }}
+      app.kubernetes.io/part-of: {{ include "workbench-public-gateway.partOf" . }}
 {{- end -}}
 
 {{- define "workbench-public-gateway.labels" -}}

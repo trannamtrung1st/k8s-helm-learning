@@ -41,7 +41,7 @@ spec:
               subPath: config.js
               readOnly: true
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- include "workbench.lib.resources.container" .Values.resources | nindent 12 }}
           livenessProbe:
             httpGet:
               path: /

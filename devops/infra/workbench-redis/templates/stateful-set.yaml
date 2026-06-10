@@ -68,7 +68,7 @@ spec:
             {{- end }}
           imagePullPolicy: IfNotPresent
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- include "workbench.lib.resources.container" .Values.resources | nindent 12 }}
           startupProbe:
             exec:
               command:
@@ -78,7 +78,7 @@ spec:
                 - -a
                 - {{ $cliPassword }}
                 - ping
-            {{- toYaml .Values.probes.startup | nindent 12 }}
+            {{- include "workbench.lib.probe.timing" .Values.probes.startup | nindent 12 }}
           livenessProbe:
             exec:
               command:
@@ -88,7 +88,7 @@ spec:
                 - -a
                 - {{ $cliPassword }}
                 - ping
-            {{- toYaml .Values.probes.liveness | nindent 12 }}
+            {{- include "workbench.lib.probe.timing" .Values.probes.liveness | nindent 12 }}
           readinessProbe:
             exec:
               command:
@@ -98,7 +98,7 @@ spec:
                 - -a
                 - {{ $cliPassword }}
                 - ping
-            {{- toYaml .Values.probes.readiness | nindent 12 }}
+            {{- include "workbench.lib.probe.timing" .Values.probes.readiness | nindent 12 }}
       volumes:
         - name: {{ .Values.secrets.name }}
           secret:

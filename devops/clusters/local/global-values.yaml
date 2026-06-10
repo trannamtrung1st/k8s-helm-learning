@@ -33,8 +33,7 @@ workbench-rabbitmq:
   replicas: 3
 
 workbench-public-gateway:
-  annotations:
-    networking.istio.io/service-type: ClusterIP
+  serviceType: ClusterIP
 
 workbench-api:
   replicaCount: 2

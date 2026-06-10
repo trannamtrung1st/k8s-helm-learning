@@ -16,9 +16,7 @@ configMap:
 secrets:
   name: workbench-worker-secrets
 resources:
-  limits:
-    cpu: 300m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
+  limitsCpu: 300m
+  limitsMemory: 256Mi
+  requestsCpu: 100m
+  requestsMemory: 128Mi

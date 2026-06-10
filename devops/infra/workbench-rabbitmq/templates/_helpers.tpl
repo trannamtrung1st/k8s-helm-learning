@@ -6,6 +6,6 @@ exec:
   command:
     {{- toYaml .root.Values.probes.command | nindent 4 }}
 {{- with .settings }}
-{{- toYaml . | nindent 0 }}
+{{ include "workbench.lib.probe.timing" . | nindent 0 }}
 {{- end }}
 {{- end -}}

@@ -27,12 +27,10 @@ probes:
     failureThreshold: 3
 # RabbitMQ requires at least 1 CPU (request and limit). Do not reduce below 1 CPU.
 resources:
-  limits:
-    cpu: "1"
-    memory: 512Mi
-  requests:
-    cpu: "1"
-    memory: 512Mi
+  limitsCpu: "1"
+  limitsMemory: 512Mi
+  requestsCpu: "1"
+  requestsMemory: 512Mi
 pvc:
   size: 512Mi
 pv:

@@ -33,7 +33,7 @@ spec:
                 - --older-than-days
                 - {{ .Values.cleanup.olderThanDays | quote }}
               resources:
-                {{- toYaml .Values.resources | nindent 16 }}
+                {{- include "workbench.lib.resources.container" .Values.resources | nindent 16 }}
               envFrom:
                 - secretRef:
                     name: {{ .Values.secrets.name }}

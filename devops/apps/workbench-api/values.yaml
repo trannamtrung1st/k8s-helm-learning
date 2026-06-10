@@ -17,27 +17,17 @@ secrets:
   name: workbench-api-secrets
 httpRoute:
   enabled: true
-  annotations: {}
-  labels: {}
-  parentRefs:
-    - name: workbench-public-gateway
-      namespace: istio-system
-  hostnames: []
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /api/wb
-      backendRefs:
-        - port: 80
+  parentGatewayName: workbench-public-gateway
+  parentGatewayNamespace: istio-system
+  hostname: ""
+  pathPrefix: /api/wb
+  pathMatchType: PathPrefix
 topologySpread:
   enabled: false
   maxSkew: 1
   minDomains: 2
 resources:
-  limits:
-    cpu: 300m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
+  limitsCpu: 300m
+  limitsMemory: 256Mi
+  requestsCpu: 100m
+  requestsMemory: 128Mi

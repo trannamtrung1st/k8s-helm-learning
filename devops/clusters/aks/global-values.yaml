@@ -34,8 +34,7 @@ global:
       replicasPerMaster: 1
 
 workbench-public-gateway:
-  annotations:
-    networking.istio.io/service-type: LoadBalancer
+  serviceType: LoadBalancer
 
 workbench-api:
   replicaCount: 2

@@ -19,22 +19,17 @@ gatewayClassName: istio
 labels: {}
 
 # Istio Gateway Service type (kind/local: ClusterIP; AKS: often LoadBalancer).
-annotations:
-  networking.istio.io/service-type: ClusterIP
+serviceType: ClusterIP
 
-listeners:
-  - name: http
-    protocol: HTTP
-    port: 80
-    # hostname: workbench.local
+httpListener:
+  enabled: true
+  name: http
+  port: 80
+  hostname: ""
 
-  # Uncomment for TLS termination (requires a Secret in the Gateway namespace).
-  # - name: https
-  #   protocol: HTTPS
-  #   port: 443
-  #   hostname: workbench.local
-  #   tls:
-  #     mode: Terminate
-  #     certificateRefs:
-  #       - name: workbench-public-tls
-  #         kind: Secret
+httpsListener:
+  enabled: false
+  name: https
+  port: 443
+  hostname: ""
+  tlsSecretName: ""

@@ -103,3 +103,61 @@ nodeAffinity:
 {{- $port := .Values.global.workbenchRedis.port | default 6379 -}}
 {{- printf "%s-%d.%s.%s.svc.cluster.local:%v" $name .ordinal $name $ns $port -}}
 {{- end -}}
+
+{{- define "workbench.lib.resources.container" -}}
+limits:
+  cpu: {{ .limitsCpu }}
+  memory: {{ .limitsMemory }}
+requests:
+  cpu: {{ .requestsCpu }}
+  memory: {{ .requestsMemory }}
+{{- end -}}
+
+{{- define "workbench.lib.probe.timing" -}}
+{{- with .initialDelaySeconds }}
+initialDelaySeconds: {{ . }}
+{{- end }}
+{{- with .periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
+{{- with .failureThreshold }}
+failureThreshold: {{ . }}
+{{- end }}
+{{- with .successThreshold }}
+successThreshold: {{ . }}
+{{- end }}
+{{- end -}}
+
+{{- define "workbench.lib.httpRoute" -}}
+{{- if .Values.httpRoute.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.httpRoute.name | default (printf "%s-http-route" .Values.name) }}
+  namespace: {{ include "workbench.lib.namespace.apps" . }}
+  labels:
+    {{- include "workbench.lib.labels.standard.apps" . | nindent 4 }}
+    {{- if .Values.environment }}
+    workbench.io/environment: {{ .Values.environment }}
+    {{- end }}
+spec:
+  parentRefs:
+    - name: {{ .Values.httpRoute.parentGatewayName }}
+      namespace: {{ .Values.httpRoute.parentGatewayNamespace }}
+  {{- with .Values.httpRoute.hostname }}
+  hostnames:
+    - {{ . | quote }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: {{ .Values.httpRoute.pathMatchType | default "PathPrefix" }}
+            value: {{ .Values.httpRoute.pathPrefix }}
+      backendRefs:
+        - name: {{ .Values.name }}
+          port: {{ .Values.service.port }}
+{{- end }}
+{{- end -}}

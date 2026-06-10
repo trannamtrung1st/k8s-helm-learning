@@ -16,9 +16,7 @@ cleanup:
 secrets:
   name: workbench-cleanup-jobs-secrets
 resources:
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
+  limitsCpu: 200m
+  limitsMemory: 128Mi
+  requestsCpu: 50m
+  requestsMemory: 64Mi

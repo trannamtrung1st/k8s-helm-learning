@@ -28,12 +28,10 @@ probes:
     failureThreshold: 3
 # Burstable QoS — sized for small nodes (e.g. AKS Standard_D2s_v3).
 resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 200m
-    memory: 384Mi
+  limitsCpu: 500m
+  limitsMemory: 512Mi
+  requestsCpu: 200m
+  requestsMemory: 384Mi
 pvc:
   size: 1Gi
 pv:

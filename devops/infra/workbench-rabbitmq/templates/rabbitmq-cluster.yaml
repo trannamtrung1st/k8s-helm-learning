@@ -9,7 +9,7 @@ spec:
   replicas: {{ .Values.replicas }}
   image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
   resources:
-    {{- toYaml .Values.resources | nindent 4 }}
+    {{- include "workbench.lib.resources.container" .Values.resources | nindent 4 }}
   persistence:
     storage: {{ .Values.pvc.size }}
     storageClassName: {{ include "workbench.lib.storageClasses.pvcName" . | quote }}

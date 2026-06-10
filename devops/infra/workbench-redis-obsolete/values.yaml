@@ -27,9 +27,7 @@ probes:
     failureThreshold: 3
 # redisCli user/password: set via global.workbenchRedis in cluster global-values.yaml
 resources:
-  limits:
-    cpu: 300m
-    memory: 256Mi
-  requests:
-    cpu: 100m
-    memory: 192Mi
+  limitsCpu: 300m
+  limitsMemory: 256Mi
+  requestsCpu: 100m
+  requestsMemory: 192Mi
