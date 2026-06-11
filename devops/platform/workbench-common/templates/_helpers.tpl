@@ -131,6 +131,21 @@ successThreshold: {{ . }}
 {{- end }}
 {{- end -}}
 
+{{- define "workbench.lib.httpRoute.headerModifierFilters" -}}
+{{- if .request.set }}
+- type: RequestHeaderModifier
+  requestHeaderModifier:
+    set:
+{{ toYaml .request.set | indent 4 }}
+{{- end }}
+{{- if .response.set }}
+- type: ResponseHeaderModifier
+  responseHeaderModifier:
+    set:
+{{ toYaml .response.set | indent 4 }}
+{{- end }}
+{{- end -}}
+
 {{- define "workbench.lib.httpRoute" -}}
 {{- if .Values.httpRoute.enabled }}
 apiVersion: gateway.networking.k8s.io/v1
@@ -193,6 +208,10 @@ spec:
         - path:
             type: {{ .Values.httpRoute.pathMatchType | default "PathPrefix" }}
             value: {{ .Values.httpRoute.pathPrefix }}
+      {{- with .Values.httpRoute.headers }}
+      filters:
+{{- include "workbench.lib.httpRoute.headerModifierFilters" . | indent 8 }}
+      {{- end }}
       backendRefs:
         - name: {{ .Values.name }}
           port: {{ .Values.service.port }}

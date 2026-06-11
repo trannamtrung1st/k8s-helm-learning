@@ -30,6 +30,15 @@ httpRoute:
     - matchPath: /swagger
       matchPathType: PathPrefix
       rewritePath: /api/wb/swagger
+  headers:
+    request:
+      set:
+        - name: x-purpose
+          value: k8s-learning
+    response:
+      set:
+        - name: x-purpose
+          value: k8s-learning
 topologySpread:
   enabled: false
   maxSkew: 1
