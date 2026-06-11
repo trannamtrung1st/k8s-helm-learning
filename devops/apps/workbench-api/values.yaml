@@ -44,6 +44,21 @@ httpRoute:
   # timeouts:
   #   request: "10s"
   #   backendRequest: "8s"
+  cors:
+    allowOrigins:
+      - "http://localhost"
+      - "http://localhost:8080"
+      - "https://localhost"
+      - "https://localhost:8080"
+      - "http://k8slearning.com"
+      - "https://k8slearning.com"
+      - "http://*.k8slearning.com"
+      - "https://*.k8slearning.com"
+    allowMethods:
+      - "*"
+    allowHeaders:
+      - "*"
+    allowCredentials: false
   headers:
     request:
       set:

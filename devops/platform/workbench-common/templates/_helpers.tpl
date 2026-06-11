@@ -131,6 +131,13 @@ successThreshold: {{ . }}
 {{- end }}
 {{- end -}}
 
+{{- define "workbench.lib.httpRoute.corsFilter" -}}
+{{- if not .allowOrigins }}{{- fail "httpRoute.cors: set allowOrigins" }}{{- end -}}
+- type: CORS
+  cors:
+{{ omit . "enabled" | toYaml | nindent 4 }}
+{{- end -}}
+
 {{- define "workbench.lib.httpRoute.headerModifierFilters" -}}
 {{- if .request.set }}
 - type: RequestHeaderModifier
@@ -143,6 +150,15 @@ successThreshold: {{ . }}
   responseHeaderModifier:
     set:
 {{ toYaml .response.set | indent 4 }}
+{{- end }}
+{{- end -}}
+
+{{- define "workbench.lib.httpRoute.filters" -}}
+{{- with .Values.httpRoute.cors }}
+{{- include "workbench.lib.httpRoute.corsFilter" . }}
+{{- end }}
+{{- with .Values.httpRoute.headers }}
+{{- include "workbench.lib.httpRoute.headerModifierFilters" . }}
 {{- end }}
 {{- end -}}
 
@@ -235,9 +251,9 @@ spec:
         - path:
             type: {{ .Values.httpRoute.pathMatchType | default "PathPrefix" }}
             value: {{ .Values.httpRoute.pathPrefix }}
-      {{- with .Values.httpRoute.headers }}
+      {{- if or .Values.httpRoute.cors .Values.httpRoute.headers }}
       filters:
-{{- include "workbench.lib.httpRoute.headerModifierFilters" . | indent 8 }}
+{{- include "workbench.lib.httpRoute.filters" . | nindent 8 }}
       {{- end }}
 {{- include "workbench.lib.httpRoute.timeouts" . }}
       backendRefs:
