@@ -23,11 +23,12 @@ var apiVersion = workbenchOptions.Version;
 
 builder.Services.AddWorkbenchApplicationServices();
 
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-});
+// Test HttpRoute CORS
+// builder.Services.AddCors(options =>
+// {
+//     options.AddDefaultPolicy(policy =>
+//         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+// });
 
 builder.Services.ConfigureHttpJsonOptions(o =>
 {
@@ -70,7 +71,7 @@ builder.Services.AddSwaggerGen(o =>
 
 var app = builder.Build();
 
-app.UseCors();
+// app.UseCors();
 
 app.UseSwagger(o => o.RouteTemplate = "api/wb/swagger/{documentName}/swagger.json");
 app.UseSwaggerUI(o =>

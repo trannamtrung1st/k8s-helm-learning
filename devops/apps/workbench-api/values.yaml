@@ -48,6 +48,7 @@ httpRoute:
     allowOrigins:
       - "http://localhost"
       - "http://localhost:8080"
+      - "http://localhost:8081"
       - "https://localhost"
       - "https://localhost:8080"
       - "http://k8slearning.com"
