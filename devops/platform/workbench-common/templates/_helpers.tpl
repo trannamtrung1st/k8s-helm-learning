@@ -145,13 +145,50 @@ metadata:
     {{- end }}
 spec:
   parentRefs:
-    - name: {{ .Values.httpRoute.parentGatewayName }}
-      namespace: {{ .Values.httpRoute.parentGatewayNamespace }}
+  {{- $sections := .Values.httpRoute.parentSectionNames | default (list "http" "https") }}
+  {{- range $sections }}
+    - name: {{ $.Values.httpRoute.parentGatewayName }}
+      namespace: {{ $.Values.httpRoute.parentGatewayNamespace }}
+      sectionName: {{ . }}
+  {{- end }}
   {{- with .Values.httpRoute.hostname }}
   hostnames:
     - {{ . | quote }}
   {{- end }}
   rules:
+  {{- range .Values.httpRoute.pathRewrites | default list }}
+    - matches:
+        - path:
+            type: {{ .matchPathType | default "PathPrefix" }}
+            value: {{ required "httpRoute.pathRewrites: set matchPath" .matchPath }}
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              {{- if eq (.rewritePathType | default "ReplacePrefixMatch") "ReplaceFullPath" }}
+              type: ReplaceFullPath
+              replaceFullPath: {{ required "httpRoute.pathRewrites: set rewritePath" .rewritePath }}
+              {{- else }}
+              type: ReplacePrefixMatch
+              replacePrefixMatch: {{ required "httpRoute.pathRewrites: set rewritePath" .rewritePath }}
+              {{- end }}
+      backendRefs:
+        - name: {{ $.Values.name }}
+          port: {{ $.Values.service.port }}
+  {{- end }}
+  {{- range .Values.httpRoute.pathRedirects | default list }}
+    - matches:
+        - path:
+            type: {{ .matchPathType | default "Exact" }}
+            value: {{ required "httpRoute.pathRedirects: set matchPath" .matchPath }}
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: {{ required "httpRoute.pathRedirects: set redirectPath" .redirectPath }}
+            statusCode: {{ .statusCode | default 301 }}
+  {{- end }}
     - matches:
         - path:
             type: {{ .Values.httpRoute.pathMatchType | default "PathPrefix" }}

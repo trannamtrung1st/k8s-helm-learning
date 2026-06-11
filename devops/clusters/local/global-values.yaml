@@ -34,6 +34,8 @@ workbench-rabbitmq:
 
 workbench-public-gateway:
   serviceType: ClusterIP
+  httpsListener:
+    hostname: k8slearning.com
 
 workbench-api:
   replicaCount: 2

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: workbench-http-to-https-redirect
+description: |
+  Platform HTTPRoute that redirects HTTP to HTTPS on workbench-public-gateway.
+type: application
+version: 1.0.0-rc1
+appVersion: "1.0.0-rc1"

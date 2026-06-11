@@ -20,9 +20,22 @@ httpRoute:
   enabled: true
   parentGatewayName: workbench-public-gateway
   parentGatewayNamespace: istio-system
+  # Both listeners; HTTP→HTTPS redirect for k8slearning.com is a separate platform route.
+  parentSectionNames:
+    - http
+    - https
   hostname: ""
   pathPrefix: /
   pathMatchType: PathPrefix
+  pathRewrites:
+    - matchPath: /secret-home
+      matchPathType: PathPrefix
+      rewritePath: /
+  pathRedirects:
+    - matchPath: /home
+      matchPathType: Exact
+      redirectPath: /
+      statusCode: 303
 resources:
   limitsCpu: 200m
   limitsMemory: 128Mi

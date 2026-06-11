@@ -24,6 +24,9 @@ dependencies:
   - name: workbench-public-gateway
     version: 1.0.0-rc1
     repository: file://../platform/gateways/workbench-public-gateway
+  - name: workbench-http-to-https-redirect
+    version: 1.0.0-rc1
+    repository: file://../platform/gateways/workbench-http-to-https-redirect
   - name: workbench-postgres
     version: 1.0.0-rc1
     repository: file://../infra/workbench-postgres

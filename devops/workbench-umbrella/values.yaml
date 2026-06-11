@@ -4,6 +4,9 @@
 workbench-public-gateway:
   enabled: true
 
+workbench-http-to-https-redirect:
+  enabled: true
+
 workbench-api:
   httpRoute:
     enabled: true

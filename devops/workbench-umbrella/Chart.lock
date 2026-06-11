@@ -17,6 +17,9 @@ dependencies:
 - name: workbench-public-gateway
   repository: file://../platform/gateways/workbench-public-gateway
   version: 1.0.0-rc1
+- name: workbench-http-to-https-redirect
+  repository: file://../platform/gateways/workbench-http-to-https-redirect
+  version: 1.0.0-rc1
 - name: workbench-postgres
   repository: file://../infra/workbench-postgres
   version: 1.0.0-rc1
@@ -38,5 +41,5 @@ dependencies:
 - name: workbench-app
   repository: file://../apps/workbench-app
   version: 1.0.0-rc1
-digest: sha256:9cc8529335f8ff12324948bb10669cb07182c3a79f6614dc57ad2b71c26b9ef8
-generated: "2026-06-10T23:07:16.576578+07:00"
+digest: sha256:44d260b9a88de95f72437ed6495f9f9315c66269d990dab4664fba70720fff06
+generated: "2026-06-11T14:15:28.896787+07:00"
