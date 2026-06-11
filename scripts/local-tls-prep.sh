@@ -18,7 +18,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCAL_CA_VALUES="${ROOT}/devops/clusters/local/local-ca.values.yaml"
-DOMAIN="${MKCERT_DOMAIN:-k8slearning.com}"
+DOMAIN="${MKCERT_DOMAIN:-api.k8slearning.com}"
 HOSTS_IP="${MKCERT_HOSTS_IP:-127.0.0.1}"
 ADD_HOSTS="true"
 

@@ -3,7 +3,7 @@
 #   -f ../../values/global-values.yaml -f ../../../clusters/local/global-values.yaml
 #
 # Attaches to the HTTP listener only. Redirect applies solely to the configured
-# hostname (default k8slearning.com); other hostnames (e.g. localhost port-forward)
+# hostname (default api.k8slearning.com); other hostnames (e.g. localhost port-forward)
 # are unaffected. App HTTPRoutes attach to both http and https listeners.
 
 enabled: true
@@ -15,7 +15,7 @@ parentGatewayName: workbench-public-gateway
 parentGatewayNamespace: istio-system
 httpListenerName: http
 
-hostname: k8slearning.com
+hostname: api.k8slearning.com
 
 redirect:
   scheme: https
