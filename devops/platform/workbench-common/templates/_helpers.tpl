@@ -146,6 +146,18 @@ successThreshold: {{ . }}
 {{- end }}
 {{- end -}}
 
+{{- define "workbench.lib.httpRoute.timeouts" -}}
+{{- with .Values.httpRoute.timeouts }}
+      timeouts:
+        {{- with .request }}
+        request: {{ . | quote }}
+        {{- end }}
+        {{- with .backendRequest }}
+        backendRequest: {{ . | quote }}
+        {{- end }}
+{{- end }}
+{{- end -}}
+
 {{- define "workbench.lib.httpRoute.backendRefs" -}}
 {{- if .Values.httpRoute.backendRefs }}
 {{- range .Values.httpRoute.backendRefs }}
@@ -202,6 +214,7 @@ spec:
               type: ReplacePrefixMatch
               replacePrefixMatch: {{ required "httpRoute.pathRewrites: set rewritePath" .rewritePath }}
               {{- end }}
+{{- include "workbench.lib.httpRoute.timeouts" $ }}
       backendRefs:
 {{- include "workbench.lib.httpRoute.backendRefs" $ | nindent 0 }}
   {{- end }}
@@ -226,6 +239,7 @@ spec:
       filters:
 {{- include "workbench.lib.httpRoute.headerModifierFilters" . | indent 8 }}
       {{- end }}
+{{- include "workbench.lib.httpRoute.timeouts" . }}
       backendRefs:
 {{- include "workbench.lib.httpRoute.backendRefs" . | nindent 0 }}
 {{- end }}

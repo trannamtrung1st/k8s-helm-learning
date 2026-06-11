@@ -40,6 +40,10 @@ httpRoute:
   #   - name: workbench-api-v2
   #     port: 80
   #     weight: 50
+  # Gateway API rule timeouts (request must be >= backendRequest when both are set).
+  # timeouts:
+  #   request: "10s"
+  #   backendRequest: "8s"
   headers:
     request:
       set:

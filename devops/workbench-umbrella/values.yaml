@@ -10,6 +10,9 @@ workbench-http-to-https-redirect:
 workbench-api:
   httpRoute:
     enabled: true
+    timeouts:
+      request: "10s"
+      backendRequest: "8s"
     backendRefs:
       - name: workbench-api
         port: 80
