@@ -11,6 +11,7 @@ data:
   Logging__LogLevel__Default: Information
   Logging__LogLevel__Microsoft.AspNetCore: Warning
   Logging__LogLevel__Microsoft.EntityFrameworkCore: Warning
+  Workbench__Version: {{ .Values.workbench.version | quote }}
   Workbench__DurationSecMin: "1"
   Workbench__DurationSecMax: "300"
   Workbench__CpuPercentMin: "0"

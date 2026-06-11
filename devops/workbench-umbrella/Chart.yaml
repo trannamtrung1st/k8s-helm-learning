@@ -39,6 +39,10 @@ dependencies:
   - name: workbench-api
     version: 1.0.0-rc1
     repository: file://../apps/workbench-api
+  - name: workbench-api
+    version: 1.0.0-rc1
+    repository: file://../apps/workbench-api
+    alias: workbench-api-v2
   - name: workbench-worker
     version: 1.0.0-rc1
     repository: file://../apps/workbench-worker

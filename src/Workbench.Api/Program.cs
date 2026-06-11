@@ -9,11 +9,17 @@ using Workbench.Domain;
 using Workbench.Infrastructure;
 using Workbench.Infrastructure.Persistence;
 using Workbench.Infrastructure.Redis;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<WorkbenchOptions>(
     builder.Configuration.GetSection(WorkbenchOptions.SectionName));
+
+var workbenchOptions = builder.Configuration
+    .GetSection(WorkbenchOptions.SectionName)
+    .Get<WorkbenchOptions>() ?? new WorkbenchOptions();
+var apiVersion = workbenchOptions.Version;
 
 builder.Services.AddWorkbenchApplicationServices();
 
@@ -53,10 +59,10 @@ builder.Services.AddHealthChecks()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {
-    o.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    o.SwaggerDoc(apiVersion, new Microsoft.OpenApi.OpenApiInfo
     {
         Title = "Workbench API",
-        Version = "v1",
+        Version = apiVersion,
         Description =
             "Synthetic load jobs: enqueue, list, get, sync workloads, and Redis-backed counters (GET /api/wb/metrics).",
     });
@@ -70,7 +76,7 @@ app.UseSwagger(o => o.RouteTemplate = "api/wb/swagger/{documentName}/swagger.jso
 app.UseSwaggerUI(o =>
 {
     o.RoutePrefix = "api/wb/swagger";
-    o.SwaggerEndpoint("v1/swagger.json", "Workbench API v1");
+    o.SwaggerEndpoint($"{apiVersion}/swagger.json", $"Workbench API {apiVersion}");
 });
 
 var livePredicate = new Func<HealthCheckRegistration, bool>(r => r.Tags.Contains("live"));
@@ -86,6 +92,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 var jobsApi = app.MapGroup("/api/wb");
+
+jobsApi.MapGet("/version", (IOptions<WorkbenchOptions> opts) =>
+    Results.Ok(new { version = opts.Value.Version }))
+    .WithName("GetVersion");
 
 jobsApi.MapPost("/jobs", async (JobPayload body, IJobsApplicationService jobs, CancellationToken ct) =>
 {

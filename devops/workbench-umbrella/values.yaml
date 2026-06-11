@@ -10,6 +10,26 @@ workbench-http-to-https-redirect:
 workbench-api:
   httpRoute:
     enabled: true
+    backendRefs:
+      - name: workbench-api
+        port: 80
+        weight: 50
+      - name: workbench-api-v2
+        port: 80
+        weight: 50
+
+workbench-api-v2:
+  name: workbench-api-v2
+  instance: workbench-api-v2
+  replicaCount: 1
+  workbench:
+    version: "2.0.0"
+  configMap:
+    name: workbench-api-v2-config
+  secrets:
+    name: workbench-api-v2-secrets
+  httpRoute:
+    enabled: false
 
 workbench-app:
   httpRoute:

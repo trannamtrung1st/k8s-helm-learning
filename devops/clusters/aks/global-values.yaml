@@ -44,6 +44,14 @@ workbench-api:
     maxSkew: 1
     minDomains: 2
 
+workbench-api-v2:
+  replicaCount: 1
+  environment: aks
+  topologySpread:
+    enabled: true
+    maxSkew: 1
+    minDomains: 2
+
 workbench-worker:
   replicaCount: 1
   environment: aks

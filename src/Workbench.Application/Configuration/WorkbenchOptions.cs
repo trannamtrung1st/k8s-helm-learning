@@ -6,6 +6,8 @@ public sealed class WorkbenchOptions
 {
     public const string SectionName = "Workbench";
 
+    public string Version { get; set; } = "1.0.0";
+
     public int DurationSecMin { get; set; } = 1;
     public int DurationSecMax { get; set; } = 300;
     public int CpuPercentMin { get; set; } = 0;

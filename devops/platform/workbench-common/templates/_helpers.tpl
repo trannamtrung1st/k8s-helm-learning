@@ -146,6 +146,21 @@ successThreshold: {{ . }}
 {{- end }}
 {{- end -}}
 
+{{- define "workbench.lib.httpRoute.backendRefs" -}}
+{{- if .Values.httpRoute.backendRefs }}
+{{- range .Values.httpRoute.backendRefs }}
+        - name: {{ required "httpRoute.backendRefs: set name" .name }}
+          port: {{ .port | default $.Values.service.port }}
+          {{- with .weight }}
+          weight: {{ . }}
+          {{- end }}
+{{- end }}
+{{- else }}
+        - name: {{ .Values.name }}
+          port: {{ .Values.service.port }}
+{{- end }}
+{{- end -}}
+
 {{- define "workbench.lib.httpRoute" -}}
 {{- if .Values.httpRoute.enabled }}
 apiVersion: gateway.networking.k8s.io/v1
@@ -188,8 +203,7 @@ spec:
               replacePrefixMatch: {{ required "httpRoute.pathRewrites: set rewritePath" .rewritePath }}
               {{- end }}
       backendRefs:
-        - name: {{ $.Values.name }}
-          port: {{ $.Values.service.port }}
+{{- include "workbench.lib.httpRoute.backendRefs" $ | nindent 0 }}
   {{- end }}
   {{- range .Values.httpRoute.pathRedirects | default list }}
     - matches:
@@ -213,7 +227,6 @@ spec:
 {{- include "workbench.lib.httpRoute.headerModifierFilters" . | indent 8 }}
       {{- end }}
       backendRefs:
-        - name: {{ .Values.name }}
-          port: {{ .Values.service.port }}
+{{- include "workbench.lib.httpRoute.backendRefs" . | nindent 0 }}
 {{- end }}
 {{- end -}}

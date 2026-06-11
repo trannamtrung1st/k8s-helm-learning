@@ -2,6 +2,8 @@ name: workbench-api
 component: api
 instance: workbench-api
 replicaCount: 1
+workbench:
+  version: "1.0.0"
 revisionHistoryLimit: 5
 environment: ""
 image:
@@ -30,6 +32,14 @@ httpRoute:
     - matchPath: /swagger
       matchPathType: PathPrefix
       rewritePath: /api/wb/swagger
+  # Optional weighted traffic split (overrides default single-service backend).
+  # backendRefs:
+  #   - name: workbench-api
+  #     port: 80
+  #     weight: 50
+  #   - name: workbench-api-v2
+  #     port: 80
+  #     weight: 50
   headers:
     request:
       set:
