@@ -15,7 +15,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-UMBRELLA="${ROOT}/devops/workbench-umbrella"
+UMBRELLA="${ROOT}/devops/umbrellas/workbench-umbrella"
 
 SUBCHARTS=(
   apps/workbench-api

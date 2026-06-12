@@ -7,48 +7,48 @@ appVersion: "1.0.0-rc1"
 dependencies:
   - name: workbench-namespaces
     version: 1.0.0-rc1
-    repository: file://../platform/workbench-namespaces
+    repository: file://../../platform/workbench-namespaces
   - name: workbench-storage-classes
     version: 1.0.0-rc1
-    repository: file://../platform/workbench-storage-classes
+    repository: file://../../platform/workbench-storage-classes
   - name: workbench-apps-secrets
     version: 1.0.0-rc1
-    repository: file://../platform/workbench-apps-secrets
+    repository: file://../../platform/workbench-apps-secrets
   - name: workbench-local-ca-secret
     version: 1.0.0-rc1
-    repository: file://../platform/workbench-local-ca-secret
+    repository: file://../../platform/workbench-local-ca-secret
     condition: workbench-local-ca-secret.enabled
   - name: workbench-policies
     version: 1.0.0-rc1
-    repository: file://../platform/workbench-policies
+    repository: file://../../platform/workbench-policies
   - name: workbench-public-gateway
     version: 1.0.0-rc1
-    repository: file://../platform/gateways/workbench-public-gateway
+    repository: file://../../platform/gateways/workbench-public-gateway
   - name: workbench-http-to-https-redirect
     version: 1.0.0-rc1
-    repository: file://../platform/gateways/workbench-http-to-https-redirect
+    repository: file://../../platform/gateways/workbench-http-to-https-redirect
   - name: workbench-postgres
     version: 1.0.0-rc1
-    repository: file://../infra/workbench-postgres
+    repository: file://../../infra/workbench-postgres
   - name: workbench-rabbitmq
     version: 1.0.0-rc1
-    repository: file://../infra/workbench-rabbitmq
+    repository: file://../../infra/workbench-rabbitmq
   - name: workbench-redis
     version: 1.0.0-rc1
-    repository: file://../infra/workbench-redis
+    repository: file://../../infra/workbench-redis
   - name: workbench-api
     version: 1.0.0-rc1
-    repository: file://../apps/workbench-api
+    repository: file://../../apps/workbench-api
   - name: workbench-api
     version: 1.0.0-rc1
-    repository: file://../apps/workbench-api
+    repository: file://../../apps/workbench-api
     alias: workbench-api-v2
   - name: workbench-worker
     version: 1.0.0-rc1
-    repository: file://../apps/workbench-worker
+    repository: file://../../apps/workbench-worker
   - name: workbench-jobs
     version: 1.0.0-rc1
-    repository: file://../apps/workbench-jobs
+    repository: file://../../apps/workbench-jobs
   - name: workbench-app
     version: 1.0.0-rc1
-    repository: file://../apps/workbench-app
+    repository: file://../../apps/workbench-app

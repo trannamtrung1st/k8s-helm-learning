@@ -33,10 +33,11 @@ devops/
       global-values.yaml    # kind / dev — connection strings + lean replicas
     aks/
       global-values.yaml    # AKS 3x Standard_D2s_v3 — same sizing targets
-  workbench-umbrella/       # platform, infra, and apps (not CRDs/operators)
-    Chart.yaml
-    Chart.lock
-    charts/                 # vendored .tgz (refresh after subchart edits)
+  umbrellas/
+    workbench-umbrella/       # platform, infra, and apps
+      Chart.yaml
+      Chart.lock
+      charts/                 # vendored .tgz (refresh after subchart edits)
 ```
 
 **RabbitMQ** and **Redis** config files live under each chart’s **`files/`** directory. **Docker Compose**, **Helm** (`.Files.Get`), and **legacy Kustomize** (`configMapGenerator` / `secretGenerator` in **`kustomization.yaml`**) all read the same paths so local and cluster stay aligned.
@@ -82,7 +83,7 @@ Dry-run against the API:
 # or: ./scripts/helm-apply.sh --dry-run=server
 ```
 
-The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then main umbrella), then **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform (incl. **`workbench-public-gateway`**), infra, apps (incl. **HTTPRoutes** on **`workbench-api`** and **`workbench-app`**). Install **`./scripts/rabbitmq-install.sh`** (and Istio) as cluster platform steps before apply.
+The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then main umbrella), then **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/umbrellas/workbench-umbrella`) — platform (incl. **`workbench-public-gateway`**), infra, apps (incl. **HTTPRoutes** on **`workbench-api`** and **`workbench-app`**). Install **`./scripts/rabbitmq-install.sh`** (and Istio) as cluster platform steps before apply.
 
 The main stack uses **`workbench-platform`** (`HELM_NAMESPACE`) and owns that namespace via **`workbench-namespaces`**. Override **`HELM_RELEASE`**. **`HELM_HISTORY_MAX`** applies to the umbrella upgrade.
 
@@ -118,11 +119,11 @@ kubectl get pvc -n workbench-infra
 ## Lint and template
 
 ```bash
-helm lint devops/workbench-umbrella \
+helm lint devops/umbrellas/workbench-umbrella \
   -f devops/platform/values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 
-helm template umbrella devops/workbench-umbrella \
+helm template umbrella devops/umbrellas/workbench-umbrella \
   -f devops/platform/values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 ```
@@ -166,7 +167,7 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `apps/workbench-worker`              | `workbench-worker`          | Worker Deployment + Service                     |
 | `apps/workbench-jobs`                | `workbench-jobs`            | Cleanup CronJob                                 |
 | `apps/workbench-app`                 | `workbench-app`             | Frontend Deployment + Service (nginx)           |
-| `workbench-umbrella`                 | `workbench-umbrella`        | Platform, infra, and apps (not CRDs/operators)  |
+| `umbrellas/workbench-umbrella`       | `workbench-umbrella`        | Platform, infra, and apps                       |
 
 ## Release name convention
 

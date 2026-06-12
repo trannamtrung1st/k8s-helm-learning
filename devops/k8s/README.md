@@ -160,7 +160,8 @@ devops/
 ├── platform/             # Helm platform charts
 ├── infra/                # Helm infra charts (rabbitmq/redis files/ here)
 ├── apps/                 # Helm app charts
-├── workbench-umbrella/
+├── umbrellas/
+│   └── workbench-umbrella/
 └── k8s/                  # legacy manifests (base + overlays)
     ├── apps/
     ├── infra/

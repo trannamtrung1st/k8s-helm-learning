@@ -11,7 +11,7 @@ set -euo pipefail
 #
 # Cluster platform prerequisites (install separately — see kind-e2e-first-run.sh):
 #   ./scripts/istio-helm-install.sh, ./scripts/rabbitmq-install.sh
-# Helm release: workbench-umbrella-<cluster> — devops/workbench-umbrella (namespace workbench-platform)
+# Helm release: workbench-umbrella-<cluster> — devops/umbrellas/workbench-umbrella (namespace workbench-platform)
 #
 # AKS: credentials in devops/clusters/aks/global-values.yaml are placeholders (CHANGEME).
 # helm-apply reads matching secrets from Azure Key Vault (terraform output key_vault_name) and merges
@@ -33,7 +33,7 @@ set -euo pipefail
 #   HELM_NAMESPACE          Main stack release namespace (default: workbench-platform)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART="${ROOT}/devops/workbench-umbrella"
+CHART="${ROOT}/devops/umbrellas/workbench-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 HELM_RELEASE="${HELM_RELEASE:-}"
 HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"

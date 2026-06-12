@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART="${ROOT}/devops/workbench-umbrella"
+CHART="${ROOT}/devops/umbrellas/workbench-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
 

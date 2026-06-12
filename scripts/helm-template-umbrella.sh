@@ -1,5 +1,5 @@
 #!/bin/bash
-# Render devops/workbench-umbrella with the standard values chain.
+# Render devops/umbrellas/workbench-umbrella with the standard values chain.
 #
 # From repository root:
 #   ./scripts/helm-template-umbrella.sh
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART="${ROOT}/devops/workbench-umbrella"
+CHART="${ROOT}/devops/umbrellas/workbench-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 HELM_RELEASE="${HELM_RELEASE:-}"
 HELM_NAMESPACE="${HELM_NAMESPACE:-}"
