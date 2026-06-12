@@ -136,7 +136,7 @@ done
 source "${ROOT}/scripts/lib/terraform-outputs.sh"
 terraform_outputs_apply_env
 
-VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
+VALUES_PLATFORM="${ROOT}/devops/platform/platform-values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
 VALUES_LOCAL_CA="${ROOT}/devops/clusters/${HELM_CLUSTER}/local-ca.values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"

@@ -5,7 +5,7 @@
 # template, and lint you MUST merge values that define global.workbenchPartOf
 # and global.workbenchNamespaces (non-empty map), for example:
 #
-#   -f devops/platform/values/global-values.yaml
+#   -f devops/platform/platform-values/global-values.yaml
 #   -f devops/clusters/local/global-values.yaml   # optional overlay
 #
 # values.schema.json requires `global`; this `{}` alone fails `helm lint` until

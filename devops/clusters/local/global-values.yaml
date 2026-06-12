@@ -1,5 +1,5 @@
 # Cluster overlay for Helm `-f` (local kind / dev machine). Merged AFTER
-# devops/platform/values/global-values.yaml — later file wins.
+# devops/platform/platform-values/global-values.yaml — later file wins.
 #
 # Supplies connection strings left empty in the platform layer.
 # Credentials here are LOCAL-ONLY placeholders; do not reuse for shared clusters.

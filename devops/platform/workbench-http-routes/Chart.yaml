@@ -1,0 +1,7 @@
+apiVersion: v2
+name: workbench-http-routes
+description: |
+  Platform HTTPRoutes (redirects, shared routes, etc.) for workbench-public-gateway.
+type: application
+version: 1.0.0-rc1
+appVersion: "1.0.0-rc1"

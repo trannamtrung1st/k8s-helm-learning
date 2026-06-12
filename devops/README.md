@@ -1,6 +1,6 @@
 # DevOps (Helm)
 
-This directory (**`devops/`**) holds **Helm charts**, **values overlays**, and **legacy Kustomize** manifests for Workbench. Charts ship minimal **`values.yaml`** files; shared defaults live under **`platform/values/`**, and per-cluster overrides under **`clusters/<cluster-name>/`**.
+This directory (**`devops/`**) holds **Helm charts**, **values overlays**, and **legacy Kustomize** manifests for Workbench. Charts ship minimal **`values.yaml`** files; shared defaults live under **`platform/platform-values/`**, and per-cluster overrides under **`clusters/<cluster-name>/`**.
 
 **Preferred install:** cluster platform layer (Istio, Gateway API, RabbitMQ operator — see e2e scripts), then main umbrella via `./scripts/helm-apply.sh` from the repository root.
 
@@ -17,7 +17,9 @@ devops/
     workbench-apps-secrets/
     workbench-storage-classes/
     workbench-policies/     # LimitRange, ResourceQuota, PDB, sample NetworkPolicy
-    values/
+    workbench-public-gateway/
+    workbench-http-routes/  # platform HTTPRoutes (redirects, etc.)
+    platform-values/
       global-values.yaml
   infra/
     workbench-postgres/
@@ -49,7 +51,7 @@ Legacy Kustomize manifests remain under **`devops/k8s/`** for reference; **`devo
 Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`** file left to right. **Later files win** on duplicate keys.
 
 ```text
--f devops/platform/values/global-values.yaml \
+-f devops/platform/platform-values/global-values.yaml \
 -f devops/clusters/local/global-values.yaml
 ```
 
@@ -120,11 +122,11 @@ kubectl get pvc -n workbench-infra
 
 ```bash
 helm lint devops/umbrellas/workbench-umbrella \
-  -f devops/platform/values/global-values.yaml \
+  -f devops/platform/platform-values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 
 helm template umbrella devops/umbrellas/workbench-umbrella \
-  -f devops/platform/values/global-values.yaml \
+  -f devops/platform/platform-values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 ```
 
@@ -132,7 +134,7 @@ helm template umbrella devops/umbrellas/workbench-umbrella \
 
 ### Container images (ACR)
 
-Workbench app images use **`workbenchacr77.azurecr.io`** (`global.imageRegistry` in **`platform/values/global-values.yaml`**). Infra images (Postgres, RabbitMQ, Redis) stay on Docker Hub.
+Workbench app images use **`workbenchacr77.azurecr.io`** (`global.imageRegistry` in **`platform/platform-values/global-values.yaml`**). Infra images (Postgres, RabbitMQ, Redis) stay on Docker Hub.
 
 ```bash
 ACR=workbenchacr77.azurecr.io
@@ -160,6 +162,8 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
 | `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |
 | `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB, sample worker NetworkPolicy |
+| `platform/workbench-public-gateway`  | `workbench-public-gateway`  | Istio Gateway (HTTP/HTTPS listeners)            |
+| `platform/workbench-http-routes`     | `workbench-http-routes`     | Platform HTTPRoutes (e.g. HTTP→HTTPS redirect) |
 | `infra/workbench-postgres`           | `workbench-postgres`        | Postgres StatefulSet, PV, db Secret             |
 | `infra/workbench-rabbitmq`           | `workbench-rabbitmq`        | `RabbitmqCluster` CR, `{name}-default-user` Secret, definitions ConfigMap |
 | `infra/workbench-redis`              | `workbench-redis`           | Redis StatefulSet, config Secret                |
@@ -193,7 +197,7 @@ helm uninstall workbench-crds-umbrella-local -n kube-system   # if release exist
 ```bash
 helm upgrade --install namespaces devops/platform/workbench-namespaces/ \
   --server-side=true -n workbench-platform --create-namespace \
-  -f devops/platform/values/global-values.yaml \
+  -f devops/platform/platform-values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 ```
 
@@ -202,7 +206,7 @@ helm upgrade --install namespaces devops/platform/workbench-namespaces/ \
 ```bash
 helm upgrade --install postgres devops/infra/workbench-postgres/ \
   --server-side=true \
-  -f devops/platform/values/global-values.yaml \
+  -f devops/platform/platform-values/global-values.yaml \
   -f devops/clusters/local/global-values.yaml
 ```
 

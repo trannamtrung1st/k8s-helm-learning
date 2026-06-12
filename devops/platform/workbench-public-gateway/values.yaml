@@ -1,6 +1,6 @@
 # Installed via workbench-umbrella (./scripts/helm-apply.sh). Standalone:
 #   helm upgrade --install workbench-public-gateway . -n workbench-platform \
-#   -f ../../values/global-values.yaml -f ../../../clusters/local/global-values.yaml
+#   -f ../platform-values/global-values.yaml -f ../../clusters/local/global-values.yaml
 #
 # Istio annotates the generated Service from this Gateway. Use ClusterIP on kind
 # (port-forward); use LoadBalancer on cloud clusters.
@@ -13,7 +13,7 @@ component: gateway
 gatewayClassName: istio
 
 # HTTPRoutes: only namespaces with app.kubernetes.io/part-of=<global.workbenchPartOf>
-# (set in template; requires -f ../../values/global-values.yaml).
+# (set in template; requires -f ../platform-values/global-values.yaml).
 
 # Merged with standard chart labels in templates/gateway.yaml.
 labels: {}

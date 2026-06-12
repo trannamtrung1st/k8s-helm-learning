@@ -23,10 +23,10 @@ dependencies:
     repository: file://../../platform/workbench-policies
   - name: workbench-public-gateway
     version: 1.0.0-rc1
-    repository: file://../../platform/gateways/workbench-public-gateway
-  - name: workbench-http-to-https-redirect
+    repository: file://../../platform/workbench-public-gateway
+  - name: workbench-http-routes
     version: 1.0.0-rc1
-    repository: file://../../platform/gateways/workbench-http-to-https-redirect
+    repository: file://../../platform/workbench-http-routes
   - name: workbench-postgres
     version: 1.0.0-rc1
     repository: file://../../infra/workbench-postgres

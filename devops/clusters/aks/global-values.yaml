@@ -1,5 +1,5 @@
 # Cluster overlay for AKS — 3x Standard_D2s_v3 (2 vCPU, 4 GiB per node).
-# Merged after devops/platform/values/global-values.yaml.
+# Merged after devops/platform/platform-values/global-values.yaml.
 #
 # Budget (~schedulable after AKS system pods): ~3.5 CPU / ~9 GiB cluster-wide.
 # This overlay keeps total requests near ~1.2 CPU / ~1.8 GiB so pods can spread.

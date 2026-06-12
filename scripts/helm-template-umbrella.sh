@@ -102,7 +102,7 @@ if ! command -v helm >/dev/null 2>&1; then
   exit 1
 fi
 
-VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
+VALUES_PLATFORM="${ROOT}/devops/platform/platform-values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
 VALUES_LOCAL_CA="${ROOT}/devops/clusters/${HELM_CLUSTER}/local-ca.values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"

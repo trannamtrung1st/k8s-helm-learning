@@ -1,11 +1,12 @@
 # Umbrella defaults. Cluster overlays: devops/clusters/<cluster>/global-values.yaml
-# Platform values: devops/platform/values/global-values.yaml (required for gateway part-of label).
+# Platform values: devops/platform/platform-values/global-values.yaml (required for gateway part-of label).
 
 workbench-public-gateway:
   enabled: true
 
-workbench-http-to-https-redirect:
-  enabled: true
+workbench-http-routes:
+  httpToHttpsRedirect:
+    enabled: true
 
 workbench-api:
   httpRoute:

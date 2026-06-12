@@ -3,11 +3,11 @@
 # =============================================================================
 # This chart does not embed connection strings. You MUST merge:
 #
-#   1) devops/platform/values/global-values.yaml  — structure + secret name
+#   1) devops/platform/platform-values/global-values.yaml  — structure + secret name
 #   2) devops/clusters/<cluster>/global-values.yaml — non-empty
 #      global.workbenchRabbitMq.uri and global.workbenchRedis (cluster or connectionString)
 #
-# `platform/values/global-values.yaml` leaves those two fields empty on purpose;
+# `platform/platform-values/global-values.yaml` leaves those two fields empty on purpose;
 # the cluster file supplies real URIs. `values.schema.json` enforces non-empty
 # strings after merge so `helm lint` / `helm template` fail if you omit (2).
 #

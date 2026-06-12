@@ -1,5 +1,5 @@
 {{- define "workbench-public-gateway.partOf" -}}
-{{- required "set global.workbenchPartOf (pass -f devops/platform/values/global-values.yaml)." .Values.global.workbenchPartOf -}}
+{{- required "set global.workbenchPartOf (pass -f devops/platform/platform-values/global-values.yaml)." .Values.global.workbenchPartOf -}}
 {{- end -}}
 
 {{- define "workbench-public-gateway.allowedRoutes" -}}

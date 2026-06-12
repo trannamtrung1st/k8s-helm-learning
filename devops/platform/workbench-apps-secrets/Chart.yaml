@@ -4,7 +4,7 @@ description: |
   Opaque Secret for apps (RabbitMQ URI, Redis connection string) in the apps namespace.
 
   Required merged values (see devops/README.md):
-    - Layer (1): -f devops/platform/values/global-values.yaml
+    - Layer (1): -f devops/platform/platform-values/global-values.yaml
     - Layer (2): -f devops/clusters/<cluster>/global-values.yaml
       with non-empty global.workbenchRabbitMq.uri and global.workbenchRedis (standalone
       connectionString or cluster.enabled with user/password).

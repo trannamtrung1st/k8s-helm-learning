@@ -1,0 +1,28 @@
+{{- $route := .Values.httpToHttpsRedirect -}}
+{{- if $route.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $route.name }}
+  namespace: {{ .Values.global.workbenchNamespaces.platform.name }}
+  labels:
+    app.kubernetes.io/name: {{ $route.name }}
+    app.kubernetes.io/component: {{ $route.component }}
+    app.kubernetes.io/part-of: {{ .Values.global.workbenchPartOf }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+spec:
+  parentRefs:
+    - name: {{ $route.parentGatewayName }}
+      namespace: {{ $route.parentGatewayNamespace }}
+      sectionName: {{ $route.httpListenerName }}
+  hostnames:
+    - {{ required "workbench-http-routes.httpToHttpsRedirect: set hostname" $route.hostname | quote }}
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: {{ $route.redirect.scheme }}
+            statusCode: {{ $route.redirect.statusCode }}
+{{- end }}
