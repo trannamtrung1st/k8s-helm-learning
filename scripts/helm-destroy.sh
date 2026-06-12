@@ -5,7 +5,7 @@ set -euo pipefail
 # Run from repository root. Requires helm and kubectl context.
 #
 # Default: remove workbench-umbrella-<cluster> only so cluster platform layers stay
-# installed (Istio ambient, Gateway API CRDs, RabbitMQ Cluster Operator). Re-apply
+# installed (Istio ambient, Gateway API CRDs, RabbitMQ operator, cert-manager). Re-apply
 # with ./scripts/helm-apply.sh without recreating the cluster.
 #
 #   ./scripts/helm-destroy.sh
@@ -44,6 +44,7 @@ recreating the cluster:
     - Istio ambient (istio-base, istiod, istio-cni, ztunnel in istio-system)
     - Kubernetes Gateway API CRDs
     - RabbitMQ Cluster Operator (rabbitmq-system)
+    - cert-manager (cert-manager namespace)
     - (gateway and HTTPRoutes ship in workbench-umbrella and are removed with it)
 
   Removed (default destroy):

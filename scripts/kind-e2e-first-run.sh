@@ -9,6 +9,7 @@ set -euo pipefail
 # 2) set kubectl context
 # 2b) install Istio ambient + Gateway API CRDs (Helm; see scripts/istio-helm-install.sh)
 # 2c) install RabbitMQ Cluster Operator (see scripts/rabbitmq-install.sh)
+# 2d) install cert-manager (see scripts/cert-manager-install.sh)
 # 3) label infra node
 # 4) init local PV directories
 # 5) build compose app images and load into kind
@@ -23,6 +24,7 @@ SKIP_LOAD="false"
 SKIP_APPLY="false"
 SKIP_ISTIO="false"
 SKIP_RABBITMQ="false"
+SKIP_CERT_MANAGER="false"
 USE_K8S_APPLY="false"
 COMPOSE_FILE="local/docker-compose.yaml"
 INCLUDE_JOBS="${INCLUDE_JOBS:-1}"
@@ -43,6 +45,7 @@ Options:
   --skip-apply           skip stack apply step (Helm or Kustomize)
   --skip-istio           skip Istio ambient Helm install (+ Gateway API CRDs)
   --skip-rabbitmq        skip RabbitMQ Cluster Operator install
+  --skip-cert-manager    skip cert-manager install
   --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
                          default: ./scripts/helm-apply.sh
   -h, --help             show help
@@ -105,6 +108,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_RABBITMQ="true"
       shift
       ;;
+    --skip-cert-manager)
+      SKIP_CERT_MANAGER="true"
+      shift
+      ;;
     --k8s)
       USE_K8S_APPLY="true"
       shift
@@ -134,7 +141,7 @@ fi
 require_cmd kind
 require_cmd kubectl
 require_cmd docker
-if [[ "${SKIP_ISTIO}" != "true" || ( "${USE_K8S_APPLY}" != "true" && "${SKIP_APPLY}" != "true" ) ]]; then
+if [[ "${SKIP_ISTIO}" != "true" || "${SKIP_CERT_MANAGER}" != "true" || ( "${USE_K8S_APPLY}" != "true" && "${SKIP_APPLY}" != "true" ) ]]; then
   require_cmd helm
 fi
 
@@ -170,6 +177,13 @@ if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
   ./scripts/rabbitmq-install.sh
 else
   echo "=== Step 2c: skip RabbitMQ operator install ==="
+fi
+
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  echo "=== Step 2d: install cert-manager ==="
+  ./scripts/cert-manager-install.sh
+else
+  echo "=== Step 2d: skip cert-manager install ==="
 fi
 
 if [[ -z "${INFRA_NODE}" ]]; then
@@ -232,6 +246,10 @@ kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps
 if [[ "${SKIP_ISTIO}" != "true" ]]; then
   kubectl get pods -n istio-system
+fi
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  kubectl get crd certificates.cert-manager.io
+  kubectl get pods -n cert-manager
 fi
 
 echo "Done."

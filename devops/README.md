@@ -68,6 +68,7 @@ From the repository root (after kind cluster, cluster platform installs, infra n
 # Cluster platform (once per cluster; also run by kind-e2e-first-run.sh / aks-e2e-first-run.sh):
 ./scripts/istio-helm-install.sh      # Istio ambient + Gateway API CRDs
 ./scripts/rabbitmq-install.sh        # RabbitMQ Cluster Operator
+./scripts/cert-manager-install.sh    # cert-manager (TLS / Certificate CRDs)
 
 ./scripts/helm-apply.sh
 # AKS (3x Standard_D2s_v3):
@@ -96,7 +97,7 @@ Install the RabbitMQ operator ([upstream manifest](https://www.rabbitmq.com/kube
 # Pin version: RABBITMQ_OPERATOR_VERSION=v2.21.0 ./scripts/rabbitmq-install.sh
 ```
 
-**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install), **Gateway API CRDs**, and the **RabbitMQ Cluster Operator** stay installed by default; pass **`--with-operator`** to remove the operator via **`./scripts/rabbitmq-install.sh --uninstall`**. Cluster-scoped **CRD** objects may remain until deleted manually.
+**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install), **Gateway API CRDs**, **RabbitMQ Cluster Operator**, and **cert-manager** stay installed by default; pass **`--with-operator`** to remove the RabbitMQ operator via **`./scripts/rabbitmq-install.sh --uninstall`**. Uninstall cert-manager with **`./scripts/cert-manager-install.sh --uninstall`** when needed. Cluster-scoped **CRD** objects may remain until deleted manually.
 
 **Failed or pending upgrade** (e.g. `pending-upgrade`, schema errors mid-apply):
 

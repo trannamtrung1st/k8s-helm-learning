@@ -10,7 +10,7 @@ set -euo pipefail
 #   ./scripts/helm-apply.sh --dry-run=server
 #
 # Cluster platform prerequisites (install separately — see kind-e2e-first-run.sh):
-#   ./scripts/istio-helm-install.sh, ./scripts/rabbitmq-install.sh
+#   ./scripts/istio-helm-install.sh, ./scripts/rabbitmq-install.sh, ./scripts/cert-manager-install.sh
 # Helm release: workbench-umbrella-<cluster> — devops/umbrellas/workbench-umbrella (namespace workbench-platform)
 #
 # AKS: credentials in devops/clusters/aks/global-values.yaml are placeholders (CHANGEME).

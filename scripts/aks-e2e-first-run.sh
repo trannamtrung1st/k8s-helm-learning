@@ -44,6 +44,7 @@ SKIP_PUSH="false"
 SKIP_APPLY="false"
 SKIP_ISTIO="false"
 SKIP_RABBITMQ="false"
+SKIP_CERT_MANAGER="false"
 SKIP_KV_SECRETS="false"
 ATTACH_ACR="false"
 
@@ -77,6 +78,7 @@ Options:
   Cluster platform:
     --skip-istio               Skip Istio ambient Helm install (+ Gateway API CRDs)
     --skip-rabbitmq            Skip RabbitMQ Cluster Operator install
+    --skip-cert-manager        Skip cert-manager install
 
   -h, --help                   Show this help
 
@@ -167,6 +169,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-rabbitmq)
       SKIP_RABBITMQ="true"
+      shift
+      ;;
+    --skip-cert-manager)
+      SKIP_CERT_MANAGER="true"
       shift
       ;;
     --skip-kv-secrets)
@@ -276,6 +282,13 @@ if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
   ./scripts/rabbitmq-install.sh
 else
   echo "=== Step 4d: skip RabbitMQ operator install ==="
+fi
+
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  echo "=== Step 4e: install cert-manager ==="
+  ./scripts/cert-manager-install.sh
+else
+  echo "=== Step 4e: skip cert-manager install ==="
 fi
 
 if [[ "${ATTACH_ACR}" == "true" ]]; then

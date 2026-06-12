@@ -70,6 +70,7 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
    ```bash
    ./scripts/istio-helm-install.sh
    ./scripts/rabbitmq-install.sh
+   ./scripts/cert-manager-install.sh
    ```
 
 6. **Apply the stack** — Helm (recommended):
