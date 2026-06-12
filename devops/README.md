@@ -96,7 +96,7 @@ Install the RabbitMQ operator ([upstream manifest](https://www.rabbitmq.com/kube
 # Pin version: RABBITMQ_OPERATOR_VERSION=v2.21.0 ./scripts/rabbitmq-install.sh
 ```
 
-**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install), **Gateway API CRDs**, and the **RabbitMQ Cluster Operator** stay installed by default; pass **`--with-crds`** to remove the operator via **`./scripts/rabbitmq-install.sh --uninstall`**. Cluster-scoped **CRD** objects may remain until deleted manually.
+**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install), **Gateway API CRDs**, and the **RabbitMQ Cluster Operator** stay installed by default; pass **`--with-operator`** to remove the operator via **`./scripts/rabbitmq-install.sh --uninstall`**. Cluster-scoped **CRD** objects may remain until deleted manually.
 
 **Failed or pending upgrade** (e.g. `pending-upgrade`, schema errors mid-apply):
 
@@ -180,15 +180,6 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 ```
 
 Examples: **`workbench-umbrella-local`** (in **`workbench-platform`**), **`workbench-namespaces-local`**.
-
-### Migrating from CRDs umbrella
-
-If the cluster still has a legacy **`workbench-crds-umbrella-<cluster>`** Helm release (operator was previously installed via Helm):
-
-```bash
-helm uninstall workbench-crds-umbrella-local -n kube-system   # if release exists
-./scripts/rabbitmq-install.sh
-```
 
 ## Single-chart examples
 

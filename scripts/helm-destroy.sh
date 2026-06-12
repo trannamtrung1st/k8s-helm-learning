@@ -10,7 +10,7 @@ set -euo pipefail
 #
 #   ./scripts/helm-destroy.sh
 #   ./scripts/helm-destroy.sh --cluster local -y
-#   ./scripts/helm-destroy.sh --cluster aks --with-crds -y   # also remove RabbitMQ operator
+#   ./scripts/helm-destroy.sh --cluster aks --with-operator -y   # also remove RabbitMQ operator
 #
 # Switches kubectl context from devops/clusters/<cluster>/cluster.conf before uninstall
 # (same as helm-apply.sh). Override release or namespace:
@@ -26,7 +26,7 @@ KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
 AUTO_APPROVE=false
 HELM_WAIT=false
 HELM_KEEP_HISTORY=false
-UNINSTALL_CRDS=false
+UNINSTALL_OPERATOR=false
 
 list_helm_clusters() {
   find "${ROOT}/devops/clusters" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
@@ -49,8 +49,9 @@ recreating the cluster:
   Removed (default destroy):
     - workbench-umbrella-<cluster> (workbench-apps, workbench-infra, workbench-db, …)
 
-Use --with-crds to also remove the RabbitMQ Cluster Operator via ./scripts/rabbitmq-install.sh
---uninstall. Cluster-scoped CRD objects may remain until deleted manually.
+Use --with-operator to also remove the RabbitMQ Cluster Operator via
+./scripts/rabbitmq-install.sh --uninstall. Cluster-scoped CRD objects may remain until
+deleted manually.
 
 Usage:
   ./scripts/helm-destroy.sh [options]
@@ -59,7 +60,7 @@ Options:
   --cluster <name>      Cluster overlay name (default: local)
   --context <name>      kubectl context (overrides cluster.conf)
   --skip-context-switch Do not change kubectl context before uninstall
-  --with-crds           Also uninstall RabbitMQ Cluster Operator
+  --with-operator       Also uninstall RabbitMQ Cluster Operator
   --wait                Wait for resources to be removed before returning
   --keep-history        Keep release history after uninstall
   -y, --auto-approve    Skip confirmation prompt
@@ -78,7 +79,7 @@ Environment:
 Examples:
   ./scripts/helm-destroy.sh --cluster local
   ./scripts/helm-destroy.sh --cluster local -y
-  ./scripts/helm-destroy.sh --cluster aks --with-crds --wait -y
+  ./scripts/helm-destroy.sh --cluster aks --with-operator --wait -y
 EOF
   echo ""
   echo "Available clusters:"
@@ -142,8 +143,8 @@ while [[ $# -gt 0 ]]; do
       HELM_SKIP_CONTEXT_SWITCH=1
       shift
       ;;
-    --with-crds)
-      UNINSTALL_CRDS=true
+    --with-operator)
+      UNINSTALL_OPERATOR=true
       shift
       ;;
     --wait)
@@ -207,7 +208,7 @@ else
   echo "Release '${RELEASE}' not found in namespace '${NAMESPACE}' (skip main umbrella)."
 fi
 
-if [[ "${UNINSTALL_CRDS}" == "true" ]]; then
+if [[ "${UNINSTALL_OPERATOR}" == "true" ]]; then
   echo "==> RabbitMQ Cluster Operator uninstall"
   rmq_uninstall_args=(--uninstall)
   if [[ "${AUTO_APPROVE}" == "true" ]]; then
@@ -215,16 +216,8 @@ if [[ "${UNINSTALL_CRDS}" == "true" ]]; then
   fi
   "${ROOT}/scripts/rabbitmq-install.sh" "${rmq_uninstall_args[@]}"
   uninstalled_any=true
-
-  # Legacy Helm CRDs release from pre-script operator install (migration).
-  for legacy_ns in kube-system "${NAMESPACE}"; do
-    if helm status "workbench-crds-umbrella-${HELM_CLUSTER}" -n "${legacy_ns}" >/dev/null 2>&1; then
-      echo "==> remove legacy Helm release workbench-crds-umbrella-${HELM_CLUSTER} in ${legacy_ns}"
-      helm uninstall "workbench-crds-umbrella-${HELM_CLUSTER}" -n "${legacy_ns}" || true
-    fi
-  done
 else
-  echo "Keeping RabbitMQ Cluster Operator (pass --with-crds to uninstall)."
+  echo "Keeping RabbitMQ Cluster Operator (pass --with-operator to uninstall)."
   echo "Keeping Istio / Gateway API CRDs (not managed by this script)."
 fi
 
