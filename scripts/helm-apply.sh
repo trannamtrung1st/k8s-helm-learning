@@ -138,7 +138,6 @@ terraform_outputs_apply_env
 
 VALUES_PLATFORM="${ROOT}/devops/platform/platform-values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
-VALUES_LOCAL_CA="${ROOT}/devops/clusters/${HELM_CLUSTER}/local-ca.values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
 NAMESPACE="${HELM_NAMESPACE}"
 
@@ -195,9 +194,6 @@ helm_upgrade_base() {
 }
 
 main_extra=(-f "${VALUES_PLATFORM}" -f "${VALUES_CLUSTER}")
-if [[ -f "${VALUES_LOCAL_CA}" ]]; then
-  main_extra+=(-f "${VALUES_LOCAL_CA}")
-fi
 if [[ -n "${KV_VALUES_FILE}" ]]; then
   main_extra+=(-f "${KV_VALUES_FILE}")
 fi

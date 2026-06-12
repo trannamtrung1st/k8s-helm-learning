@@ -463,6 +463,3 @@ devops/terraform/vars/
 # Helm packaged chart dependencies (refresh via ./scripts/helm-dependency-update.sh)
 **/*.tgz
 devops/**/tmpcharts-*/
-
-# mkcert local CA Helm overlay (scripts/local-tls-prep.sh)
-devops/clusters/local/local-ca.values.yaml

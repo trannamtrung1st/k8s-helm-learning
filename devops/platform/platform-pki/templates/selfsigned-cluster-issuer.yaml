@@ -1,0 +1,13 @@
+{{- if .Values.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.global.workbenchPki.selfSignedClusterIssuer }}
+  labels:
+    app.kubernetes.io/name: platform-pki
+    app.kubernetes.io/component: {{ .Values.global.workbenchComponents.platform.name }}
+    app.kubernetes.io/part-of: {{ .Values.global.workbenchPartOf }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selfSigned: {}
+{{- end }}

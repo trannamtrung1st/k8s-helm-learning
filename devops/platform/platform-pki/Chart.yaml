@@ -1,0 +1,11 @@
+apiVersion: v2
+name: platform-pki
+description: |
+  Bootstraps a local PKI with cert-manager: SelfSigned ClusterIssuer, root CA
+  Certificate, and CA ClusterIssuer for cluster-wide signing.
+
+  Requires cert-manager (./scripts/cert-manager-install.sh).
+  See https://cert-manager.io/docs/configuration/selfsigned/
+type: application
+version: 1.0.0-rc1
+appVersion: "1.0.0-rc1"

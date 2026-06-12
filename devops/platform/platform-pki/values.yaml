@@ -1,0 +1,8 @@
+# Bootstrap local CA via cert-manager SelfSigned issuer (opt-in; default off).
+# Enable per cluster, e.g. devops/clusters/local/global-values.yaml:
+#   platform-pki:
+#     enabled: true
+#
+# Requires: ./scripts/cert-manager-install.sh
+
+enabled: false

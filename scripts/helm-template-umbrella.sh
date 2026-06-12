@@ -104,7 +104,6 @@ fi
 
 VALUES_PLATFORM="${ROOT}/devops/platform/platform-values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
-VALUES_LOCAL_CA="${ROOT}/devops/clusters/${HELM_CLUSTER}/local-ca.values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
 
 for f in "${VALUES_PLATFORM}" "${VALUES_CLUSTER}"; do
@@ -127,9 +126,6 @@ template_args=(
   -f "${VALUES_PLATFORM}"
   -f "${VALUES_CLUSTER}"
 )
-if [[ -f "${VALUES_LOCAL_CA}" ]]; then
-  template_args+=(-f "${VALUES_LOCAL_CA}")
-fi
 if [[ -n "${HELM_NAMESPACE}" ]]; then
   template_args+=(-n "${HELM_NAMESPACE}")
 fi
