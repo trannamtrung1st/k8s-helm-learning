@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Install cluster prerequisites (CRDs/operators), wait for CRD Established, then the Workbench stack.
+# Install the Workbench stack Helm release (main umbrella only).
 # Run from repository root. Requires helm and kubectl context.
 #
 #   ./scripts/helm-apply.sh
@@ -9,9 +9,9 @@ set -euo pipefail
 #   ./scripts/helm-apply.sh --cluster aks --dry-run
 #   ./scripts/helm-apply.sh --dry-run=server
 #
-# Two Helm releases:
-#   workbench-crds-umbrella-<cluster>  — devops/workbench-crds-umbrella (Helm metadata in kube-system)
-#   workbench-umbrella-<cluster>       — devops/workbench-umbrella (namespace workbench-platform)
+# Cluster platform prerequisites (install separately — see kind-e2e-first-run.sh):
+#   ./scripts/istio-helm-install.sh, ./scripts/rabbitmq-install.sh
+# Helm release: workbench-umbrella-<cluster> — devops/workbench-umbrella (namespace workbench-platform)
 #
 # AKS: credentials in devops/clusters/aks/global-values.yaml are placeholders (CHANGEME).
 # helm-apply reads matching secrets from Azure Key Vault (terraform output key_vault_name) and merges
@@ -30,21 +30,14 @@ set -euo pipefail
 # Server-side apply uses --force-conflicts (override field manager conflicts). Pass --no-force-conflicts to skip.
 #
 # Environment:
-#   HELM_CRDS_RELEASE       CRDs release name (default: workbench-crds-umbrella-<cluster>)
-#   HELM_CRDS_NAMESPACE     Namespace for CRDs Helm release metadata (default: kube-system)
 #   HELM_NAMESPACE          Main stack release namespace (default: workbench-platform)
-#   HELM_CRD_WAIT_TIMEOUT   kubectl wait for CRD Established (default: 120s)
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHART="${ROOT}/devops/workbench-umbrella"
-CRDS_CHART="${ROOT}/devops/workbench-crds-umbrella"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 HELM_RELEASE="${HELM_RELEASE:-}"
-HELM_CRDS_RELEASE="${HELM_CRDS_RELEASE:-}"
 HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
-HELM_CRDS_NAMESPACE="${HELM_CRDS_NAMESPACE:-kube-system}"
 HISTORY_MAX="${HELM_HISTORY_MAX:-5}"
-HELM_CRD_WAIT_TIMEOUT="${HELM_CRD_WAIT_TIMEOUT:-120s}"
 HELM_SKIP_KV_SECRETS="${HELM_SKIP_KV_SECRETS:-0}"
 HELM_SKIP_CONTEXT_SWITCH="${HELM_SKIP_CONTEXT_SWITCH:-0}"
 HELM_FORCE_CONFLICTS="${HELM_FORCE_CONFLICTS:-1}"
@@ -60,18 +53,6 @@ trap cleanup EXIT
 
 list_helm_clusters() {
   find "${ROOT}/devops/clusters" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
-}
-
-helm_apply_is_dry_run() {
-  local arg
-  for arg in "$@"; do
-    case "${arg}" in
-      --dry-run|--dry-run=*)
-        return 0
-        ;;
-    esac
-  done
-  return 1
 }
 
 usage() {
@@ -96,11 +77,6 @@ usage() {
   echo "  AKS_RESOURCE_GROUP    AKS RG for --cluster aks (default: workbench)"
   echo "  AKS_CLUSTER_NAME      AKS name for --cluster aks (default: workbench-aks)"
   echo "  HELM_FETCH_AKS_CREDENTIALS  auto|false — run az aks get-credentials if context missing"
-  echo ""
-  echo "CRDs release:"
-  echo "  HELM_CRDS_RELEASE       Override CRDs release name"
-  echo "  HELM_CRDS_NAMESPACE     Helm release namespace for CRDs (default: kube-system)"
-  echo "  HELM_CRD_WAIT_TIMEOUT   Wait for rabbitmqclusters.rabbitmq.com Established"
   echo ""
   echo "Available clusters:"
   list_helm_clusters | sed 's/^/  /'
@@ -164,7 +140,6 @@ VALUES_PLATFORM="${ROOT}/devops/platform/values/global-values.yaml"
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
 VALUES_LOCAL_CA="${ROOT}/devops/clusters/${HELM_CLUSTER}/local-ca.values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
-CRDS_RELEASE="${HELM_CRDS_RELEASE:-workbench-crds-umbrella-${HELM_CLUSTER}}"
 NAMESPACE="${HELM_NAMESPACE}"
 
 if [[ ! -f "${VALUES_CLUSTER}" ]]; then
@@ -218,16 +193,6 @@ helm_upgrade_base() {
   echo "==> ${cmd[*]}"
   "${cmd[@]}"
 }
-
-echo "==> CRDs/operators release: ${CRDS_RELEASE} (namespace ${HELM_CRDS_NAMESPACE})"
-helm_upgrade_base "${CRDS_RELEASE}" "${CRDS_CHART}" "${HELM_CRDS_NAMESPACE}" 0
-
-if ((${#extra_args[@]} == 0)) || ! helm_apply_is_dry_run "${extra_args[@]}"; then
-  echo "==> wait for CRD Established: rabbitmqclusters.rabbitmq.com"
-  kubectl wait --for=condition=Established \
-    "crd/rabbitmqclusters.rabbitmq.com" \
-    --timeout="${HELM_CRD_WAIT_TIMEOUT}"
-fi
 
 main_extra=(-f "${VALUES_PLATFORM}" -f "${VALUES_CLUSTER}")
 if [[ -f "${VALUES_LOCAL_CA}" ]]; then

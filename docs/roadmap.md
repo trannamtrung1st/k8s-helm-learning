@@ -15,7 +15,7 @@ Within each band, earlier items unblock later ones. Skip ahead only when you alr
 7. (**DONE**) **Services** — ClusterIP for east-west, NodePort / LoadBalancer for north-south L4; **cluster DNS**; use **`kubectl port-forward`** for HTTP access until Gateway API is in place
 8. (**DONE**) **PersistentVolumes** and **StorageClasses** — enough to attach **durable disks** to Postgres and other stateful components (local PVs in this repo use **node affinity** to `workbench.io/infra-node=true`; see `devops/k8s/README.md` **Local kind workflow**)
 9. (**DONE**) Deploy **PostgreSQL** on Kubernetes (operator or chart; run API migrations against it)
-10. (**DONE**) Deploy **RabbitMQ** on Kubernetes via the **RabbitMQ Cluster Operator** — installed with **`workbench-crds-umbrella`** before the main stack; **`RabbitmqCluster`** CR (default **3** replicas) with topology from **`devops/infra/workbench-rabbitmq/files/`**; go deeper on cluster formation and queue HA under item **17**
+10. (**DONE**) Deploy **RabbitMQ** on Kubernetes via the **RabbitMQ Cluster Operator** — installed with **`./scripts/rabbitmq-install.sh`** before the main stack; **`RabbitmqCluster`** CR (default **3** replicas) with topology from **`devops/infra/workbench-rabbitmq/files/`**; go deeper on cluster formation and queue HA under item **17**
 11. (**DONE**) **Worker + queue system** on Kubernetes — connect the worker to the broker; competing consumers, failure behavior
 
 ## Hygiene and reliability

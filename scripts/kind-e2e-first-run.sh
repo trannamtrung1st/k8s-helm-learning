@@ -8,6 +8,7 @@ set -euo pipefail
 # 1) create/recreate kind cluster
 # 2) set kubectl context
 # 2b) install Istio ambient + Gateway API CRDs (Helm; see scripts/istio-helm-install.sh)
+# 2c) install RabbitMQ Cluster Operator (see scripts/rabbitmq-install.sh)
 # 3) label infra node
 # 4) init local PV directories
 # 5) build compose app images and load into kind
@@ -21,6 +22,7 @@ SKIP_BUILD="false"
 SKIP_LOAD="false"
 SKIP_APPLY="false"
 SKIP_ISTIO="false"
+SKIP_RABBITMQ="false"
 USE_K8S_APPLY="false"
 COMPOSE_FILE="local/docker-compose.yaml"
 INCLUDE_JOBS="${INCLUDE_JOBS:-1}"
@@ -40,6 +42,7 @@ Options:
   --no-jobs              omit workbench-jobs from build and kind load
   --skip-apply           skip stack apply step (Helm or Kustomize)
   --skip-istio           skip Istio ambient Helm install (+ Gateway API CRDs)
+  --skip-rabbitmq        skip RabbitMQ Cluster Operator install
   --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
                          default: ./scripts/helm-apply.sh
   -h, --help             show help
@@ -96,6 +99,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-istio)
       SKIP_ISTIO="true"
+      shift
+      ;;
+    --skip-rabbitmq)
+      SKIP_RABBITMQ="true"
       shift
       ;;
     --k8s)
@@ -158,6 +165,13 @@ else
   echo "=== Step 2b: skip Istio Helm install ==="
 fi
 
+if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
+  echo "=== Step 2c: install RabbitMQ Cluster Operator ==="
+  ./scripts/rabbitmq-install.sh
+else
+  echo "=== Step 2c: skip RabbitMQ operator install ==="
+fi
+
 if [[ -z "${INFRA_NODE}" ]]; then
   # Prefer first worker in multi-node cluster; else control-plane in single-node.
   if kubectl get node "${CLUSTER_NAME}-worker" >/dev/null 2>&1; then
@@ -203,12 +217,16 @@ else
 fi
 
 echo "=== Verify ==="
-kubectl get crd rabbitmqclusters.rabbitmq.com
+if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
+  kubectl get crd rabbitmqclusters.rabbitmq.com
+  kubectl get pods -n rabbitmq-system
+fi
 kubectl get ns
-kubectl get pods -n rabbitmq-system
 kubectl get pods -n workbench-db
 kubectl get pods -n workbench-infra
-kubectl get rabbitmqclusters -n workbench-infra
+if [[ "${SKIP_RABBITMQ}" != "true" && "${SKIP_APPLY}" != "true" ]]; then
+  kubectl get rabbitmqclusters -n workbench-infra
+fi
 kubectl get pods -n workbench-apps
 kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps

@@ -43,6 +43,7 @@ SKIP_BUILD="false"
 SKIP_PUSH="false"
 SKIP_APPLY="false"
 SKIP_ISTIO="false"
+SKIP_RABBITMQ="false"
 SKIP_KV_SECRETS="false"
 ATTACH_ACR="false"
 
@@ -73,8 +74,9 @@ Options:
     --skip-kv-secrets          Pass --skip-kv-secrets to helm-apply
     --no-jobs                  Omit workbench-jobs from compose build/push
 
-  Istio:
+  Cluster platform:
     --skip-istio               Skip Istio ambient Helm install (+ Gateway API CRDs)
+    --skip-rabbitmq            Skip RabbitMQ Cluster Operator install
 
   -h, --help                   Show this help
 
@@ -161,6 +163,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-istio)
       SKIP_ISTIO="true"
+      shift
+      ;;
+    --skip-rabbitmq)
+      SKIP_RABBITMQ="true"
       shift
       ;;
     --skip-kv-secrets)
@@ -263,6 +269,13 @@ if [[ "${SKIP_ISTIO}" != "true" ]]; then
   ./scripts/istio-helm-install.sh
 else
   echo "=== Step 4c: skip Istio Helm install ==="
+fi
+
+if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
+  echo "=== Step 4d: install RabbitMQ Cluster Operator ==="
+  ./scripts/rabbitmq-install.sh
+else
+  echo "=== Step 4d: skip RabbitMQ operator install ==="
 fi
 
 if [[ "${ATTACH_ACR}" == "true" ]]; then

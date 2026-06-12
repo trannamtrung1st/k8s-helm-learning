@@ -65,7 +65,14 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
    ./scripts/kind-load-images.sh --cluster workbench-0
    ```
 
-5. **Apply the stack** — Helm (recommended):
+5. **Install cluster platform** (once per cluster; included in **`kind-e2e-first-run.sh`**):
+
+   ```bash
+   ./scripts/istio-helm-install.sh
+   ./scripts/rabbitmq-install.sh
+   ```
+
+6. **Apply the stack** — Helm (recommended):
 
    ```bash
    ./scripts/helm-apply.sh
@@ -150,11 +157,9 @@ The generated **`ConfigMap`** / **`Secret`** are merged with the same build as t
 devops/
 ├── README.md             # Helm charts + values (preferred)
 ├── kustomization.yaml    # legacy apply: k8s/ resources + CM/Secret generators
-├── crds/                 # cluster prerequisites (RabbitMQ Cluster Operator)
 ├── platform/             # Helm platform charts
 ├── infra/                # Helm infra charts (rabbitmq/redis files/ here)
 ├── apps/                 # Helm app charts
-├── workbench-crds-umbrella/
 ├── workbench-umbrella/
 └── k8s/                  # legacy manifests (base + overlays)
     ├── apps/

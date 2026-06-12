@@ -2,7 +2,7 @@
 
 This directory (**`devops/`**) holds **Helm charts**, **values overlays**, and **legacy Kustomize** manifests for Workbench. Charts ship minimal **`values.yaml`** files; shared defaults live under **`platform/values/`**, and per-cluster overrides under **`clusters/<cluster-name>/`**.
 
-**Preferred install:** CRDs umbrella, then main umbrella, via `./scripts/helm-apply.sh` from the repository root.
+**Preferred install:** cluster platform layer (Istio, Gateway API, RabbitMQ operator — see e2e scripts), then main umbrella via `./scripts/helm-apply.sh` from the repository root.
 
 ## Layout
 
@@ -19,12 +19,6 @@ devops/
     workbench-policies/     # LimitRange, ResourceQuota, PDB, sample NetworkPolicy
     values/
       global-values.yaml
-  crds/
-    rabbitmq-operator/      # RabbitMQ Cluster Operator (CRD + controller, rabbitmq-system)
-  workbench-crds-umbrella/  # cluster prerequisites (operators)
-    Chart.yaml
-    Chart.lock
-    charts/
   infra/
     workbench-postgres/
     workbench-rabbitmq/     # files/definitions.json, files/conf.d/…
@@ -65,9 +59,13 @@ Helm merges values in order: packaged chart **`values.yaml`**, then each **`-f`*
 
 ## Full stack install
 
-From the repository root (after kind cluster, infra node label, volumes, and images — see **`devops/k8s/README.md`** prerequisites):
+From the repository root (after kind cluster, cluster platform installs, infra node label, volumes, and images — see **`devops/k8s/README.md`** prerequisites):
 
 ```bash
+# Cluster platform (once per cluster; also run by kind-e2e-first-run.sh / aks-e2e-first-run.sh):
+./scripts/istio-helm-install.sh      # Istio ambient + Gateway API CRDs
+./scripts/rabbitmq-install.sh        # RabbitMQ Cluster Operator
+
 ./scripts/helm-apply.sh
 # AKS (3x Standard_D2s_v3):
 HELM_CLUSTER=aks ./scripts/helm-apply.sh
@@ -84,15 +82,18 @@ Dry-run against the API:
 # or: ./scripts/helm-apply.sh --dry-run=server
 ```
 
-The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then CRDs umbrella, then main umbrella), then:
+The script runs **`./scripts/helm-dependency-update.sh`** (subcharts with **`workbench-common`**, then main umbrella), then **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform (incl. **`workbench-public-gateway`**), infra, apps (incl. **HTTPRoutes** on **`workbench-api`** and **`workbench-app`**). Install **`./scripts/rabbitmq-install.sh`** (and Istio) as cluster platform steps before apply.
 
-1. **`helm upgrade --install`** for **`workbench-crds-umbrella-<cluster>`** (`devops/workbench-crds-umbrella`) — RabbitMQ Cluster Operator
-2. **`kubectl wait`** for CRD **`rabbitmqclusters.rabbitmq.com`** **Established** (skipped on `--dry-run`)
-3. **`helm upgrade --install`** for **`workbench-umbrella-<cluster>`** (`devops/workbench-umbrella`) — platform (incl. **`workbench-public-gateway`**), infra, apps (incl. **HTTPRoutes** on **`workbench-api`** and **`workbench-app`**)
+The main stack uses **`workbench-platform`** (`HELM_NAMESPACE`) and owns that namespace via **`workbench-namespaces`**. Override **`HELM_RELEASE`**. **`HELM_HISTORY_MAX`** applies to the umbrella upgrade.
 
-CRDs release Helm metadata lives in **`kube-system`** (`HELM_CRDS_NAMESPACE`); the main stack uses **`workbench-platform`** (`HELM_NAMESPACE`) and owns that namespace via **`workbench-namespaces`**. Override **`HELM_CRDS_RELEASE`**, **`HELM_RELEASE`**, and **`HELM_CRD_WAIT_TIMEOUT`** (default **120s**). **`HELM_HISTORY_MAX`** applies to both upgrades.
+Install the RabbitMQ operator ([upstream manifest](https://www.rabbitmq.com/kubernetes/operator/install-operator)) as a cluster platform step (not part of **`helm-apply`**):
 
-**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install) and **Gateway API CRDs** stay installed by default; the **RabbitMQ operator** release stays unless you pass **`--with-crds`**. Cluster-scoped **CRD** objects may remain until you delete them manually (Helm does not remove CRDs on uninstall).
+```bash
+./scripts/rabbitmq-install.sh
+# Pin version: RABBITMQ_OPERATOR_VERSION=v2.21.0 ./scripts/rabbitmq-install.sh
+```
+
+**`./scripts/helm-destroy.sh`** uninstalls **`workbench-umbrella-<cluster>`** only (apps/infra/platform subcharts, including gateway and HTTPRoutes) so you can **`helm-apply`** again without recreating the cluster. **Istio** (ambient Helm install), **Gateway API CRDs**, and the **RabbitMQ Cluster Operator** stay installed by default; pass **`--with-crds`** to remove the operator via **`./scripts/rabbitmq-install.sh --uninstall`**. Cluster-scoped **CRD** objects may remain until deleted manually.
 
 **Failed or pending upgrade** (e.g. `pending-upgrade`, schema errors mid-apply):
 
@@ -101,7 +102,7 @@ CRDs release Helm metadata lives in **`kube-system`** (`HELM_CRDS_NAMESPACE`); t
 ./scripts/helm-apply.sh
 ```
 
-Use **`--main-only`** or **`--crds-only`** to target one release. Requires **`jq`**.
+Requires **`jq`**. For RabbitMQ operator issues, re-run **`./scripts/rabbitmq-install.sh`**.
 
 After apply, verify:
 
@@ -141,7 +142,7 @@ docker push "${ACR}/workbench-api:1.0.0-rc1"
 az aks update -g workbench -n workbench-aks --attach-acr workbenchacr77   # pull from AKS
 ```
 
-After chart edits: **`./scripts/helm-dependency-update.sh`** (or manually **`helm dependency update`** on each dependent chart, then CRDs umbrella, then main umbrella) before install — refreshes vendored subcharts.
+After chart edits: **`./scripts/helm-dependency-update.sh`** (or manually **`helm dependency update`** on each dependent chart, then main umbrella) before install — refreshes vendored subcharts.
 
 **Library chart:** app and infra charts depend on **`workbench-common`** for shared helpers (`workbench.lib.image`, `workbench.lib.namespace.*`, `workbench.lib.labels.*`, `workbench.lib.infraNode.affinity`). Chart-specific templates (e.g. **`workbench.app.config.js`**) stay in the owning chart.
 
@@ -158,8 +159,6 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 | `platform/workbench-storage-classes` | `workbench-storage-classes` | `local-storage` StorageClass                    |
 | `platform/workbench-apps-secrets`    | `workbench-apps-secrets`    | Apps-namespace broker/cache Secret              |
 | `platform/workbench-policies`        | `workbench-policies`        | LimitRange, ResourceQuota, RabbitMQ PDB, sample worker NetworkPolicy |
-| `crds/rabbitmq-operator`             | `rabbitmq-operator`         | RabbitMQ Cluster Operator (CRD, `rabbitmq-system`) |
-| `workbench-crds-umbrella`            | `workbench-crds-umbrella`   | CRDs/operators prerequisite release               |
 | `infra/workbench-postgres`           | `workbench-postgres`        | Postgres StatefulSet, PV, db Secret             |
 | `infra/workbench-rabbitmq`           | `workbench-rabbitmq`        | `RabbitmqCluster` CR, `{name}-default-user` Secret, definitions ConfigMap |
 | `infra/workbench-redis`              | `workbench-redis`           | Redis StatefulSet, config Secret                |
@@ -175,7 +174,16 @@ For an interactive menu, use **`./scripts/helm-wizard.sh`**.
 <app>-<env>
 ```
 
-Examples: **`workbench-crds-umbrella-local`** (release metadata in **`kube-system`**), **`workbench-umbrella-local`** (in **`workbench-platform`**), **`workbench-namespaces-local`**.
+Examples: **`workbench-umbrella-local`** (in **`workbench-platform`**), **`workbench-namespaces-local`**.
+
+### Migrating from CRDs umbrella
+
+If the cluster still has a legacy **`workbench-crds-umbrella-<cluster>`** Helm release (operator was previously installed via Helm):
+
+```bash
+helm uninstall workbench-crds-umbrella-local -n kube-system   # if release exists
+./scripts/rabbitmq-install.sh
+```
 
 ## Single-chart examples
 

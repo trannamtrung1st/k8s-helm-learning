@@ -5,25 +5,21 @@ set -euo pipefail
 # Run from repository root. Requires helm and kubectl context.
 #
 # Default: remove workbench-umbrella-<cluster> only so cluster platform layers stay
-# installed (Istio ambient, Gateway API CRDs, workbench-public-gateway, RabbitMQ
-# operator / CRDs umbrella). Re-apply with ./scripts/helm-apply.sh without recreating
-# the cluster.
+# installed (Istio ambient, Gateway API CRDs, RabbitMQ Cluster Operator). Re-apply
+# with ./scripts/helm-apply.sh without recreating the cluster.
 #
 #   ./scripts/helm-destroy.sh
 #   ./scripts/helm-destroy.sh --cluster local -y
-#   ./scripts/helm-destroy.sh --cluster aks --with-crds -y   # also remove operator CRDs release
+#   ./scripts/helm-destroy.sh --cluster aks --with-crds -y   # also remove RabbitMQ operator
 #
 # Switches kubectl context from devops/clusters/<cluster>/cluster.conf before uninstall
 # (same as helm-apply.sh). Override release or namespace:
 #   HELM_RELEASE=workbench-umbrella-aks ./scripts/helm-destroy.sh --cluster aks
-#   HELM_CRDS_RELEASE=workbench-crds-umbrella-aks ./scripts/helm-destroy.sh --cluster aks --with-crds
 #   HELM_NAMESPACE=workbench-platform ./scripts/helm-destroy.sh --cluster local
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HELM_CLUSTER="${HELM_CLUSTER:-local}"
 HELM_RELEASE="${HELM_RELEASE:-}"
-HELM_CRDS_RELEASE="${HELM_CRDS_RELEASE:-}"
-HELM_CRDS_NAMESPACE="${HELM_CRDS_NAMESPACE:-kube-system}"
 HELM_NAMESPACE="${HELM_NAMESPACE:-workbench-platform}"
 HELM_SKIP_CONTEXT_SWITCH="${HELM_SKIP_CONTEXT_SWITCH:-0}"
 KUBECTL_CONTEXT="${KUBECTL_CONTEXT:-}"
@@ -47,14 +43,14 @@ recreating the cluster:
   Preserved (default destroy):
     - Istio ambient (istio-base, istiod, istio-cni, ztunnel in istio-system)
     - Kubernetes Gateway API CRDs
-    - (none — gateway and HTTPRoutes ship in workbench-umbrella and are removed with it)
-    - workbench-crds-umbrella-<cluster> (RabbitMQ Cluster Operator)
+    - RabbitMQ Cluster Operator (rabbitmq-system)
+    - (gateway and HTTPRoutes ship in workbench-umbrella and are removed with it)
 
   Removed (default destroy):
     - workbench-umbrella-<cluster> (workbench-apps, workbench-infra, workbench-db, …)
 
-Use --with-crds to also uninstall workbench-crds-umbrella-<cluster>. Cluster-scoped
-CRD objects may remain until deleted manually (Helm does not remove CRDs on uninstall).
+Use --with-crds to also remove the RabbitMQ Cluster Operator via ./scripts/rabbitmq-install.sh
+--uninstall. Cluster-scoped CRD objects may remain until deleted manually.
 
 Usage:
   ./scripts/helm-destroy.sh [options]
@@ -63,7 +59,7 @@ Options:
   --cluster <name>      Cluster overlay name (default: local)
   --context <name>      kubectl context (overrides cluster.conf)
   --skip-context-switch Do not change kubectl context before uninstall
-  --with-crds           Also uninstall workbench-crds-umbrella-<cluster>
+  --with-crds           Also uninstall RabbitMQ Cluster Operator
   --wait                Wait for resources to be removed before returning
   --keep-history        Keep release history after uninstall
   -y, --auto-approve    Skip confirmation prompt
@@ -72,8 +68,6 @@ Options:
 Environment:
   HELM_CLUSTER          Same as --cluster (default: local)
   HELM_RELEASE          Main release name (default: workbench-umbrella-<cluster>)
-  HELM_CRDS_RELEASE     CRDs release name (default: workbench-crds-umbrella-<cluster>)
-  HELM_CRDS_NAMESPACE   CRDs Helm release namespace (default: kube-system)
   HELM_NAMESPACE        Main release namespace (default: workbench-platform)
   KUBECTL_CONTEXT       Explicit kubectl context
   KIND_CLUSTER_NAME     kind cluster for --cluster local (default: workbench-0)
@@ -177,7 +171,6 @@ done
 
 VALUES_CLUSTER="${ROOT}/devops/clusters/${HELM_CLUSTER}/global-values.yaml"
 RELEASE="${HELM_RELEASE:-workbench-umbrella-${HELM_CLUSTER}}"
-CRDS_RELEASE="${HELM_CRDS_RELEASE:-workbench-crds-umbrella-${HELM_CLUSTER}}"
 NAMESPACE="${HELM_NAMESPACE}"
 
 if [[ ! -f "${VALUES_CLUSTER}" ]]; then
@@ -215,28 +208,23 @@ else
 fi
 
 if [[ "${UNINSTALL_CRDS}" == "true" ]]; then
-  crds_namespace=""
-  if helm status "${CRDS_RELEASE}" -n "${HELM_CRDS_NAMESPACE}" >/dev/null 2>&1; then
-    crds_namespace="${HELM_CRDS_NAMESPACE}"
-  elif helm status "${CRDS_RELEASE}" -n "${NAMESPACE}" >/dev/null 2>&1; then
-    echo "CRDs release found in legacy namespace '${NAMESPACE}' (pre kube-system split)."
-    crds_namespace="${NAMESPACE}"
+  echo "==> RabbitMQ Cluster Operator uninstall"
+  rmq_uninstall_args=(--uninstall)
+  if [[ "${AUTO_APPROVE}" == "true" ]]; then
+    rmq_uninstall_args+=(-y)
   fi
+  "${ROOT}/scripts/rabbitmq-install.sh" "${rmq_uninstall_args[@]}"
+  uninstalled_any=true
 
-  if [[ -n "${crds_namespace}" ]]; then
-    if [[ "${AUTO_APPROVE}" != "true" ]]; then
-      if ! confirm_uninstall "${CRDS_RELEASE}" "${crds_namespace}"; then
-        echo "Aborted before CRDs uninstall."
-        exit 0
-      fi
+  # Legacy Helm CRDs release from pre-script operator install (migration).
+  for legacy_ns in kube-system "${NAMESPACE}"; do
+    if helm status "workbench-crds-umbrella-${HELM_CLUSTER}" -n "${legacy_ns}" >/dev/null 2>&1; then
+      echo "==> remove legacy Helm release workbench-crds-umbrella-${HELM_CLUSTER} in ${legacy_ns}"
+      helm uninstall "workbench-crds-umbrella-${HELM_CLUSTER}" -n "${legacy_ns}" || true
     fi
-    helm_uninstall_release "${CRDS_RELEASE}" "${crds_namespace}"
-    uninstalled_any=true
-  else
-    echo "CRDs release '${CRDS_RELEASE}' not found in '${HELM_CRDS_NAMESPACE}' or '${NAMESPACE}' (skip)."
-  fi
+  done
 else
-  echo "Keeping platform CRDs release '${CRDS_RELEASE}' (pass --with-crds to uninstall)."
+  echo "Keeping RabbitMQ Cluster Operator (pass --with-crds to uninstall)."
   echo "Keeping Istio / Gateway API CRDs (not managed by this script)."
 fi
 
