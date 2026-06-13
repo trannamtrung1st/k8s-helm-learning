@@ -203,7 +203,7 @@ metadata:
     {{- end }}
 spec:
   parentRefs:
-  {{- $sections := .Values.httpRoute.parentSectionNames | default (list "http" "https") }}
+  {{- $sections := .Values.httpRoute.parentSectionNames | default (list "http" "https-wildcard" "https-localhost") }}
   {{- range $sections }}
     - name: {{ $.Values.httpRoute.parentGatewayName }}
       namespace: {{ $.Values.httpRoute.parentGatewayNamespace }}

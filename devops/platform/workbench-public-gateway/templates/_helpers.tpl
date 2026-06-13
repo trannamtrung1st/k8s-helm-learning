@@ -19,20 +19,28 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
 app.kubernetes.io/part-of: {{ include "workbench-public-gateway.partOf" . }}
 {{- end -}}
 
+{{- define "workbench-public-gateway.httpsListenersEnabled" -}}
+{{- $enabled := false -}}
+{{- range .Values.httpsListeners -}}
+{{- if .enabled -}}
+{{- $enabled = true -}}
+{{- end -}}
+{{- end -}}
+{{- $enabled -}}
+{{- end -}}
+
 {{/*
 cert-manager Gateway annotations (https://cert-manager.io/docs/usage/gateway/).
-Emitted when the HTTPS listener is enabled.
+Emitted when any HTTPS listener is enabled.
 */}}
 {{- define "workbench-public-gateway.certManagerAnnotations" -}}
-{{- if .Values.httpsListener.enabled }}
+{{- if include "workbench-public-gateway.httpsListenersEnabled" . | eq "true" }}
 {{- $cm := .Values.certManager }}
-{{- $hostname := .Values.httpsListener.hostname }}
 {{- if .Values.global.workbenchPki.caClusterIssuer }}
 cert-manager.io/cluster-issuer: {{ .Values.global.workbenchPki.caClusterIssuer }}
 {{- end }}
-{{- $commonName := default $hostname $cm.commonName }}
-{{- if $commonName }}
-cert-manager.io/common-name: {{ $commonName | quote }}
+{{- with $cm.commonName }}
+cert-manager.io/common-name: {{ . | quote }}
 {{- end }}
 {{- with $cm.duration }}
 cert-manager.io/duration: {{ . | quote }}

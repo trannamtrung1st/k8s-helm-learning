@@ -11,7 +11,7 @@ httpToHttpsRedirect:
   parentGatewayName: workbench-public-gateway
   parentGatewayNamespace: istio-system
   httpListenerName: http
-  hostname: api.k8slearning.com
+  hostname: "*.k8slearning.com"
   redirect:
     scheme: https
     statusCode: 301

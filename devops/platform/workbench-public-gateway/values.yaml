@@ -25,19 +25,25 @@ httpListener:
   enabled: true
   name: http
   port: 80
-  hostname: ""
+  # hostname omitted → accept all hostnames
 
-httpsListener:
-  enabled: false
-  name: https
-  port: 443
-  hostname: ""
-  tlsSecretName: workbench-public-gateway-tls
+httpsListeners:
+  - name: https-wildcard
+    enabled: true
+    hostname: "*.k8slearning.com"
+    port: 443
+  - name: https-localhost
+    enabled: true
+    hostname: localhost
+    port: 443
 
-# cert-manager Certificate settings for the HTTPS listener.
+tlsSecretName: workbench-public-gateway-tls
+
+# cert-manager Certificate settings for the HTTPS listeners.
 # https://cert-manager.io/docs/usage/gateway/
-# commonName defaults to httpsListener.hostname; subjectOrganizations defaults to global.workbenchPartOf.
+# dnsNames are derived from httpsListeners hostnames; commonName is set explicitly.
 certManager:
+  commonName: "*.k8slearning.com"
   duration: 8760h # 1 year
   renewBefore: 720h # 30 days before expiry
   usages: "digital signature,key encipherment,server auth"

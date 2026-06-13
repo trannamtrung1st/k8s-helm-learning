@@ -20,10 +20,11 @@ httpRoute:
   enabled: true
   parentGatewayName: workbench-public-gateway
   parentGatewayNamespace: istio-system
-  # Both listeners; HTTP→HTTPS redirect for api.k8slearning.com is a separate platform route.
+  # HTTP + both HTTPS listeners; HTTP→HTTPS redirect for *.k8slearning.com is a separate platform route.
   parentSectionNames:
     - http
-    - https
+    - https-wildcard
+    - https-localhost
   hostname: ""
   pathPrefix: /
   pathMatchType: PathPrefix

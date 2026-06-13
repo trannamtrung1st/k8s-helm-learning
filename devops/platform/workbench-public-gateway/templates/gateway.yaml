@@ -27,14 +27,15 @@ spec:
       allowedRoutes:
         {{- include "workbench-public-gateway.allowedRoutes" . | nindent 8 }}
     {{- end }}
-    {{- if .Values.httpsListener.enabled }}
-    - name: {{ .Values.httpsListener.name }}
+    {{- range .Values.httpsListeners }}
+    {{- if .enabled }}
+    - name: {{ .name }}
       protocol: HTTPS
-      port: {{ .Values.httpsListener.port }}
-      {{- with .Values.httpsListener.hostname }}
+      port: {{ .port }}
+      {{- with .hostname }}
       hostname: {{ . | quote }}
       {{- end }}
-      {{- with .Values.httpsListener.tlsSecretName }}
+      {{- with $.Values.tlsSecretName }}
       tls:
         mode: Terminate
         certificateRefs:
@@ -43,6 +44,7 @@ spec:
             group: ""
       {{- end }}
       allowedRoutes:
-        {{- include "workbench-public-gateway.allowedRoutes" . | nindent 8 }}
+        {{- include "workbench-public-gateway.allowedRoutes" $ | nindent 8 }}
+    {{- end }}
     {{- end }}
 {{- end }}
