@@ -42,6 +42,7 @@ SKIP_CREDENTIALS="false"
 SKIP_BUILD="false"
 SKIP_PUSH="false"
 SKIP_APPLY="false"
+SKIP_GATEWAY_API="false"
 SKIP_ISTIO="false"
 SKIP_RABBITMQ="false"
 SKIP_CERT_MANAGER="false"
@@ -76,7 +77,8 @@ Options:
     --no-jobs                  Omit workbench-jobs from compose build/push
 
   Cluster platform:
-    --skip-istio               Skip Istio ambient Helm install (+ Gateway API CRDs)
+    --skip-gateway-api         Skip Gateway API CRD install
+    --skip-istio               Skip Istio ambient Helm install
     --skip-rabbitmq            Skip RabbitMQ Cluster Operator install
     --skip-cert-manager        Skip cert-manager install
 
@@ -167,6 +169,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_ISTIO="true"
       shift
       ;;
+    --skip-gateway-api)
+      SKIP_GATEWAY_API="true"
+      shift
+      ;;
     --skip-rabbitmq)
       SKIP_RABBITMQ="true"
       shift
@@ -212,7 +218,7 @@ require_cmd docker
 if [[ "${SKIP_TERRAFORM}" != "true" ]]; then
   require_cmd terraform
 fi
-if [[ "${SKIP_ISTIO}" != "true" || "${SKIP_APPLY}" != "true" ]]; then
+if [[ "${SKIP_ISTIO}" != "true" || "${SKIP_CERT_MANAGER}" != "true" || "${SKIP_APPLY}" != "true" ]]; then
   require_cmd helm
 fi
 if [[ "${SKIP_BUILD}" != "true" || "${SKIP_PUSH}" != "true" ]]; then
@@ -270,11 +276,18 @@ helm_kubectl_use_context "${HELM_CLUSTER}"
 echo "=== Step 4: verify cluster ==="
 kubectl get nodes -o wide
 
-if [[ "${SKIP_ISTIO}" != "true" ]]; then
-  echo "=== Step 4c: install Istio ambient (Helm) + Gateway API CRDs ==="
-  ./scripts/istio-helm-install.sh
+if [[ "${SKIP_GATEWAY_API}" != "true" ]]; then
+  echo "=== Step 4a: install Gateway API CRDs ==="
+  ./scripts/gateway-api-install.sh
 else
-  echo "=== Step 4c: skip Istio Helm install ==="
+  echo "=== Step 4a: skip Gateway API CRD install ==="
+fi
+
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  echo "=== Step 4c: install cert-manager + istio-csr ==="
+  ./scripts/cert-manager-install.sh
+else
+  echo "=== Step 4c: skip cert-manager install ==="
 fi
 
 if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
@@ -284,11 +297,11 @@ else
   echo "=== Step 4d: skip RabbitMQ operator install ==="
 fi
 
-if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
-  echo "=== Step 4e: install cert-manager ==="
-  ./scripts/cert-manager-install.sh
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  echo "=== Step 4e: install Istio ambient (Helm) ==="
+  ./scripts/istio-helm-install.sh
 else
-  echo "=== Step 4e: skip cert-manager install ==="
+  echo "=== Step 4e: skip Istio Helm install ==="
 fi
 
 if [[ "${ATTACH_ACR}" == "true" ]]; then
@@ -338,6 +351,10 @@ kubectl get svc -n workbench-infra
 kubectl get svc -n workbench-apps
 if [[ "${SKIP_ISTIO}" != "true" ]]; then
   kubectl get pods -n istio-system
+fi
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  kubectl get crd certificates.cert-manager.io
+  kubectl get pods -n cert-manager
 fi
 
 echo "Done."

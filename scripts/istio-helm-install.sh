@@ -4,6 +4,7 @@ set -euo pipefail
 # Install Istio ambient mode with Helm (control plane + data plane + Gateway API CRDs).
 # Run from repository root after kubectl context is set.
 #
+#   ./scripts/cert-manager-install.sh   # prerequisite (once per cluster)
 #   ./scripts/istio-helm-install.sh
 #   ./scripts/istio-helm-install.sh --version 1.30.1
 #
@@ -13,6 +14,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ISTIO_VERSION="${ISTIO_VERSION:-1.30.1}"
 ISTIO_NAMESPACE="${ISTIO_NAMESPACE:-istio-system}"
 ISTIO_HELM_REPO="${ISTIO_HELM_REPO:-https://istio-release.storage.googleapis.com/charts}"
+CERT_MANAGER_NAMESPACE="${CERT_MANAGER_NAMESPACE:-cert-manager}"
+ISTIO_CSR_RELEASE="${ISTIO_CSR_RELEASE:-cert-manager-istio-csr}"
+ISTIO_CSR_VERSION="${ISTIO_CSR_VERSION:-v0.14.2}"
+ISTIO_CSR_CHART="${ISTIO_CSR_CHART:-oci://quay.io/jetstack/charts/cert-manager-istio-csr}"
+ISTIO_CSR_VALUES="${ISTIO_CSR_VALUES:-${ROOT}/devops/platform/istio-csr-values/values.yaml}"
+ISTIOD_VALUES="${ISTIOD_VALUES:-${ROOT}/devops/platform/istio-values/istiod-ambient.yaml}"
+ZTUNNEL_VALUES="${ZTUNNEL_VALUES:-${ROOT}/devops/platform/istio-values/ztunnel-ambient.yaml}"
 SKIP_VERIFY="false"
 
 usage() {
@@ -20,7 +28,9 @@ usage() {
 Usage: $0 [options]
 
 Install Istio ambient mode using Helm charts (istio-base, istiod, cni, ztunnel)
-and Kubernetes Gateway API CRDs per the official ambient Helm guide.
+and Kubernetes Gateway API CRDs.
+
+Prerequisite: ./scripts/cert-manager-install.sh
 
 Options:
   --version <x.y.z>     Istio chart version (default: ${ISTIO_VERSION})
@@ -30,6 +40,7 @@ Options:
 
 Environment:
   ISTIO_VERSION, ISTIO_NAMESPACE, ISTIO_HELM_REPO
+  ISTIOD_VALUES, ZTUNNEL_VALUES
 
 Standalone alternatives (not used by e2e):
   ./scripts/istio-install.sh       # istioctl profile=ambient
@@ -43,6 +54,33 @@ require_cmd() {
     echo "Required command not found: ${cmd}" >&2
     exit 1
   fi
+}
+
+require_values_files() {
+  local file
+  for file in "${ISTIOD_VALUES}" "${ZTUNNEL_VALUES}" "${ISTIO_CSR_VALUES}"; do
+    if [[ ! -f "${file}" ]]; then
+      echo "Required file not found: ${file}" >&2
+      exit 1
+    fi
+  done
+}
+
+sync_istio_csr_istio_namespace() {
+  if ! helm list -n "${CERT_MANAGER_NAMESPACE}" 2>/dev/null \
+    | awk '{print $1}' | grep -qx "${ISTIO_CSR_RELEASE}"; then
+    echo "Helm release ${ISTIO_CSR_RELEASE} not found (skip istio-csr namespace sync)."
+    return 0
+  fi
+
+  echo "==> helm upgrade ${ISTIO_CSR_RELEASE} (control plane namespace ${ISTIO_NAMESPACE})"
+  helm upgrade "${ISTIO_CSR_RELEASE}" "${ISTIO_CSR_CHART}" \
+    -n "${CERT_MANAGER_NAMESPACE}" \
+    --wait \
+    --version "${ISTIO_CSR_VERSION}" \
+    -f "${ISTIO_CSR_VALUES}" \
+    --set "app.istio.namespace=${ISTIO_NAMESPACE}" \
+    --set "app.controller.leaderElectionNamespace=${ISTIO_NAMESPACE}"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -75,6 +113,12 @@ done
 
 require_cmd helm
 require_cmd kubectl
+require_values_files
+
+echo "==> ensure namespace ${ISTIO_NAMESPACE}"
+kubectl create namespace "${ISTIO_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
+
+sync_istio_csr_istio_namespace
 
 echo "==> helm repo add istio ${ISTIO_HELM_REPO}"
 if helm repo list 2>/dev/null | grep -qE '^istio[[:space:]]'; then
@@ -91,13 +135,11 @@ helm upgrade --install istio-base istio/base \
   --wait \
   --version "${ISTIO_VERSION}"
 
-echo "==> install Kubernetes Gateway API CRDs"
-"${ROOT}/scripts/gateway-api-install.sh"
-
-echo "==> helm upgrade --install istiod istio/istiod -n ${ISTIO_NAMESPACE} --set profile=ambient --wait --version ${ISTIO_VERSION}"
+echo "==> helm upgrade --install istiod istio/istiod (ambient)"
 helm upgrade --install istiod istio/istiod \
   -n "${ISTIO_NAMESPACE}" \
   --set profile=ambient \
+  -f "${ISTIOD_VALUES}" \
   --wait \
   --version "${ISTIO_VERSION}"
 
@@ -108,9 +150,10 @@ helm upgrade --install istio-cni istio/cni \
   --wait \
   --version "${ISTIO_VERSION}"
 
-echo "==> helm upgrade --install ztunnel istio/ztunnel -n ${ISTIO_NAMESPACE} --wait --version ${ISTIO_VERSION}"
+echo "==> helm upgrade --install ztunnel istio/ztunnel (ambient)"
 helm upgrade --install ztunnel istio/ztunnel \
   -n "${ISTIO_NAMESPACE}" \
+  -f "${ZTUNNEL_VALUES}" \
   --wait \
   --version "${ISTIO_VERSION}"
 

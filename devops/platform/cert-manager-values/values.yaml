@@ -1,5 +1,6 @@
 # Helm values for cert-manager install.
 # Used by: ./scripts/cert-manager-install.sh
+# Gateway API CRDs are installed separately (./scripts/gateway-api-install.sh or e2e step 2a/4a).
 crds:
   enabled: true
 

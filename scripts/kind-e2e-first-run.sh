@@ -7,9 +7,10 @@ set -euo pipefail
 # Mirrors devops/k8s/README.md first-run flow:
 # 1) create/recreate kind cluster
 # 2) set kubectl context
-# 2b) install Istio ambient + Gateway API CRDs (Helm; see scripts/istio-helm-install.sh)
+# 2a) install Gateway API CRDs (see scripts/gateway-api-install.sh)
+# 2b) install cert-manager + istio-csr (see scripts/cert-manager-install.sh)
 # 2c) install RabbitMQ Cluster Operator (see scripts/rabbitmq-install.sh)
-# 2d) install cert-manager (see scripts/cert-manager-install.sh)
+# 2d) install Istio ambient (Helm; see scripts/istio-helm-install.sh)
 # 3) label infra node
 # 4) init local PV directories
 # 5) build compose app images and load into kind
@@ -22,6 +23,7 @@ INFRA_NODE=""
 SKIP_BUILD="false"
 SKIP_LOAD="false"
 SKIP_APPLY="false"
+SKIP_GATEWAY_API="false"
 SKIP_ISTIO="false"
 SKIP_RABBITMQ="false"
 SKIP_CERT_MANAGER="false"
@@ -43,7 +45,8 @@ Options:
   --skip-load            skip kind image load step
   --no-jobs              omit workbench-jobs from build and kind load
   --skip-apply           skip stack apply step (Helm or Kustomize)
-  --skip-istio           skip Istio ambient Helm install (+ Gateway API CRDs)
+  --skip-gateway-api     skip Gateway API CRD install
+  --skip-istio           skip Istio ambient Helm install
   --skip-rabbitmq        skip RabbitMQ Cluster Operator install
   --skip-cert-manager    skip cert-manager install
   --k8s                  apply with ./scripts/k8s-apply.sh (legacy Kustomize)
@@ -98,6 +101,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-apply)
       SKIP_APPLY="true"
+      shift
+      ;;
+    --skip-gateway-api)
+      SKIP_GATEWAY_API="true"
       shift
       ;;
     --skip-istio)
@@ -165,11 +172,18 @@ echo "=== Step 2: set kubectl context ==="
 kubectl config use-context "kind-${CLUSTER_NAME}" >/dev/null
 kubectl get nodes -o wide
 
-if [[ "${SKIP_ISTIO}" != "true" ]]; then
-  echo "=== Step 2b: install Istio ambient (Helm) + Gateway API CRDs ==="
-  ./scripts/istio-helm-install.sh
+if [[ "${SKIP_GATEWAY_API}" != "true" ]]; then
+  echo "=== Step 2a: install Gateway API CRDs ==="
+  ./scripts/gateway-api-install.sh
 else
-  echo "=== Step 2b: skip Istio Helm install ==="
+  echo "=== Step 2a: skip Gateway API CRD install ==="
+fi
+
+if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
+  echo "=== Step 2b: install cert-manager + istio-csr ==="
+  ./scripts/cert-manager-install.sh
+else
+  echo "=== Step 2b: skip cert-manager install ==="
 fi
 
 if [[ "${SKIP_RABBITMQ}" != "true" ]]; then
@@ -179,11 +193,11 @@ else
   echo "=== Step 2c: skip RabbitMQ operator install ==="
 fi
 
-if [[ "${SKIP_CERT_MANAGER}" != "true" ]]; then
-  echo "=== Step 2d: install cert-manager ==="
-  ./scripts/cert-manager-install.sh
+if [[ "${SKIP_ISTIO}" != "true" ]]; then
+  echo "=== Step 2d: install Istio ambient (Helm) ==="
+  ./scripts/istio-helm-install.sh
 else
-  echo "=== Step 2d: skip cert-manager install ==="
+  echo "=== Step 2d: skip Istio Helm install ==="
 fi
 
 if [[ -z "${INFRA_NODE}" ]]; then

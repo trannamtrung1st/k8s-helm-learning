@@ -64,6 +64,3 @@ workbench-app:
 workbench-policies:
   workbenchWorkerNetworkPolicy:
     enabled: true
-
-platform-pki:
-  enabled: true

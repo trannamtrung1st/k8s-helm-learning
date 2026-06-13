@@ -1,0 +1,33 @@
+# Helm values for cert-manager istio-csr.
+# Used by: ./scripts/cert-manager-install.sh (bootstrap in cert-manager namespace)
+# and ./scripts/istio-helm-install.sh (syncs app.istio.namespace to istio-system).
+# Requires platform-pki bootstrap (workbench-ca-issuer ClusterIssuer).
+# See: https://cert-manager.io/docs/usage/istio-csr/installation/
+
+app:
+  tls:
+    rootCAFile: /var/run/secrets/istio-csr/tls.crt
+    certificateDNSNames:
+      - cert-manager-istio-csr.cert-manager.svc
+      - istio-csr.cert-manager.svc
+  server:
+    caTrustedNodeAccounts: istio-system/ztunnel
+  certmanager:
+    namespace: cert-manager
+    issuer:
+      name: workbench-ca-issuer
+      kind: ClusterIssuer
+      group: cert-manager.io
+  istio:
+    namespace: cert-manager
+  controller:
+    leaderElectionNamespace: cert-manager
+
+volumeMounts:
+  - name: root-ca
+    mountPath: /var/run/secrets/istio-csr
+
+volumes:
+  - name: root-ca
+    secret:
+      secretName: workbench-root-ca-secret

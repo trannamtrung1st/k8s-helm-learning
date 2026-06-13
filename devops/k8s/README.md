@@ -68,9 +68,10 @@ Manual steps below (same flow as the e2e script). Run from the **repository root
 5. **Install cluster platform** (once per cluster; included in **`kind-e2e-first-run.sh`**):
 
    ```bash
-   ./scripts/istio-helm-install.sh
-   ./scripts/rabbitmq-install.sh
+   ./scripts/gateway-api-install.sh
    ./scripts/cert-manager-install.sh
+   ./scripts/rabbitmq-install.sh
+   ./scripts/istio-helm-install.sh
    ```
 
 6. **Apply the stack** — Helm (recommended):

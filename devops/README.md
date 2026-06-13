@@ -66,9 +66,10 @@ From the repository root (after kind cluster, cluster platform installs, infra n
 
 ```bash
 # Cluster platform (once per cluster; also run by kind-e2e-first-run.sh / aks-e2e-first-run.sh):
-./scripts/istio-helm-install.sh      # Istio ambient + Gateway API CRDs
+./scripts/gateway-api-install.sh      # Gateway API CRDs (before cert-manager)
+./scripts/cert-manager-install.sh    # cert-manager + platform-pki + istio-csr
 ./scripts/rabbitmq-install.sh        # RabbitMQ Cluster Operator
-./scripts/cert-manager-install.sh    # cert-manager (TLS / Certificate CRDs)
+./scripts/istio-helm-install.sh      # Istio ambient
 
 ./scripts/helm-apply.sh
 # AKS (3x Standard_D2s_v3):

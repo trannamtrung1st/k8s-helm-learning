@@ -4,7 +4,7 @@ set -euo pipefail
 # Export the workbench root CA certificate from cert-manager for local trust installation.
 # Only the public certificate (tls.crt) is written — never the CA private key.
 #
-# Run from repository root after platform-pki is deployed (./scripts/helm-apply.sh).
+# Run from repository root after platform-pki is deployed (./scripts/cert-manager-install.sh).
 #
 #   ./scripts/cert-manager-export-root-ca.sh
 #   ./scripts/cert-manager-export-root-ca.sh --cluster local
@@ -163,7 +163,7 @@ fi
 
 if ! kubectl get secret "${ROOT_CA_SECRET}" -n "${CERT_MANAGER_NAMESPACE}" >/dev/null 2>&1; then
   echo "Secret ${ROOT_CA_SECRET} not found in namespace ${CERT_MANAGER_NAMESPACE}." >&2
-  echo "Deploy platform-pki first: ./scripts/helm-apply.sh" >&2
+  echo "Deploy platform-pki first: ./scripts/cert-manager-install.sh" >&2
   exit 1
 fi
 

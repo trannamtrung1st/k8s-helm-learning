@@ -8,9 +8,6 @@ dependencies:
 - name: workbench-apps-secrets
   repository: file://../../platform/workbench-apps-secrets
   version: 1.0.0-rc1
-- name: platform-pki
-  repository: file://../../platform/platform-pki
-  version: 1.0.0-rc1
 - name: workbench-policies
   repository: file://../../platform/workbench-policies
   version: 1.0.0-rc1
@@ -44,5 +41,5 @@ dependencies:
 - name: workbench-app
   repository: file://../../apps/workbench-app
   version: 1.0.0-rc1
-digest: sha256:d3735df73fe85ea9ed57c6e645608457a4aac687117446ba4144f6ad9ecfa09a
-generated: "2026-06-12T23:58:59.268355+07:00"
+digest: sha256:5e48d2ae50ecbd8a9faf8cf1a4b228a97cbaf582506ea3a9c0c582ecb59c64c8
+generated: "2026-06-13T21:45:58.706272+07:00"

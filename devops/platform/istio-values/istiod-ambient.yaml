@@ -1,0 +1,11 @@
+# Istiod Helm overrides for ambient mode with an external mesh CA.
+# Used by: ./scripts/istio-helm-install.sh
+# Prerequisite: ./scripts/cert-manager-install.sh (installs the external CA)
+
+pilot:
+  env:
+    ENABLE_CA_SERVER: "false"
+
+global:
+  caAddress: cert-manager-istio-csr.cert-manager.svc:443
+  meshID: cluster.local

@@ -14,10 +14,6 @@ dependencies:
   - name: workbench-apps-secrets
     version: 1.0.0-rc1
     repository: file://../../platform/workbench-apps-secrets
-  - name: platform-pki
-    version: 1.0.0-rc1
-    repository: file://../../platform/platform-pki
-    condition: platform-pki.enabled
   - name: workbench-policies
     version: 1.0.0-rc1
     repository: file://../../platform/workbench-policies
