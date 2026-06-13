@@ -18,3 +18,49 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/version: {{ .Chart.AppVersion }}
 app.kubernetes.io/part-of: {{ include "workbench-public-gateway.partOf" . }}
 {{- end -}}
+
+{{/*
+cert-manager Gateway annotations (https://cert-manager.io/docs/usage/gateway/).
+Emitted when the HTTPS listener is enabled.
+*/}}
+{{- define "workbench-public-gateway.certManagerAnnotations" -}}
+{{- if .Values.httpsListener.enabled }}
+{{- $cm := .Values.certManager }}
+{{- $hostname := .Values.httpsListener.hostname }}
+{{- if .Values.global.workbenchPki.caClusterIssuer }}
+cert-manager.io/cluster-issuer: {{ .Values.global.workbenchPki.caClusterIssuer }}
+{{- end }}
+{{- $commonName := default $hostname $cm.commonName }}
+{{- if $commonName }}
+cert-manager.io/common-name: {{ $commonName | quote }}
+{{- end }}
+{{- with $cm.duration }}
+cert-manager.io/duration: {{ . | quote }}
+{{- end }}
+{{- with $cm.renewBefore }}
+cert-manager.io/renew-before: {{ . | quote }}
+{{- end }}
+{{- with $cm.usages }}
+cert-manager.io/usages: {{ . | quote }}
+{{- end }}
+{{- with $cm.privateKeyAlgorithm }}
+cert-manager.io/private-key-algorithm: {{ . | quote }}
+{{- end }}
+{{- with $cm.privateKeySize }}
+cert-manager.io/private-key-size: {{ . | quote }}
+{{- end }}
+{{- with $cm.privateKeyRotationPolicy }}
+cert-manager.io/private-key-rotation-policy: {{ . | quote }}
+{{- end }}
+{{- $org := default (include "workbench-public-gateway.partOf" . | title) $cm.subjectOrganizations }}
+{{- if $org }}
+cert-manager.io/subject-organizations: {{ $org | quote }}
+{{- end }}
+{{- with $cm.revisionHistoryLimit }}
+cert-manager.io/revision-history-limit: {{ . | quote }}
+{{- end }}
+{{- range $key, $value := $cm.extraAnnotations }}
+{{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- end -}}

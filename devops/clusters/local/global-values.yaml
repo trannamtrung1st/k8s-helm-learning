@@ -35,6 +35,7 @@ workbench-rabbitmq:
 workbench-public-gateway:
   serviceType: ClusterIP
   httpsListener:
+    enabled: true
     hostname: api.k8slearning.com
 
 workbench-api:

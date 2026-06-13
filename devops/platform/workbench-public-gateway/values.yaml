@@ -32,4 +32,16 @@ httpsListener:
   name: https
   port: 443
   hostname: ""
-  tlsSecretName: ""
+  tlsSecretName: workbench-public-gateway-tls
+
+# cert-manager Certificate settings for the HTTPS listener.
+# https://cert-manager.io/docs/usage/gateway/
+# commonName defaults to httpsListener.hostname; subjectOrganizations defaults to global.workbenchPartOf.
+certManager:
+  duration: 8760h # 1 year
+  renewBefore: 720h # 30 days before expiry
+  usages: "digital signature,key encipherment,server auth"
+  privateKeyAlgorithm: ECDSA
+  privateKeySize: "256"
+  privateKeyRotationPolicy: Always
+  extraAnnotations: {}

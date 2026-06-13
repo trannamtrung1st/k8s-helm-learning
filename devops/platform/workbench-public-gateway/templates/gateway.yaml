@@ -6,6 +6,7 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     networking.istio.io/service-type: {{ .Values.serviceType }}
+{{- include "workbench-public-gateway.certManagerAnnotations" . | nindent 4 }}
   labels:
     {{- include "workbench-public-gateway.labels" . | nindent 4 }}
     {{- with .Values.labels }}
@@ -39,6 +40,7 @@ spec:
         certificateRefs:
           - name: {{ . }}
             kind: Secret
+            group: ""
       {{- end }}
       allowedRoutes:
         {{- include "workbench-public-gateway.allowedRoutes" . | nindent 8 }}

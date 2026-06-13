@@ -6,6 +6,7 @@ set -euo pipefail
 #
 #   ./scripts/cert-manager-install.sh
 #   ./scripts/cert-manager-install.sh --version v1.20.2
+#   ./scripts/cert-manager-install.sh --values devops/platform/cert-manager-values/values.yaml
 #   ./scripts/cert-manager-install.sh --uninstall -y
 #
 # Renders the upstream OCI Helm chart and applies with kubectl (see cert-manager docs:
@@ -16,6 +17,7 @@ CERT_MANAGER_VERSION="${CERT_MANAGER_VERSION:-v1.20.2}"
 CERT_MANAGER_NAMESPACE="${CERT_MANAGER_NAMESPACE:-cert-manager}"
 CERT_MANAGER_RELEASE="${CERT_MANAGER_RELEASE:-cert-manager}"
 CERT_MANAGER_CHART="${CERT_MANAGER_CHART:-oci://quay.io/jetstack/charts/cert-manager}"
+CERT_MANAGER_VALUES="${CERT_MANAGER_VALUES:-${ROOT}/devops/platform/cert-manager-values/values.yaml}"
 CERT_MANAGER_WAIT_TIMEOUT="${CERT_MANAGER_WAIT_TIMEOUT:-180s}"
 SKIP_VERIFY=false
 UNINSTALL=false
@@ -30,6 +32,7 @@ Install or uninstall cert-manager via helm template + kubectl apply.
 Options:
   --version <tag>       Chart version (default: ${CERT_MANAGER_VERSION})
   --namespace <name>    Target namespace (default: ${CERT_MANAGER_NAMESPACE})
+  --values <file>       Helm values file (default: cert-manager-values/values.yaml)
   --skip-verify         Skip post-install rollout checks
   --uninstall           Remove cert-manager resources (CRDs may remain)
   -y, --auto-approve    Skip confirmation prompt (uninstall only)
@@ -38,6 +41,7 @@ Options:
 Environment:
   CERT_MANAGER_VERSION, CERT_MANAGER_NAMESPACE, CERT_MANAGER_RELEASE
   CERT_MANAGER_CHART    OCI chart reference (default: quay.io/jetstack/charts/cert-manager)
+  CERT_MANAGER_VALUES
   CERT_MANAGER_WAIT_TIMEOUT
 EOF
 }
@@ -50,11 +54,18 @@ require_cmd() {
   fi
 }
 
+require_values_file() {
+  if [[ ! -f "${CERT_MANAGER_VALUES}" ]]; then
+    echo "cert-manager values file not found: ${CERT_MANAGER_VALUES}" >&2
+    exit 1
+  fi
+}
+
 render_manifest() {
   helm template "${CERT_MANAGER_RELEASE}" "${CERT_MANAGER_CHART}" \
     --namespace "${CERT_MANAGER_NAMESPACE}" \
     --version "${CERT_MANAGER_VERSION}" \
-    --set crds.enabled=true
+    -f "${CERT_MANAGER_VALUES}"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -67,6 +78,11 @@ while [[ $# -gt 0 ]]; do
     --namespace)
       [[ $# -ge 2 ]] || { echo "Missing value for --namespace" >&2; exit 1; }
       CERT_MANAGER_NAMESPACE="$2"
+      shift 2
+      ;;
+    --values)
+      [[ $# -ge 2 ]] || { echo "Missing value for --values" >&2; exit 1; }
+      CERT_MANAGER_VALUES="$2"
       shift 2
       ;;
     --skip-verify)
@@ -95,6 +111,7 @@ done
 
 require_cmd helm
 require_cmd kubectl
+require_values_file
 
 if [[ "${UNINSTALL}" == "true" ]]; then
   if ! kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then

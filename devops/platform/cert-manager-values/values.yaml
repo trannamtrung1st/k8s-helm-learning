@@ -1,0 +1,11 @@
+# Helm values for cert-manager install.
+# Used by: ./scripts/cert-manager-install.sh
+crds:
+  enabled: true
+
+config:
+  enableGatewayAPI: true
+  # ListenerSet (cert-manager 1.20+, Gateway API v1.5+). Gateway/ListenerSet resources added separately.
+  enableGatewayAPIListenerSet: true
+  featureGates:
+    ListenerSets: true
