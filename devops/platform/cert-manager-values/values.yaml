@@ -4,6 +4,9 @@
 crds:
   enabled: true
 
+# Delete TLS secrets when their Certificate is deleted (controller --enable-certificate-owner-ref).
+enableCertificateOwnerRef: true
+
 config:
   enableGatewayAPI: true
   # ListenerSet (cert-manager 1.20+, Gateway API v1.5+). Gateway/ListenerSet resources added separately.
