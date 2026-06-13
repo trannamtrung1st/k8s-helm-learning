@@ -11,7 +11,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   isCA: true
-  maxPathLen: 0
   commonName: {{ .Values.global.workbenchPki.intermediateCa.commonName }}
   secretName: {{ .Values.global.workbenchPki.intermediateCa.secretName }}
   duration: {{ required "set global.workbenchPki.intermediateCa.duration" .Values.global.workbenchPki.intermediateCa.duration }}
