@@ -28,11 +28,18 @@ global:
   workbenchPki:
     certManagerNamespace: cert-manager
     selfSignedClusterIssuer: workbench-selfsigned-issuer
+    rootCaClusterIssuer: workbench-root-ca-issuer
     rootCa:
       certificateName: workbench-root-ca
       secretName: workbench-root-ca-secret
       commonName: workbench-root-ca
       duration: 876000h # 100 years (100 * 365 * 24h)
+      renewBefore: 8760h # 1 year before expiry
+    intermediateCa:
+      certificateName: workbench-intermediate-ca
+      secretName: workbench-intermediate-ca-secret
+      commonName: workbench-intermediate-ca
+      duration: 87600h # 10 years (10 * 365 * 24h)
       renewBefore: 8760h # 1 year before expiry
     caClusterIssuer: workbench-ca-issuer
   workbenchComponents:

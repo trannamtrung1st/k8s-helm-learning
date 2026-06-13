@@ -1,0 +1,29 @@
+{{- if .Values.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.global.workbenchPki.intermediateCa.certificateName }}
+  namespace: {{ .Values.global.workbenchPki.certManagerNamespace }}
+  labels:
+    app.kubernetes.io/name: platform-pki
+    app.kubernetes.io/component: {{ .Values.global.workbenchComponents.platform.name }}
+    app.kubernetes.io/part-of: {{ .Values.global.workbenchPartOf }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  isCA: true
+  maxPathLen: 0
+  commonName: {{ .Values.global.workbenchPki.intermediateCa.commonName }}
+  secretName: {{ .Values.global.workbenchPki.intermediateCa.secretName }}
+  duration: {{ required "set global.workbenchPki.intermediateCa.duration" .Values.global.workbenchPki.intermediateCa.duration }}
+  renewBefore: {{ required "set global.workbenchPki.intermediateCa.renewBefore" .Values.global.workbenchPki.intermediateCa.renewBefore }}
+  subject:
+    organizations:
+      - {{ .Values.global.workbenchPartOf | title }}
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: {{ .Values.global.workbenchPki.rootCaClusterIssuer }}
+    kind: ClusterIssuer
+    group: cert-manager.io
+{{- end }}
